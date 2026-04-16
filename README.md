@@ -6,6 +6,8 @@ D&D 5e is included as the reference system. Any other tabletop RPG can be added 
 
 > **Using Claude?** This framework was extracted from [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill), a Claude Code-specific version with deeper integration. If you're running Claude Code, that repo will give you a more optimised experience.
 
+![open-tabletop-gm demo](docs/screenshots/demo-v2.gif)
+
 ---
 
 ## What it is
@@ -149,6 +151,16 @@ open https://localhost:5001
 ```
 
 Runs entirely independently of the LLM. If the display isn't running, all scripts fail silently — nothing breaks.
+
+> Screenshots below show the D&D 5e system module (included). The display companion works identically with any system module.
+
+![Session display with stat sidebar and NPC dialogue](docs/screenshots/screenshot-npc-dialogue.png)
+
+![Full display view with combat roll and player input panel](docs/screenshots/screenshot-display.png)
+
+| Stat sidebar | Character sheet |
+|---|---|
+| ![Stat sidebar](docs/screenshots/sidebar-card.png) | ![Character sheet modal](docs/screenshots/character-sheet-modal.png) |
 
 See [display/README.md](display/README.md) for full documentation.
 
