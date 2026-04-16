@@ -1,0 +1,22 @@
+# Display companion runtime files
+display/.token
+display/stats.json
+display/text_log.json
+display/app.log
+display/app.pid
+display/cert.pem
+display/key.pem
+display/.campaign
+display/.input_queue
+display/.input_trigger
+display/input_log.json
+display/player_input.json
+
+# SRD dataset (generated — run build_srd.py)
+systems/dnd5e/data/dnd5e_srd.json
+systems/dnd5e/data/dnd5e_supplemental.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

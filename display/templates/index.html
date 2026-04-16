@@ -1,0 +1,3998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="dnd-token" content="{{ lan_token }}">
+<title>DnD — Dungeon Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: #d4c4a0;
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 20px;
+    line-height: 1.85;
+  }
+
+  /* ── Background gradient layers (A/B crossfade) ── */
+  .bg-layer {
+    position: fixed; inset: 0;
+    transition: opacity 2.5s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #bg-a { opacity: 1; }
+  #bg-b { opacity: 0; }
+
+  /* ── Sky canvas (sun/moon/clouds/stars — driven by world_time) ── */
+  #sky {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 42vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Particle canvas ── */
+  #particles {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Vignette ── */
+  #vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 45%,
+      transparent 30%,
+      rgba(0,0,0,0.55) 70%,
+      rgba(0,0,0,0.88) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Decorative border frame ── */
+  #frame {
+    position: fixed; inset: 16px;
+    border: 1px solid rgba(180, 140, 60, 0.25);
+    border-radius: 2px;
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,0.4),
+      0 0 30px rgba(0,0,0,0.7);
+    pointer-events: none;
+    z-index: 3;
+  }
+  /* Corner accents */
+  #frame::before, #frame::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: rgba(180, 140, 60, 0.5);
+    border-style: solid;
+  }
+  #frame::before {
+    top: -1px; left: -1px;
+    border-width: 2px 0 0 2px;
+  }
+  #frame::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 2px 2px 0;
+  }
+
+  /* ── Scene indicator ── */
+  #scene-indicator {
+    position: fixed;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: rgba(180, 140, 60, 0.6);
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.8s ease;
+    white-space: nowrap;
+  }
+  #scene-indicator.changing {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  /* ── Text scroll area ── */
+  #text-scroll {
+    position: fixed; inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 72px 18vw 80px 230px;  /* left: sidebar width + gap */
+    z-index: 4;
+    scroll-behavior: smooth;
+    transition: padding-left 0.4s ease;
+    /* Hide scrollbar but keep scroll */
+    scrollbar-width: none;
+  }
+  #text-scroll::-webkit-scrollbar { display: none; }
+  #text-scroll.sidebar-hidden { padding-left: 60px; }
+
+  /* ── Text content ── */
+  #text-content {
+    max-width: 820px;
+    margin: 0 auto;
+    transition: opacity 0.35s ease;
+  }
+
+  .dm-block {
+    margin-bottom: 2.2em;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .dm-block p {
+    color: #d4c4a0;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  /* Italic for atmospheric/narration lines */
+  .dm-block p em { color: #c8b080; }
+
+  /* ── Player action blocks ── */
+  .player-block {
+    margin-bottom: 2em;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    border-left: 2px solid rgba(120, 175, 210, 0.3);
+    padding-left: 1.2em;
+  }
+
+  .player-name {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(130, 185, 215, 0.75);
+    margin-bottom: 0.45em;
+  }
+
+  .player-block p {
+    color: #94b8cc;
+    font-size: 0.92em;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  .player-block p em {
+    font-style: italic;
+  }
+
+  /* ── Player action intent block ── */
+  .action-block {
+    margin-bottom: 1.4em;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+  }
+
+  .action-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(130, 185, 215, 0.5);
+    white-space: nowrap;
+    padding-top: 0.15em;
+    flex-shrink: 0;
+  }
+
+  .action-block p {
+    color: rgba(148, 184, 204, 0.65);
+    font-size: 0.82em;
+    font-style: italic;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 1px solid rgba(120, 175, 210, 0.18);
+    padding-left: 0.7em;
+  }
+
+  /* ── NPC dialogue blocks ── */
+  .npc-block {
+    margin-bottom: 2em;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    border-left: 2px solid rgba(200, 160, 64, 0.35);
+    padding-left: 1.2em;
+  }
+
+  .npc-name {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(200, 160, 64, 0.8);
+    margin-bottom: 0.45em;
+  }
+
+  .npc-block p {
+    color: #c8a878;
+    font-style: italic;
+    font-size: 0.95em;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  /* ── Dice result blocks ── */
+  .dice-block {
+    margin: 0.4em 0 1.6em;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+    text-align: center;
+  }
+
+  .dice-result {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #c8a040;
+    text-shadow: 0 0 10px rgba(200, 160, 64, 0.3);
+    padding: 0.25em 1.2em;
+    border: 1px solid rgba(200, 160, 64, 0.18);
+    border-radius: 1px;
+  }
+
+  /* ── Tutor / learning mode hint blocks ── */
+  .tutor-block {
+    margin-bottom: 2em;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    border: 1px solid rgba(160, 200, 160, 0.22);
+    border-left: 2px solid rgba(130, 190, 130, 0.5);
+    border-radius: 2px;
+    background: rgba(20, 40, 20, 0.45);
+    padding: 0.7em 1.1em 0.75em;
+  }
+
+  .tutor-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+  }
+
+  .tutor-icon {
+    font-size: 10px;
+    color: rgba(130, 190, 130, 0.75);
+    flex-shrink: 0;
+  }
+
+  .tutor-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(130, 190, 130, 0.65);
+    flex: 1;
+  }
+
+  .tutor-chevron {
+    font-size: 9px;
+    color: rgba(130, 190, 130, 0.45);
+    transition: transform 0.2s ease;
+  }
+  .tutor-block.expanded .tutor-chevron { transform: rotate(180deg); }
+
+  .tutor-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.28s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    opacity: 0;
+    margin-top: 0;
+  }
+  .tutor-block.expanded .tutor-body {
+    max-height: 600px;
+    opacity: 1;
+    margin-top: 0.55em;
+  }
+
+  .tutor-body p {
+    font-size: 0.88em;
+    color: rgba(180, 220, 180, 0.82);
+    font-style: italic;
+    line-height: 1.7;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  }
+
+  /* Consequence / warning variant */
+  .tutor-block.tutor-warning {
+    border-color: rgba(200, 140, 60, 0.25);
+    border-left-color: rgba(200, 140, 60, 0.6);
+    background: rgba(40, 24, 8, 0.5);
+  }
+  .tutor-block.tutor-warning .tutor-icon,
+  .tutor-block.tutor-warning .tutor-label,
+  .tutor-block.tutor-warning .tutor-chevron { color: rgba(200, 150, 70, 0.7); }
+  .tutor-block.tutor-warning .tutor-body p  { color: rgba(230, 190, 130, 0.82); }
+
+  /* DM processing indicator — shown between queue consumed and first narration */
+  #dm-processing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px 10px 2px;
+    opacity: 0;
+    animation: proc-fadein 0.4s ease 0.15s forwards;
+  }
+  @keyframes proc-fadein {
+    to { opacity: 1; }
+  }
+  #dm-processing-indicator .proc-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(160, 120, 60, 0.55);
+    animation: proc-pulse 1.2s ease-in-out infinite;
+  }
+  #dm-processing-indicator .proc-dot:nth-child(2) { animation-delay: 0.2s; }
+  #dm-processing-indicator .proc-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes proc-pulse {
+    0%, 80%, 100% { transform: scale(0.7); opacity: 0.35; }
+    40%           { transform: scale(1.15); opacity: 0.85; }
+  }
+
+  /* Session divider */
+  .divider {
+    text-align: center;
+    color: rgba(180, 140, 60, 0.4);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    margin: 2em 0;
+    user-select: none;
+  }
+  .divider::before, .divider::after {
+    content: '— ';
+  }
+
+  /* Cursor blink */
+  .typing-cursor::after {
+    content: '';
+    display: inline-block;
+    width: 2px;
+    height: 0.85em;
+    background: rgba(180, 140, 60, 0.8);
+    vertical-align: -0.05em;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  /* Bottom fade gradient to hint there's more */
+  #bottom-fade {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 80px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     CHARACTER SIDEBAR
+     Fixed left column. Compact player cards stack vertically.
+     Ability scores shown only when there is exactly 1 player.
+     ══════════════════════════════════════════════════════════ */
+
+  /* ── Sidebar hide toggle ── */
+  #sidebar-toggle {
+    position: fixed;
+    left: 28px;
+    top: 32px;
+    z-index: 6;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.4);
+    padding: 2px 6px;
+    transition: color 0.3s ease;
+    display: none;  /* shown only when sidebar has data */
+  }
+  #sidebar-toggle:hover { color: rgba(180,140,60,0.8); }
+  #sidebar-toggle.visible { display: block; }
+
+  #sidebar {
+    position: fixed;
+    left: 0;
+    top: 60px;
+    bottom: 28px;
+    width: 210px;
+    z-index: 6;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    background: linear-gradient(to right, rgba(0,0,0,0.6) 70%, transparent);
+    border-right: 1px solid rgba(180,140,60,0.15);
+    padding: 10px 12px 16px 28px;
+    opacity: 0;
+    transition: opacity 0.7s ease, transform 0.4s ease;
+    transform: translateX(0);
+  }
+  #sidebar.has-data { opacity: 1; }
+  #sidebar.hidden {
+    transform: translateX(-210px);
+    opacity: 0;
+    pointer-events: none;
+  }
+  #sidebar::-webkit-scrollbar { display: none; }
+
+  /* ── Player card ── */
+  .sb-player {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(180,140,60,0.1);
+  }
+  .sb-player:last-of-type { border-bottom: none; margin-bottom: 0; }
+
+  .sb-name {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(200,165,80,0.9);
+    margin-bottom: 2px;
+  }
+  .sb-identity {
+    font-size: 10px;
+    color: rgba(200,185,150,0.5);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  /* ── HP row ── */
+  .sb-hp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+  .sb-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.5);
+  }
+  .sb-hp-nums {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: rgba(220,200,160,0.75);
+  }
+  .sb-bar-track {
+    height: 3px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 3px;
+  }
+  .sb-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease, background-color 0.6s ease;
+  }
+  .sb-hp-temp-row {
+    font-size: 9px;
+    color: rgba(120,180,230,0.6);
+    margin-bottom: 3px;
+  }
+
+  /* ── XP row ── */
+  .sb-xp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+  .sb-xp-nums {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: rgba(180,140,60,0.55);
+  }
+  .sb-xp-bar { background: rgba(180,140,60,0.4); }
+
+  /* ── Quick stats (AC · Init · Speed) ── */
+  .sb-quick-stats {
+    margin-top: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(200,185,150,0.55);
+    line-height: 1.8;
+  }
+  .sb-quick-stats span.val {
+    color: rgba(220,200,160,0.8);
+    margin-right: 8px;
+  }
+
+  /* ── Conditions ── */
+  .sb-conditions {
+    margin-top: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .sb-condition-pill {
+    font-family: 'Cinzel', serif;
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+  .sb-condition-pill.danger {
+    color: rgba(220,80,80,0.9);
+    border-color: rgba(220,80,80,0.35);
+    background: rgba(220,80,80,0.08);
+  }
+  .sb-condition-pill.warn {
+    color: rgba(220,150,50,0.9);
+    border-color: rgba(220,150,50,0.35);
+    background: rgba(220,150,50,0.08);
+  }
+  .sb-condition-pill.info {
+    color: rgba(100,160,220,0.9);
+    border-color: rgba(100,160,220,0.35);
+    background: rgba(100,160,220,0.08);
+  }
+  .sb-condition-pill.buff {
+    color: rgba(80,200,130,0.9);
+    border-color: rgba(80,200,130,0.35);
+    background: rgba(80,200,130,0.08);
+  }
+  /* Concentration tag */
+  .sb-concentrate {
+    margin-top: 4px;
+    font-size: 8px;
+    color: rgba(160,120,220,0.75);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Timed effects ── */
+  .sb-effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 4px;
+  }
+  .sb-effect-pill {
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: rgba(60,110,60,0.2);
+    color: rgba(130,190,130,0.7);
+    border: 1px solid rgba(70,130,70,0.3);
+    white-space: nowrap;
+    cursor: default;
+  }
+  .sb-effect-pill.conc {
+    background: rgba(90,60,140,0.2);
+    color: rgba(170,140,220,0.75);
+    border-color: rgba(130,90,190,0.35);
+  }
+  .sb-effect-pill.warning {
+    background: rgba(150,90,20,0.3);
+    color: rgba(220,155,55,0.9);
+    border-color: rgba(180,120,30,0.4);
+    animation: effect-warn 1.4s ease-in-out infinite;
+  }
+  @keyframes effect-warn {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+  }
+
+  /* ── Effect expiry block in feed ── */
+  .effect-expired-block {
+    margin: 0.4em 0 1.6em;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+    text-align: center;
+  }
+  .effect-expired-result {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: rgba(190,120,50,0.85);
+    padding: 0.25em 1.2em;
+    border: 1px solid rgba(190,120,50,0.25);
+    border-radius: 1px;
+    text-shadow: 0 0 8px rgba(190,120,50,0.25);
+  }
+
+  /* ── Features (Second Wind etc) ── */
+  .sb-features {
+    margin-top: 4px;
+    font-size: 9px;
+    color: rgba(200,185,150,0.4);
+    line-height: 1.6;
+  }
+
+  /* ── Ability scores — only rendered when 1 player ── */
+  .sb-abilities {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(180,140,60,0.08);
+  }
+  .sb-ab-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px 2px;
+  }
+  .sb-ab-cell {
+    text-align: center;
+  }
+  .sb-ab-name {
+    font-family: 'Cinzel', serif;
+    font-size: 7.5px;
+    letter-spacing: 1px;
+    color: rgba(180,140,60,0.45);
+    text-transform: uppercase;
+  }
+  .sb-ab-score {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: rgba(220,200,160,0.8);
+    line-height: 1.2;
+  }
+  .sb-ab-mod {
+    font-size: 9px;
+    color: rgba(180,140,60,0.65);
+    font-family: 'IM Fell English', Georgia, serif;
+  }
+
+  /* ── Player card — clickable ── */
+  .sb-player {
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.18s ease;
+    border-radius: 3px;
+    margin-left: -4px;
+    padding-left: 4px;
+  }
+  .sb-player:hover { background: rgba(180,140,60,0.06); }
+
+  /* ── Character sheet modal ── */
+  #sheet-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.78);
+    align-items: center;
+    justify-content: center;
+  }
+  #sheet-modal.open { display: flex; }
+  #sheet-panel {
+    background: rgba(8,6,4,0.97);
+    border: 1px solid rgba(180,140,60,0.3);
+    border-radius: 3px;
+    box-shadow: 0 0 80px rgba(0,0,0,0.85), inset 0 0 40px rgba(0,0,0,0.5);
+    width: min(680px, 90vw);
+    max-height: 84vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180,140,60,0.2) transparent;
+    padding: 30px 34px 38px;
+    position: relative;
+    animation: sheetIn 0.18s ease;
+  }
+  @keyframes sheetIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #sheet-close {
+    position: absolute; top: 14px; right: 18px;
+    background: none; border: none;
+    color: rgba(180,140,60,0.45); font-size: 18px;
+    cursor: pointer; padding: 4px; line-height: 1;
+    transition: color 0.15s;
+  }
+  #sheet-close:hover { color: rgba(180,140,60,0.9); }
+  .sm-name {
+    font-family: 'Cinzel', serif; font-size: 19px;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(200,165,80,0.95); margin-bottom: 3px;
+  }
+  .sm-identity {
+    font-size: 12px; color: rgba(200,185,150,0.45);
+    margin-bottom: 16px; letter-spacing: 1px;
+  }
+  .sm-divider {
+    height: 1px; background: rgba(180,140,60,0.12); margin: 15px 0;
+  }
+  .sm-section-title {
+    font-family: 'Cinzel', serif; font-size: 8.5px;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(180,140,60,0.5); margin-bottom: 10px;
+  }
+  .sm-combat-strip {
+    display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 2px;
+  }
+  .sm-stat-cell { text-align: center; }
+  .sm-stat-label {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(180,140,60,0.4); display: block;
+  }
+  .sm-stat-val {
+    font-family: 'Cinzel', serif; font-size: 14px;
+    color: rgba(220,200,160,0.88);
+  }
+  .sm-xp {
+    font-size: 10px; color: rgba(180,140,60,0.45);
+    font-family: 'Cinzel', serif; letter-spacing: 1px;
+    margin-top: 4px;
+  }
+  .sm-ab-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+  }
+  .sm-ab-cell { text-align: center; }
+  .sm-ab-name {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 1px; color: rgba(180,140,60,0.4);
+    text-transform: uppercase;
+  }
+  .sm-ab-score {
+    font-family: 'Cinzel', serif; font-size: 15px;
+    color: rgba(220,200,160,0.85); line-height: 1.1;
+  }
+  .sm-ab-mod { font-size: 11px; color: rgba(180,140,60,0.65); }
+  .sm-attacks-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .sm-attacks-table th {
+    font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 1px;
+    text-transform: uppercase; color: rgba(180,140,60,0.45);
+    text-align: left; padding: 0 10px 6px 0;
+    border-bottom: 1px solid rgba(180,140,60,0.1);
+  }
+  .sm-attacks-table td {
+    padding: 5px 10px 5px 0; color: rgba(210,195,160,0.75);
+    border-bottom: 1px solid rgba(180,140,60,0.05); vertical-align: top;
+  }
+  .sm-attacks-table td.atk-name { color: rgba(220,200,160,0.95); }
+  .sm-attacks-table td.atk-notes {
+    color: rgba(200,185,150,0.45); font-style: italic; font-size: 11px;
+  }
+  .sm-spell-meta {
+    font-size: 11px; color: rgba(200,185,150,0.45);
+    margin-bottom: 10px; font-style: italic;
+  }
+  .sm-sub-label {
+    font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 8px 0 5px;
+  }
+  .sm-sub-label.cantrip-label { color: rgba(160,120,220,0.4); }
+  .sm-sub-label.prepared-label { color: rgba(180,140,60,0.4); }
+  .sm-spell-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  .sm-spell-tag {
+    font-size: 11px; color: rgba(200,185,150,0.8);
+    background: rgba(180,140,60,0.06);
+    border: 1px solid rgba(180,140,60,0.15);
+    border-radius: 2px; padding: 3px 8px;
+    cursor: pointer; transition: background 0.12s, border-color 0.12s;
+  }
+  .sm-spell-tag:hover {
+    background: rgba(180,140,60,0.14);
+    border-color: rgba(180,140,60,0.35);
+  }
+  .sm-spell-tag.cantrip {
+    color: rgba(160,120,220,0.8);
+    border-color: rgba(160,120,220,0.2);
+    background: rgba(160,120,220,0.05);
+  }
+  .sm-spell-tag.cantrip:hover {
+    background: rgba(160,120,220,0.12);
+    border-color: rgba(160,120,220,0.4);
+  }
+  .sm-feature-name[data-srd-name] {
+    cursor: pointer; transition: color 0.12s;
+  }
+  .sm-feature-name[data-srd-name]:hover { color: rgba(200,165,80,1); }
+  .atk-name[data-srd-name] {
+    cursor: pointer; transition: color 0.12s;
+  }
+  .atk-name[data-srd-name]:hover { color: rgba(220,200,160,1); text-decoration: underline dotted rgba(180,140,60,0.4); }
+  .sm-inventory-list li[data-srd-name] {
+    cursor: pointer; transition: color 0.12s;
+  }
+  .sm-inventory-list li[data-srd-name]:hover { color: rgba(220,200,160,0.9); }
+
+  /* ── SRD lookup modal ─────────────────────────── */
+  #srd-modal {
+    display: none; position: fixed; inset: 0;
+    z-index: 10500;
+    background: rgba(0,0,0,0.72);
+    align-items: center; justify-content: center;
+  }
+  #srd-modal.open { display: flex; }
+  #srd-panel {
+    background: rgba(6,4,3,0.98);
+    border: 1px solid rgba(180,140,60,0.25);
+    border-radius: 3px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.4);
+    width: min(560px, 88vw);
+    max-height: 78vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180,140,60,0.15) transparent;
+    padding: 26px 30px 32px;
+    position: relative;
+    animation: sheetIn 0.15s ease;
+  }
+  #srd-close {
+    position: absolute; top: 12px; right: 16px;
+    background: none; border: none;
+    color: rgba(180,140,60,0.4); font-size: 16px;
+    cursor: pointer; padding: 4px; line-height: 1;
+    transition: color 0.15s;
+  }
+  #srd-close:hover { color: rgba(180,140,60,0.85); }
+  #srd-category-badge {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(180,140,60,0.38); margin-bottom: 4px;
+  }
+  #srd-body {
+    font-size: 12px; line-height: 1.7;
+    color: rgba(200,185,150,0.82);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  #srd-body .srd-title {
+    font-family: 'Cinzel', serif; font-size: 15px;
+    color: rgba(210,180,90,0.92); letter-spacing: 1.5px;
+    margin-bottom: 10px; line-height: 1.3;
+  }
+  #srd-body .srd-meta {
+    font-size: 11px; color: rgba(180,140,60,0.55);
+    margin-bottom: 12px; font-style: italic;
+  }
+  #srd-body .srd-desc { white-space: pre-wrap; }
+  #srd-loading {
+    font-size: 11px; font-family: 'Cinzel', serif;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(180,140,60,0.35); padding: 20px 0;
+    text-align: center;
+  }
+  #srd-not-found {
+    font-size: 11px; color: rgba(200,185,150,0.3);
+    font-style: italic; padding: 16px 0;
+  }
+  .sm-feature { margin-bottom: 10px; }
+  .sm-feature-name {
+    font-family: 'Cinzel', serif; font-size: 11px;
+    color: rgba(200,165,80,0.75); margin-bottom: 2px;
+  }
+  .sm-feature-text {
+    font-size: 12px; color: rgba(200,185,150,0.6); line-height: 1.55;
+  }
+  .sm-inventory-list {
+    list-style: none; column-count: 2; column-gap: 24px;
+  }
+  .sm-inventory-list li {
+    font-size: 12px; color: rgba(200,185,150,0.7);
+    padding: 2px 0; break-inside: avoid;
+  }
+  .sm-inventory-list li::before {
+    content: '·  '; color: rgba(180,140,60,0.35);
+  }
+  .sm-no-data {
+    font-size: 12px; color: rgba(200,185,150,0.25);
+    font-style: italic; text-align: center; padding: 22px 0;
+  }
+
+  /* ── Spell slots (sidebar) ── */
+  .sb-slots { margin-top: 5px; }
+  .sb-slot-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+  .sb-slot-level {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    color: rgba(160,120,220,0.5); width: 14px; text-align: right; flex-shrink: 0;
+  }
+  .sb-slot-pip {
+    width: 6px; height: 6px; border-radius: 50%; border: 1px solid;
+    flex-shrink: 0;
+  }
+  .sb-slot-pip.avail { background: rgba(160,120,220,0.6); border-color: rgba(160,120,220,0.6); }
+  .sb-slot-pip.spent { background: transparent; border-color: rgba(160,120,220,0.18); }
+
+  /* ── Faction panel (sidebar) ── */
+  #sb-factions {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid rgba(180,140,60,0.08);
+  }
+  .sb-factions-header {
+    font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(180,140,60,0.35); margin-bottom: 6px;
+  }
+  .sb-faction-item {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 6px; padding: 2px 0;
+  }
+  .sb-faction-name {
+    font-size: 9px; color: rgba(200,185,150,0.6);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+  }
+  .sb-faction-standing {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap;
+  }
+  .sb-faction-standing.allied    { color: rgba(80,200,130,0.80); }
+  .sb-faction-standing.friendly  { color: rgba(80,200,130,0.60); }
+  .sb-faction-standing.neutral   { color: rgba(180,140,60,0.60); }
+  .sb-faction-standing.unfriendly,
+  .sb-faction-standing.suspicious{ color: rgba(220,120,50,0.70); }
+  .sb-faction-standing.hostile   { color: rgba(220,60,60,0.80); }
+  .sb-faction-standing.unknown   { color: rgba(200,185,150,0.25); }
+
+  /* ── Relationships (sheet modal) ── */
+  .sm-relationship { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+  .sm-rel-name {
+    font-family: 'Cinzel', serif; font-size: 11px;
+    color: rgba(200,165,80,0.75); min-width: 90px; flex-shrink: 0;
+  }
+  .sm-rel-role {
+    font-size: 10px; font-style: italic;
+    color: rgba(160,120,220,0.6); min-width: 60px; flex-shrink: 0;
+  }
+  .sm-rel-note { font-size: 11px; color: rgba(200,185,150,0.5); line-height: 1.45; }
+
+  /* ── Clickable sheet items ── */
+  .sm-clickable { cursor: default; }
+
+  /* ── Turn order section ── */
+  #sb-turn-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(180,140,60,0.12);
+  }
+  .sb-turn-header {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.55);
+    margin-bottom: 6px;
+  }
+  .sb-turn-item {
+    font-size: 10px;
+    color: rgba(200,185,150,0.4);
+    padding: 2px 0 2px 14px;
+    line-height: 1.5;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sb-turn-item.sb-turn-current {
+    color: rgba(220,200,160,0.95);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+  }
+  .sb-turn-item.sb-turn-current::before {
+    content: '▶';
+    position: absolute;
+    left: 0;
+    font-size: 7px;
+    color: rgba(180,140,60,0.8);
+    top: 4px;
+  }
+
+  /* ── CRIT / FUMBLE flash overlay ── */
+  #flash-overlay {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 9;
+    opacity: 0;
+  }
+  @keyframes flashCrit {
+    0%   { opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(210,170,40,0.55) 0%, transparent 65%); }
+    12%  { opacity: 1; }
+    100% { opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(210,170,40,0) 0%, transparent 65%); }
+  }
+  @keyframes flashFumble {
+    0%   { opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(180,30,30,0.65) 0%, transparent 65%); }
+    8%   { opacity: 1; }
+    100% { opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(180,30,30,0) 0%, transparent 65%); }
+  }
+  .flash-crit   { animation: flashCrit   2.0s ease-out forwards; }
+  .flash-fumble { animation: flashFumble 1.6s ease-out forwards; }
+
+  /* ── HP number flash ── */
+  @keyframes hpDmg  { 0% { color:#d05050; } 100% { color:rgba(220,200,160,0.75); } }
+  @keyframes hpHeal { 0% { color:#55cc70; } 100% { color:rgba(220,200,160,0.75); } }
+  .hp-flash-dmg  { animation: hpDmg  1.4s ease-out forwards; }
+  .hp-flash-heal { animation: hpHeal 1.0s ease-out forwards; }
+
+  /* ── World clock ── */
+  #world-clock {
+    position: fixed;
+    top: 28px; right: 32px;
+    z-index: 5;
+    text-align: right;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s ease;
+    user-select: none;
+  }
+  #world-clock.has-data { opacity: 1; }
+  #wc-icon {
+    font-family: system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1;
+    margin-bottom: 5px;
+    opacity: 0.6;
+  }
+  #wc-date {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.65);
+    line-height: 1.5;
+  }
+  #wc-sub {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.38);
+    line-height: 1.5;
+    margin-top: 1px;
+  }
+
+  /* ── Audio toggle controls ── */
+  #audio-controls {
+    position: fixed;
+    top: 96px; right: 28px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    opacity: 0.38;
+    transition: opacity 0.3s ease;
+    pointer-events: auto;
+  }
+  #audio-controls:hover { opacity: 0.85; }
+  .speed-label {
+    font-family: 'Cinzel', serif;
+    font-size: 7.5px;
+    letter-spacing: 1.5px;
+    color: rgba(180,140,60,0.75);
+    text-transform: uppercase;
+    min-width: 42px;
+    text-align: right;
+    cursor: pointer;
+    user-select: none;
+  }
+  .speed-label:hover { color: rgba(220,185,100,1); }
+
+  /* ── Player input panel ── */
+  #input-panel {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+    width: min(540px, 80vw);
+    background: rgba(10, 7, 3, 0.92);
+    border: 1px solid rgba(180,140,60,0.28);
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    transition: border-color 0.2s ease;
+  }
+  #input-panel:focus-within { border-color: rgba(180,140,60,0.55); }
+  #input-panel-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; cursor: pointer; user-select: none;
+  }
+  #input-panel-label {
+    font-family: 'Cinzel', serif; font-size: 8px;
+    letter-spacing: 2px; color: rgba(180,140,60,0.65);
+    text-transform: uppercase; flex: 1;
+  }
+  #input-badge {
+    display: none; font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 1px; color: rgba(220,185,100,1);
+    background: rgba(40,25,5,0.9); border: 1px solid rgba(180,140,60,0.55);
+    border-radius: 10px; padding: 1px 8px;
+  }
+  #input-toggle-arrow {
+    font-size: 9px; color: rgba(180,140,60,0.45);
+  }
+  #input-body {
+    padding: 0 14px 14px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  #input-panel.collapsed #input-body { display: none; }
+  #char-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
+  .char-tab {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(180,140,60,0.5);
+    border: 1px solid rgba(180,140,60,0.22);
+    border-radius: 3px; padding: 4px 10px;
+    cursor: pointer; background: transparent;
+    transition: all 0.15s ease; user-select: none;
+  }
+  .char-tab:hover { color: rgba(220,185,100,0.85); border-color: rgba(180,140,60,0.5); }
+  .char-tab.active {
+    color: rgba(220,185,100,1); border-color: rgba(180,140,60,0.75);
+    background: rgba(30,20,5,0.55);
+  }
+  #player-input-text {
+    width: 100%; box-sizing: border-box;
+    background: rgba(8,5,2,0.85); border: 1px solid rgba(180,140,60,0.18);
+    border-radius: 3px; color: rgba(220,200,160,0.9);
+    font-family: 'IM Fell English', serif; font-size: 13px;
+    padding: 8px 10px; resize: none; outline: none;
+    transition: border-color 0.15s ease;
+  }
+  #player-input-text:focus { border-color: rgba(180,140,60,0.45); }
+  #player-input-text::placeholder { color: rgba(180,140,60,0.28); }
+  #input-footer { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  #skip-turn-btn {
+    font-family: 'Cinzel', serif; font-size: 8px;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: rgba(190,100,70,0.72); background: rgba(20,6,3,0.45);
+    border: 1px dashed rgba(170,85,55,0.38);
+    border-radius: 3px; padding: 6px 14px;
+    cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+    margin-right: auto;
+  }
+  #skip-turn-btn:hover {
+    color: rgba(215,120,80,0.95); border-color: rgba(195,100,65,0.65);
+    background: rgba(35,10,5,0.65);
+  }
+  #stage-btn {
+    font-family: 'Cinzel', serif; font-size: 8px;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: rgba(200,165,80,0.85); background: rgba(20,14,6,0.6);
+    border: 1px solid rgba(180,140,60,0.48);
+    border-radius: 3px; padding: 6px 16px;
+    cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+  }
+  #stage-btn:hover {
+    color: rgba(220,185,100,1); border-color: rgba(180,140,60,0.8);
+    background: rgba(30,20,8,0.75);
+  }
+  #stage-btn:disabled { opacity: 0.4; pointer-events: none; }
+  #staged-queue { display: flex; flex-direction: column; gap: 5px; }
+  .staged-entry {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(18,10,3,0.65);
+    border-left: 2px solid rgba(180,140,60,0.28);
+    border-radius: 0 2px 2px 0; padding: 6px 9px;
+    transition: border-color 0.2s ease;
+  }
+  .staged-entry.is-ready { border-left-color: rgba(120,190,80,0.65); }
+  .staged-entry-body { flex: 1; min-width: 0; }
+  .staged-char {
+    font-family: 'Cinzel', serif; font-size: 8.5px;
+    letter-spacing: 1px; color: rgba(180,140,60,0.82);
+    margin-bottom: 2px;
+  }
+  .staged-text {
+    font-family: 'IM Fell English', serif; font-size: 11.5px;
+    color: rgba(200,175,120,0.82); word-break: break-word;
+  }
+  .staged-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+  .ready-btn {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: rgba(180,140,60,0.55); background: transparent;
+    border: 1px solid rgba(180,140,60,0.25); border-radius: 3px;
+    padding: 3px 8px; cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+  }
+  .ready-btn:hover { color: rgba(200,230,140,0.9); border-color: rgba(120,190,80,0.55); }
+  .ready-btn.is-ready {
+    color: rgba(140,210,90,0.9); border-color: rgba(120,190,80,0.7);
+    background: rgba(20,35,10,0.6);
+  }
+  .unstage-btn {
+    font-size: 10px; color: rgba(180,140,60,0.3); background: transparent;
+    border: none; cursor: pointer; padding: 1px 3px; line-height: 1;
+    transition: color 0.15s ease;
+  }
+  .unstage-btn:hover { color: rgba(200,100,80,0.75); }
+  .skip-btn {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: rgba(180,140,60,0.35); background: transparent;
+    border: 1px solid rgba(180,140,60,0.15); border-radius: 3px;
+    padding: 3px 8px; cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+  }
+  .skip-btn:hover { color: rgba(210,140,80,0.8); border-color: rgba(210,140,80,0.45); }
+  #waiting-indicator {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 1.2px; color: rgba(180,140,60,0.45);
+    text-align: center; padding: 4px 0;
+    display: none; flex-direction: column; gap: 3px;
+  }
+  #waiting-indicator .queue-label {
+    color: rgba(180,140,60,0.5); font-size: 7px; letter-spacing: 1.5px;
+  }
+  #waiting-indicator .queue-check {
+    color: rgba(140,200,120,0.75); font-size: 8px; letter-spacing: 1px;
+  }
+
+  /* ── Autorun cycle indicator (lives inside party input panel header) ── */
+  #autorun-indicator {
+    display: none; align-items: center; gap: 5px;
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 1.4px; color: rgba(180,140,60,0.55);
+    text-transform: uppercase;
+  }
+  .autorun-pie { flex-shrink: 0; overflow: visible; }
+  .autorun-track {
+    fill: none; stroke: rgba(180,140,60,0.15); stroke-width: 2;
+  }
+  .autorun-fill {
+    fill: none; stroke: rgba(180,140,60,0.6); stroke-width: 2;
+    stroke-linecap: round;
+    transform-origin: 12px 12px; transform: rotate(-90deg);
+    transition: stroke 0.4s ease;
+  }
+  .autorun-fill.waiting {
+    stroke: rgba(140,200,120,0.75);
+    animation: autorun-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes autorun-pulse {
+    0%, 100% { opacity: 0.45; }
+    50%       { opacity: 1; }
+  }
+
+  /* ── DM Help button ── */
+  #dm-help-btn {
+    position: fixed;
+    bottom: 22px; right: 24px;
+    z-index: 6;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(200,165,80,0.82);
+    background: rgba(20,14,6,0.55);
+    border: 1px solid rgba(180,140,60,0.5);
+    border-radius: 3px;
+    padding: 6px 12px;
+    cursor: pointer;
+    opacity: 1;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    pointer-events: auto;
+    user-select: none;
+    box-shadow: 0 0 6px rgba(180,140,60,0.15);
+  }
+  #dm-help-btn:hover  { color: rgba(220,185,100,1); border-color: rgba(210,170,80,0.85); background: rgba(30,20,8,0.75); box-shadow: 0 0 10px rgba(180,140,60,0.3); }
+  #dm-help-btn.pending { color: rgba(180,140,60,0.7); border-color: rgba(180,140,60,0.4); cursor: default; box-shadow: none; }
+  #dm-help-btn.locked { color: rgba(180,90,60,0.85); border-color: rgba(180,90,60,0.5); }
+  #dm-help-btn:disabled { pointer-events: none; }
+
+  /* ── Device approval cards ── */
+  #device-approvals {
+    position: fixed;
+    top: 18px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex; flex-direction: column; gap: 6px;
+    pointer-events: none;
+  }
+  .device-card {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(10,6,2,0.94);
+    border: 1px solid rgba(180,90,60,0.6);
+    border-radius: 5px; padding: 8px 14px;
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+  }
+  .device-card-label {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(220,150,100,0.9); flex: 1;
+  }
+  .device-card-ip {
+    font-family: 'IM Fell English', serif; font-size: 11px;
+    color: rgba(200,160,120,0.7); margin-right: 4px;
+  }
+  .device-approve-btn, .device-deny-btn {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    border-radius: 3px; padding: 4px 10px; cursor: pointer;
+    transition: all 0.15s ease; white-space: nowrap;
+  }
+  .device-approve-btn {
+    color: rgba(140,210,90,0.9); background: rgba(20,35,10,0.6);
+    border: 1px solid rgba(120,190,80,0.55);
+  }
+  .device-approve-btn:hover { background: rgba(30,50,15,0.8); border-color: rgba(140,210,90,0.8); }
+  .device-deny-btn {
+    color: rgba(200,90,70,0.85); background: rgba(30,10,8,0.6);
+    border: 1px solid rgba(180,70,50,0.45);
+  }
+  .device-deny-btn:hover { background: rgba(45,15,10,0.8); border-color: rgba(200,90,70,0.75); }
+
+  .audio-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .audio-label {
+    font-family: 'Cinzel', serif;
+    font-size: 7.5px;
+    letter-spacing: 1.8px;
+    color: rgba(180,140,60,0.75);
+    text-transform: uppercase;
+    min-width: 42px;
+    text-align: right;
+  }
+  .toggle-track {
+    width: 28px; height: 14px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(180,140,60,0.25);
+    border-radius: 7px;
+    position: relative;
+    transition: background 0.3s, border-color 0.3s;
+    flex-shrink: 0;
+  }
+  .toggle-track.on {
+    background: rgba(180,140,60,0.28);
+    border-color: rgba(180,140,60,0.65);
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(180,140,60,0.45);
+    transition: transform 0.22s ease, background 0.3s;
+  }
+  .toggle-track.on .toggle-thumb {
+    transform: translateX(14px);
+    background: rgba(220,180,70,0.92);
+  }
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div id="bg-a" class="bg-layer"></div>
+<div id="bg-b" class="bg-layer"></div>
+
+<!-- Sky layer — sun/moon/clouds/stars, driven by world_time -->
+<canvas id="sky"></canvas>
+
+<!-- Particles -->
+<canvas id="particles"></canvas>
+
+<!-- Overlays -->
+<div id="vignette"></div>
+<div id="frame"></div>
+<div id="scene-indicator">— The Inn —</div>
+<div id="bottom-fade"></div>
+
+<!-- Sidebar toggle button -->
+<button id="sidebar-toggle" title="Toggle character sidebar">◀ Hide</button>
+
+<!-- CRIT / FUMBLE full-screen flash -->
+<div id="flash-overlay"></div>
+
+<!-- World time clock (top-right) -->
+<div id="world-clock">
+  <div id="wc-icon">☀</div>
+  <div id="wc-date"></div>
+  <div id="wc-sub"></div>
+</div>
+
+<!-- Audio toggle controls — SFX triggered by narration text -->
+<div id="audio-controls">
+  <div class="audio-row" id="sfx-row" title="Sound effects (triggered by narration)">
+    <span class="audio-label">Sound Effects</span>
+    <div class="toggle-track" id="sfx-track"><div class="toggle-thumb"></div></div>
+  </div>
+  <div class="audio-row" id="speed-row" title="Typing speed — click to cycle">
+    <span class="audio-label">Type Speed</span>
+    <span id="speed-label" class="speed-label">Normal</span>
+  </div>
+</div>
+
+<!-- DM Help — on-demand hint button -->
+<button id="dm-help-btn" title="Request a DM hint for the current scene">◈ DM Help</button>
+
+<!-- Device approval cards — shown when a new LAN device requests input access -->
+<div id="device-approvals"></div>
+
+<!-- Player input panel — submit actions from the display companion -->
+<div id="input-panel" class="collapsed">
+  <div id="input-panel-header">
+    <span id="input-panel-label">Party Input</span>
+    <span id="input-badge"></span>
+    <div id="autorun-indicator">
+      <svg class="autorun-pie" viewBox="0 0 24 24" width="13" height="13">
+        <circle class="autorun-track" cx="12" cy="12" r="9"/>
+        <circle class="autorun-fill" cx="12" cy="12" r="9"
+                stroke-dasharray="56.55" stroke-dashoffset="0"/>
+      </svg>
+      <span class="autorun-label">Next Turn</span>
+    </div>
+    <span id="input-toggle-arrow">▲</span>
+  </div>
+  <div id="input-body">
+    <div id="staged-queue"></div>
+    <div id="waiting-indicator"></div>
+    <div id="char-tabs">
+      <button class="char-tab active" data-char="Everybody">Everybody</button>
+    </div>
+    <textarea id="player-input-text" rows="2" placeholder="Enter action or dialogue…" maxlength="500"></textarea>
+    <div id="input-footer">
+      <button id="skip-turn-btn" style="display:none" title="Skip this character's turn">Skip Turn</button>
+      <button id="stage-btn">Stage</button>
+    </div>
+  </div>
+</div>
+
+<!-- Character sheet modal (click any player card in the sidebar to open) -->
+<div id="sheet-modal">
+  <div id="sheet-panel">
+    <button id="sheet-close" title="Close (Esc)">✕</button>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+
+<div id="srd-modal">
+  <div id="srd-panel">
+    <button id="srd-close" title="Close">✕</button>
+    <div id="srd-category-badge"></div>
+    <div id="srd-body"></div>
+  </div>
+</div>
+
+<!-- Character sidebar -->
+<div id="sidebar">
+  <!-- Player cards are injected here by updateStats() -->
+  <!-- Turn order section (shown only during combat) -->
+  <div id="sb-turn-section" style="display:none">
+    <div class="sb-turn-header">Round <span id="sb-round">1</span></div>
+    <div id="sb-turn-list"></div>
+  </div>
+  <!-- Faction standings — injected by updateStats() when factions data is present -->
+  <div id="sb-factions" style="display:none">
+    <div class="sb-factions-header">Factions</div>
+  </div>
+</div>
+
+<!-- Text -->
+<div id="text-scroll">
+  <div id="text-content"></div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// SCENE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+
+const SCENE_DEFAULTS = {
+  colors: ['#1a0800', '#2e1400'],
+  accent: '#c8601a',
+  particles: 'embers',
+  label: 'The Inn',
+  name: 'tavern',
+};
+
+let activeScene = { ...SCENE_DEFAULTS };
+let bgActive = 'a'; // which bg layer is currently showing
+
+function applyScene(scene) {
+  if (!scene || scene.name === activeScene.name) return;
+  activeScene = { ...SCENE_DEFAULTS, ...scene };
+
+  // Update scene indicator with a fade
+  const indicator = document.getElementById('scene-indicator');
+  indicator.classList.add('changing');
+  setTimeout(() => {
+    indicator.textContent = '— ' + (activeScene.label || activeScene.name) + ' —';
+    indicator.classList.remove('changing');
+  }, 400);
+
+  // Crossfade background layers
+  const incoming = bgActive === 'a' ? 'b' : 'a';
+  const inEl  = document.getElementById('bg-' + incoming);
+  const outEl = document.getElementById('bg-' + bgActive);
+
+  const [top, bot] = activeScene.colors;
+  inEl.style.background =
+    `radial-gradient(ellipse at 50% 30%, ${top} 0%, ${bot} 100%)`;
+  inEl.style.opacity = '1';
+  outEl.style.opacity = '0';
+  bgActive = incoming;
+
+  // Switch particle type
+  particleSystem.switchType(activeScene.particles, activeScene.accent);
+  // no audio hook on scene change — ambient removed
+}
+
+// Initialise background to default scene
+;(function initBg() {
+  const el = document.getElementById('bg-' + bgActive);
+  const [top, bot] = SCENE_DEFAULTS.colors;
+  el.style.background =
+    `radial-gradient(ellipse at 50% 30%, ${top} 0%, ${bot} 100%)`;
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════
+// PARTICLE SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+const canvas  = document.getElementById('particles');
+const ctx     = canvas.getContext('2d');
+let W = 0, H = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ── Particle classes ──────────────────────────────────────────────
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+class Particle {
+  constructor(type, accent) {
+    this.type   = type;
+    this.accent = accent;
+    this.reset();
+  }
+  reset() {
+    const T = this.type;
+    this.x    = rand(0, W);
+    this.y    = rand(0, H);
+    this.life = 0;
+    this.maxLife = 1;
+    this.size = 2;
+    this.alpha = 0;
+    this.vx = 0; this.vy = 0;
+    this._phase = rand(0, Math.PI * 2);
+
+    if (T === 'embers') {
+      this.x = rand(0, W);
+      this.y = rand(H * 0.6, H);
+      this.vx = rand(-0.4, 0.4);
+      this.vy = rand(-0.8, -0.3);
+      this.size = rand(1, 3);
+      this.maxLife = rand(120, 300);
+      this._color = this.accent;
+    } else if (T === 'fireflies') {
+      this.x = rand(0, W);
+      this.y = rand(H * 0.2, H * 0.9);
+      this.vx = rand(-0.3, 0.3);
+      this.vy = rand(-0.2, 0.2);
+      this.size = rand(1.5, 3.5);
+      this.maxLife = rand(200, 500);
+      this._color = '#a0ff60';
+    } else if (T === 'smoke') {
+      this.x = rand(0, W);
+      this.y = H + 10;
+      this.vx = rand(-0.2, 0.2);
+      this.vy = rand(-0.4, -0.15);
+      this.size = rand(6, 18);
+      this.maxLife = rand(180, 350);
+      this._color = '#404040';
+    } else if (T === 'dust') {
+      this.x = rand(0, W);
+      this.y = rand(0, H);
+      this.vx = rand(-0.1, 0.1);
+      this.vy = rand(-0.05, 0.08);
+      this.size = rand(0.5, 1.8);
+      this.maxLife = rand(300, 600);
+      this._color = '#a09060';
+    } else if (T === 'snow') {
+      this.x = rand(-10, W + 10);
+      this.y = rand(-10, 0);
+      this.vx = rand(-0.3, 0.3);
+      this.vy = rand(0.4, 1.2);
+      this.size = rand(1, 3.5);
+      this.maxLife = rand(200, 450);
+      this._color = '#d8e8ff';
+    } else if (T === 'stars') {
+      this.x = rand(0, W);
+      this.y = rand(0, H * 0.8);
+      this.vx = 0; this.vy = 0;
+      this.size = rand(0.5, 2);
+      this.maxLife = rand(400, 900);
+      this._color = '#c0d0ff';
+    } else if (T === 'bubbles') {
+      this.x = rand(0, W);
+      this.y = H + 10;
+      this.vx = rand(-0.2, 0.2);
+      this.vy = rand(-0.5, -0.2);
+      this.size = rand(2, 8);
+      this.maxLife = rand(200, 400);
+      this._color = '#60a0d0';
+    } else if (T === 'sparks') {
+      this.x = rand(0, W);
+      this.y = rand(H * 0.4, H);
+      this.vx = rand(-1.5, 1.5);
+      this.vy = rand(-2, -0.5);
+      this.size = rand(0.8, 2.5);
+      this.maxLife = rand(40, 100);
+      this._color = '#ffe060';
+    } else if (T === 'sand') {
+      this.x = rand(-20, 0);
+      this.y = rand(0, H);
+      this.vx = rand(1.2, 2.8);
+      this.vy = rand(-0.2, 0.4);
+      this.size = rand(0.8, 2.2);
+      this.maxLife = rand(150, 350);
+      this._color = '#c0a060';
+    } else if (T === 'rain') {
+      this.x = rand(-20, W);
+      this.y = rand(-20, 0);
+      this.vx = rand(0.5, 1.2);
+      this.vy = rand(6, 14);
+      this.size = rand(1, 2);
+      this.maxLife = rand(60, 120);
+      this._color = '#8090b0';
+    } else if (T === 'drips') {
+      this.x = rand(0, W);
+      this.y = rand(-20, 0);
+      this.vx = 0;
+      this.vy = rand(1.5, 4);
+      this.size = rand(1.5, 3.5);
+      this.maxLife = rand(80, 180);
+      this._color = '#6090b0';
+    } else if (T === 'mist') {
+      this.x = rand(-120, W + 120);
+      this.y = rand(H * 0.05, H * 0.85);
+      this.vx = rand(0.04, 0.18);
+      this.vy = rand(-0.015, 0.015);
+      this.size = rand(70, 180);
+      this.maxLife = rand(700, 1400);
+      this._color = '#7888a0';
+    } else if (T === 'leaves') {
+      this.x = rand(0, W);
+      this.y = rand(-20, 0);
+      this.vx = rand(-0.7, 0.7);
+      this.vy = rand(0.5, 1.6);
+      this.size = rand(4, 9);
+      this.maxLife = rand(220, 520);
+      this._rot = rand(0, Math.PI * 2);
+      this._rotSpeed = rand(-0.045, 0.045);
+      const lc = ['#8B4513','#D2691E','#c8a020','#CD853F','#a06828'];
+      this._color = lc[randInt(0, lc.length - 1)];
+    } else if (T === 'ripples') {
+      this.x = rand(0, W);
+      this.y = rand(H * 0.55, H);
+      this.vx = 0; this.vy = 0;
+      this.size = rand(6, 22);
+      this.maxLife = rand(100, 220);
+      this._color = '#4888c0';
+    } else {
+      // fallback = dust
+      this.vx = 0; this.vy = 0;
+      this.size = 1;
+      this.maxLife = 300;
+      this._color = '#808080';
+    }
+  }
+
+  update() {
+    this.life++;
+    const T = this.type;
+    const progress = this.life / this.maxLife;
+
+    // Alpha envelope: fade in first 10%, full mid, fade out last 20%
+    if (progress < 0.1)       this.alpha = progress / 0.1;
+    else if (progress > 0.8)  this.alpha = (1 - progress) / 0.2;
+    else                      this.alpha = 1;
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    if (T === 'embers') {
+      this.vx += rand(-0.05, 0.05);
+      this.vx  = Math.max(-0.6, Math.min(0.6, this.vx));
+      if (this.life % 20 === 0) this.alpha *= rand(0.5, 1.0);
+    } else if (T === 'fireflies') {
+      this._phase += 0.03;
+      this.x += Math.sin(this._phase) * 0.5;
+      this.y += Math.cos(this._phase * 0.7) * 0.3;
+      this.alpha *= (0.85 + 0.15 * Math.sin(this._phase * 2));
+    } else if (T === 'smoke') {
+      this.size += 0.04;
+      this.vx  += rand(-0.01, 0.01);
+    } else if (T === 'stars') {
+      this._phase += 0.02;
+      this.alpha *= (0.85 + 0.15 * Math.sin(this._phase));
+    } else if (T === 'sparks') {
+      this.vy += 0.08; // gravity
+    } else if (T === 'leaves') {
+      this._rot += this._rotSpeed;
+      this.vx += rand(-0.025, 0.025);
+      this.vx = Math.max(-1.2, Math.min(1.2, this.vx));
+    } else if (T === 'ripples') {
+      this.size += 0.55;
+    }
+
+    return this.life < this.maxLife;
+  }
+
+  draw(ctx) {
+    const T = this.type;
+    const [r,g,b] = hexToRgb(this._color);
+    ctx.globalAlpha = Math.max(0, Math.min(1, this.alpha));
+
+    if (T === 'smoke') {
+      const grad = ctx.createRadialGradient(
+        this.x, this.y, 0, this.x, this.y, this.size);
+      grad.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
+      grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (T === 'embers' || T === 'fireflies' || T === 'sparks') {
+      // Glow effect
+      const glow = ctx.createRadialGradient(
+        this.x, this.y, 0, this.x, this.y, this.size * 3);
+      glow.addColorStop(0, `rgba(${r},${g},${b},0.6)`);
+      glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+      ctx.fill();
+      // Core dot
+      ctx.fillStyle = `rgb(${Math.min(255,r+60)},${Math.min(255,g+40)},${Math.min(255,b+20)})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (T === 'bubbles') {
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.6)`;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (T === 'rain') {
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x + this.vx * 3, this.y + this.vy * 3);
+      ctx.stroke();
+    } else if (T === 'drips') {
+      ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.size * 0.4, this.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (T === 'mist') {
+      const mg = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+      mg.addColorStop(0, `rgba(${r},${g},${b},0.055)`);
+      mg.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = mg;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.size, this.size * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (T === 'leaves') {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this._rot);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.88)`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 0.42, this.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (T === 'ripples') {
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.28)`;
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.size, this.size * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── Particle system controller ────────────────────────────────────
+
+const PARTICLE_COUNT = {
+  embers: 80, fireflies: 45, smoke: 20, dust: 90,
+  snow: 110, stars: 160, bubbles: 45, sparks: 50,
+  sand: 80, rain: 130, drips: 35,
+  mist: 12, leaves: 55, ripples: 18,
+};
+
+const particleSystem = {
+  particles: [],
+  type: 'embers',
+  accent: SCENE_DEFAULTS.accent,
+  transitioning: false,
+
+  init() {
+    this.populate(this.type, this.accent);
+  },
+
+  populate(type, accent) {
+    const count = PARTICLE_COUNT[type] || 60;
+    this.particles = [];
+    for (let i = 0; i < count; i++) {
+      const p = new Particle(type, accent);
+      p.life = randInt(0, p.maxLife);  // stagger so they don't all start together
+      this.particles.push(p);
+    }
+  },
+
+  switchType(newType, accent) {
+    if (newType === this.type) return;
+    this.type   = newType;
+    this.accent = accent || '#ffffff';
+    // Fade out current by letting them die, then repopulate
+    // Mark old particles so they run out fast
+    this.particles.forEach(p => { p.life = Math.max(p.life, p.maxLife - 30); });
+    // Add new particles over ~2s
+    let added = 0;
+    const target = PARTICLE_COUNT[newType] || 60;
+    const interval = setInterval(() => {
+      if (added >= target) { clearInterval(interval); return; }
+      const p = new Particle(newType, this.accent);
+      this.particles.push(p);
+      added++;
+    }, 2000 / target);
+  },
+
+  update() {
+    this.particles = this.particles.filter(p => p.update());
+    // Replenish
+    const target = PARTICLE_COUNT[this.type] || 60;
+    while (this.particles.length < target) {
+      const p = new Particle(this.type, this.accent);
+      this.particles.push(p);
+    }
+  },
+
+  draw() {
+    ctx.clearRect(0, 0, W, H);
+    this.particles.forEach(p => p.draw(ctx));
+  },
+};
+
+particleSystem.init();
+
+// ── Sky Renderer ──────────────────────────────────────────────────
+
+const skyCanvas = document.getElementById('sky');
+const skyCtx    = skyCanvas.getContext('2d');
+let SW = 0, SH = 0;
+
+function resizeSky() {
+  const dpr = window.devicePixelRatio || 1;
+  SW = window.innerWidth;
+  SH = Math.round(window.innerHeight * 0.42);
+  skyCanvas.width  = SW * dpr;
+  skyCanvas.height = SH * dpr;
+  skyCanvas.style.width  = SW + 'px';
+  skyCanvas.style.height = SH + 'px';
+  skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeSky);
+resizeSky();
+
+const skyRenderer = (() => {
+  let _time = 'morning', _weather = '';
+
+  // Pre-computed star positions (twinkling dots, night only)
+  const STARS = Array.from({length: 130}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 0.4 + Math.random() * 1.6,
+    ph: Math.random() * Math.PI * 2,
+    spd: 0.008 + Math.random() * 0.022,
+  }));
+
+  // Cloud objects — drift left, wrap to right
+  const CLOUD_BLOBS = [[0,0,30],[-25,10,23],[23,8,25],[-9,-12,19],[13,-9,17],[36,14,17],[-36,14,15],[6,16,13]];
+  const CLOUDS = Array.from({length: 5}, (_, i) => ({
+    x: (i / 5) * (SW + 600) - 100,
+    y: 0, sc: 1, spd: 0.1,
+  }));
+  function resetCloud(c, offscreen) {
+    c.x   = offscreen ? SW + rand(100, 350) : rand(-200, SW + 200);
+    c.y   = rand(SH * 0.06, SH * 0.68);
+    c.sc  = rand(0.65, 1.75);
+    c.spd = rand(0.07, 0.22);
+  }
+  CLOUDS.forEach(c => resetCloud(c, false));
+
+  function drawCloud(c, opacity, color) {
+    skyCtx.globalAlpha = opacity;
+    skyCtx.fillStyle = color;
+    CLOUD_BLOBS.forEach(([dx, dy, r]) => {
+      skyCtx.beginPath();
+      skyCtx.arc(c.x + dx * c.sc, c.y + dy * c.sc, r * c.sc, 0, Math.PI * 2);
+      skyCtx.fill();
+    });
+    skyCtx.globalAlpha = 1;
+  }
+
+  function glow(x, y, r0, r1, c0, c1) {
+    const g = skyCtx.createRadialGradient(x, y, r0, x, y, r1);
+    g.addColorStop(0, c0); g.addColorStop(1, c1);
+    skyCtx.fillStyle = g;
+    skyCtx.beginPath();
+    skyCtx.arc(x, y, r1, 0, Math.PI * 2);
+    skyCtx.fill();
+  }
+
+  return {
+    setState(wt) {
+      if (!wt) return;
+      _time    = (wt.time    || 'morning').toLowerCase();
+      _weather = (wt.weather || '').toLowerCase();
+    },
+
+    draw() {
+      skyCtx.clearRect(0, 0, SW, SH);
+
+      const isNight  = /night|midnight|late/.test(_time);
+      const isDusk   = /evening|dusk/.test(_time);
+      const isDawn   = /dawn/.test(_time);
+      const isRain   = /rain|storm/.test(_weather);
+      const isCloudy = /cloud|overcast/.test(_weather) || isRain;
+      const isFog    = /fog|mist/.test(_weather);
+
+      // Stars (night / dusk)
+      if (isNight || isDusk) {
+        const mod = isNight ? 1 : 0.35;
+        STARS.forEach(s => {
+          s.ph += s.spd;
+          const a = (0.25 + 0.55 * Math.sin(s.ph)) * mod * (isRain ? 0.15 : 1);
+          if (a <= 0.01) return;
+          skyCtx.globalAlpha = a;
+          skyCtx.fillStyle = '#c8d4ff';
+          skyCtx.beginPath();
+          skyCtx.arc(s.x * SW, s.y * SH, s.r, 0, Math.PI * 2);
+          skyCtx.fill();
+        });
+        skyCtx.globalAlpha = 1;
+      }
+
+      // Moon (night / dusk)
+      if (isNight || isDusk) {
+        const mx = SW * 0.76, my = SH * 0.24;
+        const ma = isNight ? 0.82 : 0.32;
+        glow(mx, my, 10, 72, `rgba(190,200,230,${(ma * 0.18).toFixed(2)})`, 'rgba(190,200,230,0)');
+        skyCtx.globalAlpha = ma;
+        skyCtx.fillStyle = '#d8e0f4';
+        skyCtx.beginPath(); skyCtx.arc(mx, my, 15, 0, Math.PI * 2); skyCtx.fill();
+        // Crescent: paint shadow circle using clip
+        skyCtx.save();
+        skyCtx.beginPath(); skyCtx.arc(mx, my, 15, 0, Math.PI * 2); skyCtx.clip();
+        skyCtx.fillStyle = 'rgba(8,12,28,0.82)';
+        skyCtx.beginPath(); skyCtx.arc(mx + 9, my - 4, 13, 0, Math.PI * 2); skyCtx.fill();
+        skyCtx.restore();
+        skyCtx.globalAlpha = 1;
+      }
+
+      // Sun (day / dusk / dawn)
+      if (!isNight) {
+        let sx, sy, inner, outer;
+        if (isDawn) {
+          [sx, sy] = [SW * 0.12, SH * 0.90];
+          [inner, outer] = ['rgba(255,155,55,0.72)', 'rgba(255,100,20,0)'];
+        } else if (/morning/.test(_time)) {
+          [sx, sy] = [SW * 0.18, SH * 0.38];
+          [inner, outer] = ['rgba(255,225,130,0.62)', 'rgba(255,200,80,0)'];
+        } else if (/midday|noon/.test(_time)) {
+          [sx, sy] = [SW * 0.50, SH * 0.06];
+          [inner, outer] = ['rgba(255,248,190,0.44)', 'rgba(255,245,160,0)'];
+        } else if (/afternoon/.test(_time)) {
+          [sx, sy] = [SW * 0.80, SH * 0.32];
+          [inner, outer] = ['rgba(255,215,100,0.55)', 'rgba(255,185,60,0)'];
+        } else { // evening / dusk
+          [sx, sy] = [SW * 0.88, SH * 0.84];
+          [inner, outer] = ['rgba(245,110,28,0.75)', 'rgba(210,65,0,0)'];
+        }
+        glow(sx, sy, 4, 95, inner, outer);
+        glow(sx, sy, 0, 26, inner.replace(/[\d.]+\)$/, '1)'), inner.replace(/[\d.]+\)$/, '0)'));
+      }
+
+      // Clouds
+      const cloudAlpha = isRain ? 0.40 : isCloudy ? 0.22 : isFog ? 0.14 : 0.08;
+      const cloudCount = isRain ? 5  : isCloudy ? 4 : 2;
+      const cloudColor = isNight ? '#303248' : isDusk ? '#a05828' : isRain ? '#3a3c4c' : '#c4c8d8';
+      const windMult   = isRain ? 2.2 : 1;
+
+      CLOUDS.forEach((c, i) => {
+        if (i >= cloudCount) return;
+        c.x -= c.spd * windMult;
+        if (c.x < -300 * c.sc) resetCloud(c, true);
+        const ao = cloudAlpha * (0.7 + 0.06 * i);
+        drawCloud(c, ao, cloudColor);
+      });
+
+      // Bottom gradient fade — sky dissolves into scene background
+      skyCtx.globalCompositeOperation = 'destination-out';
+      const fade = skyCtx.createLinearGradient(0, SH * 0.52, 0, SH);
+      fade.addColorStop(0, 'rgba(0,0,0,0)');
+      fade.addColorStop(1, 'rgba(0,0,0,1)');
+      skyCtx.fillStyle = fade;
+      skyCtx.fillRect(0, SH * 0.52, SW, SH * 0.48);
+      skyCtx.globalCompositeOperation = 'source-over';
+    },
+  };
+})();
+
+// ── Animation loop ────────────────────────────────────────────────
+
+function loop() {
+  particleSystem.update();
+  particleSystem.draw();
+  skyRenderer.draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+
+// ═══════════════════════════════════════════════════════════════════
+// TYPEWRITER / TEXT RENDERING
+// ═══════════════════════════════════════════════════════════════════
+
+const textScroll  = document.getElementById('text-scroll');
+const textContent = document.getElementById('text-content');
+
+let charQueue    = [];
+let isTyping     = false;
+let currentEl    = null;
+let currentCursor = null;
+let lastChunkTime = Date.now();
+let idleTimer     = null;
+
+// Auto-scroll: only follow if the user hasn't scrolled up
+let userScrolledUp = false;
+textScroll.addEventListener('scroll', () => {
+  const distFromBottom = textScroll.scrollHeight - textScroll.scrollTop - textScroll.clientHeight;
+  userScrolledUp = distFromBottom > 80;
+});
+
+let charDelay = 18;      // ms per character while typing (mutable — see speed toggle)
+const IDLE_GAP   = 1800; // ms silence before starting a new block
+
+function getOrCreateBlock() {
+  if (!currentEl) {
+    currentEl = document.createElement('div');
+    currentEl.className = 'dm-block';
+    const p = document.createElement('p');
+    currentEl.appendChild(p);
+    textContent.appendChild(currentEl);
+    scrollToBottom();
+  }
+  return currentEl.querySelector('p:last-child');
+}
+
+function typeNextChar() {
+  if (charQueue.length === 0) {
+    isTyping = false;
+    // Keep cursor blinking at end
+    return;
+  }
+
+  const ch = charQueue.shift();
+  const p  = getOrCreateBlock();
+
+  // Remove cursor class from previous paragraph
+  if (currentCursor) {
+    currentCursor.classList.remove('typing-cursor');
+  }
+
+  if (ch === '\n') {
+    // New paragraph inside same block
+    const next = document.createElement('p');
+    currentEl.appendChild(next);
+  } else {
+    p.appendChild(document.createTextNode(ch));
+  }
+
+  // Apply cursor class to current last paragraph via ::after pseudo-element
+  currentCursor = currentEl.querySelector('p:last-child');
+  if (currentCursor) currentCursor.classList.add('typing-cursor');
+
+  scrollToBottom();
+  setTimeout(typeNextChar, charDelay);
+}
+
+function startTyping() {
+  if (isTyping) return;
+  isTyping = true;
+  typeNextChar();
+}
+
+function flushNewBlock() {
+  // Finalise the current block and start a fresh one next time
+  if (currentCursor && currentCursor.parentNode) {
+    currentCursor.parentNode.removeChild(currentCursor);
+    currentCursor = null;
+  }
+  // Add a soft divider if there was content
+  if (currentEl) {
+    const div = document.createElement('div');
+    div.className = 'divider';
+    div.textContent = '✦';
+    textContent.appendChild(div);
+  }
+  currentEl = null;
+}
+
+// ── Instant flush: drain all pending chars synchronously ──────────────
+// Called before inserting a non-DM block so the typewriter never gets
+// interrupted mid-word. Renders all queued chars immediately, then
+// stops the typewriter loop cleanly.
+function instantFlush() {
+  if (charQueue.length === 0) return;
+  clearTimeout(idleTimer);
+  const pending = charQueue.splice(0);  // atomically drain
+  for (const ch of pending) {
+    if (ch === '\n') {
+      if (!currentEl) getOrCreateBlock();
+      const next = document.createElement('p');
+      currentEl.appendChild(next);
+    } else {
+      const p = getOrCreateBlock();
+      p.appendChild(document.createTextNode(ch));
+    }
+  }
+  // The in-flight setTimeout(typeNextChar) will fire into an empty queue
+  // and set isTyping=false itself — force it false now so startTyping()
+  // can restart cleanly if new DM text arrives.
+  isTyping = false;
+  if (currentCursor) {
+    currentCursor.classList.remove('typing-cursor');
+  }
+  currentCursor = currentEl ? currentEl.querySelector('p:last-child') : null;
+}
+
+// ── Shared: flush cursor and currentEl before inserting a non-DM block ──
+function _flushForBlock() {
+  instantFlush();  // finish any in-progress typewriter before inserting
+  if (currentCursor) {
+    currentCursor.classList.remove('typing-cursor');
+    currentCursor = null;
+  }
+  currentEl = null;
+  clearTimeout(idleTimer);
+}
+
+// ── Shared: after inserting a non-DM block, re-establish cursor below it ──
+// If typing is still in progress, immediately open the next DM block so the
+// cursor appears below the inserted block rather than going invisible.
+function _reanchorCursor() {
+  if ((isTyping || charQueue.length > 0) && !currentEl) {
+    const p = getOrCreateBlock();
+    currentCursor = p;
+    currentCursor.classList.add('typing-cursor');
+  }
+  scrollToBottom();
+}
+
+// ── Player action block ──────────────────────────────────────────────
+function renderPlayerBlock(name, text, isReplay) {
+  _flushForBlock();
+
+  const block = document.createElement('div');
+  block.className = 'player-block';
+  if (isReplay) block.style.opacity = '0.65';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'player-name';
+  nameEl.textContent = name;
+  block.appendChild(nameEl);
+
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '')
+    .replace(/\t/g, '  ')
+    .trim();
+
+  cleaned.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const p = document.createElement('p');
+    p.textContent = trimmed;
+    block.appendChild(p);
+  });
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
+// ── Player action intent block ───────────────────────────────────────
+function renderActionBlock(name, text, isReplay) {
+  _flushForBlock();
+
+  const block = document.createElement('div');
+  block.className = 'action-block';
+  if (isReplay) block.style.opacity = '0.45';
+
+  const tag = document.createElement('div');
+  tag.className = 'action-tag';
+  tag.textContent = name;
+  block.appendChild(tag);
+
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '')
+    .trim();
+
+  const p = document.createElement('p');
+  p.textContent = cleaned;
+  block.appendChild(p);
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
+// ── NPC dialogue block ───────────────────────────────────────────────
+function renderNPCBlock(name, text, isReplay) {
+  _flushForBlock();
+
+  const block = document.createElement('div');
+  block.className = 'npc-block';
+  if (isReplay) block.style.opacity = '0.65';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'npc-name';
+  nameEl.textContent = name;
+  block.appendChild(nameEl);
+
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '')
+    .replace(/\t/g, '  ')
+    .trim();
+
+  cleaned.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const p = document.createElement('p');
+    p.textContent = trimmed;
+    block.appendChild(p);
+  });
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
+// ── Dice result block ─────────────────────────────────────────────────
+function renderDiceBlock(text, isReplay) {
+  _flushForBlock();
+
+  const block = document.createElement('div');
+  block.className = 'dice-block';
+  if (isReplay) block.style.opacity = '0.65';
+
+  const cleaned = text.trim()
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '');
+
+  let hasCrit = false, hasFumble = false;
+  cleaned.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const el = document.createElement('div');
+    el.className = 'dice-result';
+    el.textContent = trimmed;
+    block.appendChild(el);
+    if (/CRITICAL HIT/i.test(trimmed)) hasCrit = true;
+    if (/FUMBLE/i.test(trimmed))        hasFumble = true;
+  });
+
+  if (!isReplay) {
+    if (hasCrit)   triggerFlash('crit');
+    else if (hasFumble) triggerFlash('fumble');
+  }
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
+// ── Tutor / learning hint block ──────────────────────────────────────
+function renderTutorBlock(text, isReplay) {
+  _flushForBlock();
+
+  // Detect warning prefix (lines starting with ⚠ or WARNING:)
+  const isWarning = /^(⚠|WARNING[:\s])/i.test(text.trim());
+
+  const block = document.createElement('div');
+  block.className = 'tutor-block' + (isWarning ? ' tutor-warning' : '');
+  if (isReplay) block.style.opacity = '0.65';
+
+  // Clickable header row
+  const header = document.createElement('div');
+  header.className = 'tutor-header';
+  header.innerHTML = `<span class="tutor-icon">${isWarning ? '⚠' : '◈'}</span>` +
+                     `<span class="tutor-label">${isWarning ? 'Warning' : 'DM Hint'}</span>` +
+                     `<span class="tutor-chevron">▼</span>`;
+  block.appendChild(header);
+
+  // Collapsible body
+  const body = document.createElement('div');
+  body.className = 'tutor-body';
+
+  const cleaned = text.replace(/^(⚠|WARNING[:\s]+)/i, '').trim()
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '');
+
+  cleaned.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const p = document.createElement('p');
+    p.textContent = trimmed;
+    body.appendChild(p);
+  });
+  block.appendChild(body);
+
+  header.addEventListener('click', () => block.classList.toggle('expanded'));
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+
+  // Reset DM Help button — hint arrived, execution complete
+  clearTimeout(_helpResetTimer);
+  _dmHelpReset();
+}
+
+// ── Replay batch (reconnect / session resume) ─────────────────────────
+function renderReplayBatch(items) {
+  flushNewBlock();
+  items.forEach(item => {
+    if (!item || !item.text) return;
+    if (item.action) {
+      renderActionBlock(item.action, item.text, true);
+    } else if (item.player) {
+      renderPlayerBlock(item.player, item.text, true);
+    } else if (item.npc) {
+      renderNPCBlock(item.npc, item.text, true);
+    } else if (item.dice) {
+      renderDiceBlock(item.text, true);
+    } else if (item.tutor) {
+      renderTutorBlock(item.text, true);
+    } else {
+      const block = document.createElement('div');
+      block.className = 'dm-block';
+      block.style.opacity = '0.75';
+      item.text.split('\n').forEach(line => {
+        const p = document.createElement('p');
+        p.textContent = line;
+        block.appendChild(p);
+      });
+      textContent.appendChild(block);
+    }
+  });
+
+  const div = document.createElement('div');
+  div.className = 'divider';
+  div.textContent = '✦';
+  textContent.appendChild(div);
+
+  scrollToBottom();
+}
+
+function clearDisplay(then) {
+  // Fade out, wipe, fade back in, then call the callback.
+  textContent.style.opacity = '0';
+  setTimeout(() => {
+    // Abort any in-progress typewriter
+    charQueue = [];
+    isTyping  = false;
+    if (currentCursor && currentCursor.parentNode) {
+      currentCursor.parentNode.removeChild(currentCursor);
+    }
+    currentCursor = null;
+    currentEl     = null;
+    clearTimeout(idleTimer);
+
+    textContent.innerHTML = '';
+    textScroll.scrollTop  = 0;
+    userScrolledUp = false;
+    textContent.style.opacity = '1';
+    _hideProcessingIndicator();
+
+    if (then) then();
+  }, 370); // matches the CSS transition duration
+}
+
+function _showProcessingIndicator() {
+  _hideProcessingIndicator(); // clear any existing one first
+  const el = document.createElement('div');
+  el.id = 'dm-processing-indicator';
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'proc-dot';
+    el.appendChild(dot);
+  }
+  textContent.appendChild(el);
+  scrollToBottom();
+}
+
+function _hideProcessingIndicator() {
+  const el = document.getElementById('dm-processing-indicator');
+  if (el) el.remove();
+}
+
+function handleIncomingText(text) {
+  _hideProcessingIndicator();
+  // Debounce block separation: if there was a gap > IDLE_GAP, new block
+  const now = Date.now();
+  if (now - lastChunkTime > IDLE_GAP && charQueue.length === 0 && !isTyping) {
+    flushNewBlock();
+  }
+  lastChunkTime = now;
+
+  // Reset idle timer
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (!isTyping && charQueue.length === 0) flushNewBlock();
+  }, IDLE_GAP * 2);
+
+  // Enqueue characters
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')  // strip control chars (keep \n \t)
+    .replace(/\[[\d;?]*[a-zA-Z]/g, '')           // strip leftover CSI remnants
+    .replace(/\r/g, '')
+    .replace(/\t/g, '  ');
+  for (const ch of cleaned) {
+    charQueue.push(ch);
+  }
+
+  startTyping();
+}
+
+function scrollToBottom() {
+  if (!userScrolledUp) {
+    textScroll.scrollTop = textScroll.scrollHeight;
+  }
+}
+
+function renderReplay(text) {
+  // Render historical text instantly (no typewriter) when browser reconnects.
+  flushNewBlock();
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\[[\d;?]*[a-zA-Z]/g, '')
+    .replace(/\r/g, '')
+    .replace(/\t/g, '  ');
+  if (!cleaned.trim()) return;
+
+  const block = document.createElement('div');
+  block.className = 'dm-block';
+  block.style.opacity = '0.75';   // subtle visual distinction for historical text
+  cleaned.split('\n').forEach(line => {
+    const p = document.createElement('p');
+    p.textContent = line;
+    block.appendChild(p);
+  });
+  textContent.appendChild(block);
+
+  // Add a divider after replay so live text starts fresh
+  const div = document.createElement('div');
+  div.className = 'divider';
+  div.textContent = '✦';
+  textContent.appendChild(div);
+
+  scrollToBottom();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// STATS SIDEBAR
+// ═══════════════════════════════════════════════════════════════════
+
+// Keyed by player name so repeated calls merge cleanly.
+const _playerData = {};
+
+// ── CRIT / FUMBLE flash ─────────────────────────────────────────────
+const _flashOverlay = document.getElementById('flash-overlay');
+function triggerFlash(type) {
+  _flashOverlay.classList.remove('flash-crit', 'flash-fumble');
+  // Force reflow so the animation restarts cleanly
+  void _flashOverlay.offsetWidth;
+  _flashOverlay.classList.add(type === 'crit' ? 'flash-crit' : 'flash-fumble');
+}
+
+// ── HP change tracking (for colour flash on sidebar numerals) ───────
+const _prevHp = {}; // { playerName: currentHp }
+
+function _hpColor(pct) {
+  if (pct > 60) return '#4a9a4a';
+  if (pct > 30) return '#c0901a';
+  return '#a03030';
+}
+
+function _buildPlayerCard(p, solo) {
+  const card = document.createElement('div');
+  card.className = 'sb-player';
+  card.dataset.playerName = p.name;
+
+  // Name
+  const nameEl = document.createElement('div');
+  nameEl.className = 'sb-name';
+  nameEl.textContent = p.name || '—';
+  card.appendChild(nameEl);
+
+  // Identity: Race · Class Level
+  const identEl = document.createElement('div');
+  identEl.className = 'sb-identity';
+  const parts = [];
+  if (p.race)  parts.push(p.race);
+  if (p.class) parts.push(p.class + (p.level ? ' ' + p.level : ''));
+  if (p.background) parts.push(p.background);
+  identEl.textContent = parts.join(' · ') || '—';
+  card.appendChild(identEl);
+
+  // HP
+  const hp = p.hp || {};
+  const hpRow = document.createElement('div');
+  hpRow.className = 'sb-hp-row';
+  hpRow.innerHTML = `<span class="sb-label">HP</span>
+    <span class="sb-hp-nums">${hp.current ?? '—'} / ${hp.max ?? '—'}</span>`;
+  card.appendChild(hpRow);
+
+  const hpTrack = document.createElement('div');
+  hpTrack.className = 'sb-bar-track';
+  const hpFill = document.createElement('div');
+  hpFill.className = 'sb-bar-fill';
+  hpFill.dataset.role = 'hp-fill';
+  const hpPct = (hp.max && hp.current != null) ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 100;
+  hpFill.style.width = hpPct + '%';
+  hpFill.style.backgroundColor = _hpColor(hpPct);
+  hpTrack.appendChild(hpFill);
+  card.appendChild(hpTrack);
+
+  if (hp.temp) {
+    const tempEl = document.createElement('div');
+    tempEl.className = 'sb-hp-temp-row';
+    tempEl.dataset.role = 'hp-temp';
+    tempEl.textContent = '+' + hp.temp + ' temp';
+    card.appendChild(tempEl);
+  }
+
+  // XP
+  const xp = p.xp || {};
+  if (xp.current != null) {
+    const xpRow = document.createElement('div');
+    xpRow.className = 'sb-xp-row';
+    xpRow.innerHTML = `<span class="sb-label">XP</span>
+      <span class="sb-xp-nums">${xp.current} / ${xp.next ?? '?'}</span>`;
+    card.appendChild(xpRow);
+    const xpTrack = document.createElement('div');
+    xpTrack.className = 'sb-bar-track';
+    const xpFill = document.createElement('div');
+    xpFill.className = 'sb-bar-fill sb-xp-bar';
+    xpFill.dataset.role = 'xp-fill';
+    const xpPct = (xp.next && xp.current != null) ? Math.max(0, Math.min(100, (xp.current / xp.next) * 100)) : 0;
+    xpFill.style.width = xpPct + '%';
+    xpTrack.appendChild(xpFill);
+    card.appendChild(xpTrack);
+  }
+
+  // Quick combat stats
+  const quickLines = [];
+  if (p.ac        != null) quickLines.push(`AC <span class="val">${p.ac}</span>`);
+  if (p.initiative != null) quickLines.push(`Init <span class="val">${p.initiative}</span>`);
+  if (p.speed     != null) quickLines.push(`Spd <span class="val">${p.speed}</span>`);
+  if (p.hit_dice) {
+    const hd = p.hit_dice;
+    quickLines.push(`HD <span class="val">${hd.remaining ?? '?'}/${hd.max ?? '?'} ${hd.die || ''}</span>`);
+  }
+  if (quickLines.length) {
+    const qs = document.createElement('div');
+    qs.className = 'sb-quick-stats';
+    qs.innerHTML = quickLines.join('<br>');
+    card.appendChild(qs);
+  }
+
+  // Conditions
+  const CONDITION_CLASS = {
+    unconscious: 'danger', paralyzed: 'danger', petrified: 'danger', stunned: 'danger',
+    incapacitated: 'warn', frightened: 'warn', poisoned: 'warn', charmed: 'warn', exhausted: 'warn',
+    grappled: 'info', restrained: 'info', prone: 'info', blinded: 'info', deafened: 'info',
+    invisible: 'buff',
+  };
+  const conditions = p.conditions || [];
+  if (conditions.length) {
+    const condEl = document.createElement('div');
+    condEl.className = 'sb-conditions';
+    condEl.dataset.role = 'conditions';
+    conditions.forEach(c => {
+      const pill = document.createElement('span');
+      const cls  = CONDITION_CLASS[c.toLowerCase()] || 'info';
+      pill.className   = `sb-condition-pill ${cls}`;
+      pill.textContent = c;
+      condEl.appendChild(pill);
+    });
+    card.appendChild(condEl);
+  } else {
+    // Placeholder so merges can clear it
+    const condEl = document.createElement('div');
+    condEl.className = 'sb-conditions';
+    condEl.dataset.role = 'conditions';
+    card.appendChild(condEl);
+  }
+
+  // Concentration
+  if (p.concentration) {
+    const concEl = document.createElement('div');
+    concEl.className = 'sb-concentrate';
+    concEl.dataset.role = 'concentration';
+    concEl.textContent = `◈ ${p.concentration}`;
+    card.appendChild(concEl);
+  }
+
+  // Timed effects
+  {
+    const effects = p.effects || [];
+    const effEl = document.createElement('div');
+    effEl.className = 'sb-effects';
+    effEl.dataset.role = 'effects';
+    effects.forEach(eff => {
+      const pill = _makeEffectPill(eff, p.name);
+      effEl.appendChild(pill);
+    });
+    card.appendChild(effEl);
+  }
+
+  // Spell slots
+  if (p.spell_slots && Object.keys(p.spell_slots).length) {
+    const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX'];
+    const slotsEl = document.createElement('div');
+    slotsEl.className = 'sb-slots';
+    slotsEl.dataset.role = 'spell_slots';
+    Object.entries(p.spell_slots)
+      .sort(([a],[b]) => +a - +b)
+      .forEach(([lvl, s]) => {
+        const max = s.max || 0;
+        if (!max) return;
+        const avail = max - (s.used || 0);
+        const row = document.createElement('div');
+        row.className = 'sb-slot-row';
+        const lbl = document.createElement('span');
+        lbl.className = 'sb-slot-level';
+        lbl.textContent = ROMAN[+lvl] || lvl;
+        row.appendChild(lbl);
+        for (let i = 0; i < max; i++) {
+          const pip = document.createElement('span');
+          pip.className = 'sb-slot-pip ' + (i < avail ? 'avail' : 'spent');
+          row.appendChild(pip);
+        }
+        slotsEl.appendChild(row);
+      });
+    if (slotsEl.children.length) card.appendChild(slotsEl);
+  }
+
+  // Features (Second Wind etc)
+  const feats = [];
+  if (p.second_wind != null) {
+    feats.push(p.second_wind ? '2nd Wind ✓' : '2nd Wind ✗');
+  }
+  if (feats.length) {
+    const featEl = document.createElement('div');
+    featEl.className = 'sb-features';
+    featEl.dataset.role = 'features';
+    featEl.innerHTML = feats.map(f => {
+      const dim = f.endsWith('✗');
+      return `<span style="color:${dim ? 'rgba(200,185,150,0.25)' : 'rgba(140,190,140,0.6)'}">${f}</span>`;
+    }).join('<br>');
+    card.appendChild(featEl);
+  }
+
+  // Ability scores — only for solo play
+  if (solo && p.ability_scores) {
+    const ab = p.ability_scores;
+    const abSection = document.createElement('div');
+    abSection.className = 'sb-abilities';
+    const grid = document.createElement('div');
+    grid.className = 'sb-ab-grid';
+    ['str','dex','con','int','wis','cha'].forEach(key => {
+      const cell = document.createElement('div');
+      cell.className = 'sb-ab-cell';
+      const d = ab[key] || {};
+      cell.innerHTML = `
+        <div class="sb-ab-name">${key.toUpperCase()}</div>
+        <div class="sb-ab-score">${d.score ?? '—'}</div>
+        <div class="sb-ab-mod">${d.mod ?? '—'}</div>`;
+      grid.appendChild(cell);
+    });
+    abSection.appendChild(grid);
+    card.appendChild(abSection);
+  }
+
+  // Direct listener — belt-and-suspenders alongside the delegated sidebar listener
+  card.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openSheet(p.name);
+  });
+
+  return card;
+}
+
+// ── Character sheet modal ────────────────────────────────────────────────────
+
+function _smDivider() {
+  const d = document.createElement('div');
+  d.className = 'sm-divider';
+  return d;
+}
+
+let _openSheetName = null;
+
+function openSheet(name) {
+  _openSheetName = name;
+  const p = _playerData[name];
+  if (!p) return;
+  const content = document.getElementById('sheet-content');
+  content.innerHTML = '';
+
+  // Header
+  const nameEl = document.createElement('div');
+  nameEl.className = 'sm-name';
+  nameEl.textContent = p.name || '—';
+  content.appendChild(nameEl);
+
+  const identParts = [];
+  if (p.race)       identParts.push(p.race);
+  if (p.class)      identParts.push(p.class + (p.level ? ' ' + p.level : ''));
+  if (p.background) identParts.push(p.background);
+  const identEl = document.createElement('div');
+  identEl.className = 'sm-identity';
+  identEl.textContent = identParts.join('  ·  ') || '—';
+  content.appendChild(identEl);
+
+  // Combat stats strip
+  const hp = p.hp || {};
+  const hd = p.hit_dice || {};
+  const stripData = [
+    ['HP',       hp.current != null ? `${hp.current}/${hp.max}` : '—'],
+    ['AC',       p.ac       ?? '—'],
+    ['Init',     p.initiative ?? '—'],
+    ['Speed',    p.speed    != null ? p.speed + ' ft' : '—'],
+    ['Hit Dice', hd.die     ? `${hd.remaining ?? '?'}/${hd.max ?? '?'} ${hd.die}` : '—'],
+  ];
+  if (hp.temp) stripData.splice(1, 0, ['Temp HP', '+' + hp.temp]);
+  const strip = document.createElement('div');
+  strip.className = 'sm-combat-strip';
+  stripData.forEach(([label, val]) => {
+    const cell = document.createElement('div');
+    cell.className = 'sm-stat-cell';
+    cell.innerHTML = `<span class="sm-stat-label">${label}</span><span class="sm-stat-val">${val}</span>`;
+    strip.appendChild(cell);
+  });
+  content.appendChild(strip);
+
+  if (p.xp && p.xp.current != null) {
+    const xpEl = document.createElement('div');
+    xpEl.className = 'sm-xp';
+    xpEl.textContent = `XP  ${p.xp.current} / ${p.xp.next ?? '?'}`;
+    content.appendChild(xpEl);
+  }
+
+  // Ability scores (always shown in modal)
+  if (p.ability_scores) {
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Ability Scores';
+    content.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'sm-ab-grid';
+    ['str','dex','con','int','wis','cha'].forEach(key => {
+      const d = p.ability_scores[key] || {};
+      const cell = document.createElement('div');
+      cell.className = 'sm-ab-cell';
+      cell.innerHTML = `<div class="sm-ab-name">${key.toUpperCase()}</div>
+        <div class="sm-ab-score">${d.score ?? '—'}</div>
+        <div class="sm-ab-mod">${d.mod ?? '—'}</div>`;
+      grid.appendChild(cell);
+    });
+    content.appendChild(grid);
+  }
+
+  const sheet = p.sheet || {};
+
+  // Attacks
+  if (sheet.attacks && sheet.attacks.length) {
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Attacks';
+    content.appendChild(title);
+    const table = document.createElement('table');
+    table.className = 'sm-attacks-table';
+    table.innerHTML = `<thead><tr>
+      <th>Name</th><th>Bonus</th><th>Damage</th><th>Type</th><th>Notes</th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+    sheet.attacks.forEach(a => {
+      const tr = document.createElement('tr');
+      const nameCell = document.createElement('td');
+      nameCell.className = 'atk-name';
+      nameCell.textContent = a.name || '—';
+      if (a.name) { nameCell.dataset.srdName = a.name; nameCell.dataset.srdCategory = 'item'; }
+      tr.appendChild(nameCell);
+      tr.insertAdjacentHTML('beforeend',
+        `<td>${a.bonus||'—'}</td><td>${a.damage||'—'}</td>
+         <td>${a.type||'—'}</td><td class="atk-notes">${a.notes||''}</td>`);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    content.appendChild(table);
+  }
+
+  // Spells
+  if (sheet.spells) {
+    const sp = sheet.spells;
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Spellcasting';
+    content.appendChild(title);
+    // Derive live slot string from spell_slots object if available; fall back to static string
+    let _slotsStr = sp.slots || '';
+    if (p.spell_slots && Object.keys(p.spell_slots).length) {
+      const _ROM = ['','I','II','III','IV','V','VI','VII','VIII','IX'];
+      _slotsStr = Object.entries(p.spell_slots)
+        .sort(([a],[b]) => +a - +b)
+        .filter(([,s]) => (s.max || 0) > 0)
+        .map(([lvl,s]) => `${_ROM[+lvl]||lvl}: ${(s.max||0)-(s.used||0)}/${s.max||0}`)
+        .join('  ');
+    }
+    if (_slotsStr || sp.save_dc || sp.attack_bonus) {
+      const meta = document.createElement('div');
+      meta.className = 'sm-spell-meta';
+      const parts = [];
+      if (_slotsStr)        parts.push('Slots: ' + _slotsStr);
+      if (sp.save_dc)       parts.push('Save DC ' + sp.save_dc);
+      if (sp.attack_bonus)  parts.push('Atk ' + sp.attack_bonus);
+      meta.textContent = parts.join('  ·  ');
+      content.appendChild(meta);
+    }
+    if (sp.cantrips && sp.cantrips.length) {
+      const lbl = document.createElement('div');
+      lbl.className = 'sm-sub-label cantrip-label';
+      lbl.textContent = 'Cantrips';
+      content.appendChild(lbl);
+      const grid = document.createElement('div');
+      grid.className = 'sm-spell-grid';
+      sp.cantrips.forEach(s => {
+        const tag = document.createElement('span');
+        tag.className = 'sm-spell-tag cantrip';
+        tag.textContent = s;
+        tag.dataset.srdName = s; tag.dataset.srdCategory = 'spell';
+        grid.appendChild(tag);
+      });
+      content.appendChild(grid);
+    }
+    if (sp.prepared && sp.prepared.length) {
+      const lbl = document.createElement('div');
+      lbl.className = 'sm-sub-label prepared-label';
+      lbl.textContent = 'Prepared';
+      content.appendChild(lbl);
+      const grid = document.createElement('div');
+      grid.className = 'sm-spell-grid';
+      sp.prepared.forEach(s => {
+        const tag = document.createElement('span');
+        tag.className = 'sm-spell-tag';
+        tag.textContent = s;
+        tag.dataset.srdName = s; tag.dataset.srdCategory = 'spell';
+        grid.appendChild(tag);
+      });
+      content.appendChild(grid);
+    }
+  }
+
+  // Features & Passives
+  if (sheet.features && sheet.features.length) {
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Features & Passives';
+    content.appendChild(title);
+    sheet.features.forEach(f => {
+      const el = document.createElement('div');
+      el.className = 'sm-feature';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'sm-feature-name';
+      nameEl.textContent = f.name;
+      nameEl.dataset.srdName = f.name; nameEl.dataset.srdCategory = 'feature';
+      const textEl = document.createElement('div');
+      textEl.className = 'sm-feature-text';
+      textEl.textContent = f.text;
+      el.appendChild(nameEl);
+      el.appendChild(textEl);
+      content.appendChild(el);
+    });
+  }
+
+  // Inventory
+  if (sheet.inventory && sheet.inventory.length) {
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Inventory';
+    content.appendChild(title);
+    const list = document.createElement('ul');
+    list.className = 'sm-inventory-list';
+    sheet.inventory.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      li.dataset.srdName = item; li.dataset.srdCategory = 'item';
+      list.appendChild(li);
+    });
+    content.appendChild(list);
+  }
+
+  // Relationships
+  if (sheet.relationships && sheet.relationships.length) {
+    content.appendChild(_smDivider());
+    const title = document.createElement('div');
+    title.className = 'sm-section-title';
+    title.textContent = 'Relationships';
+    content.appendChild(title);
+    sheet.relationships.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'sm-relationship';
+      const nm = document.createElement('span');
+      nm.className = 'sm-rel-name';
+      nm.textContent = r.name || '—';
+      const role = document.createElement('span');
+      role.className = 'sm-rel-role';
+      role.textContent = [r.role, r.standing].filter(Boolean).join(' · ');
+      const note = document.createElement('span');
+      note.className = 'sm-rel-note';
+      note.textContent = r.note || '';
+      el.appendChild(nm); el.appendChild(role); el.appendChild(note);
+      content.appendChild(el);
+    });
+  }
+
+  // No sheet data hint
+  if (!sheet.attacks && !sheet.spells && !sheet.features && !sheet.inventory) {
+    content.appendChild(_smDivider());
+    const noData = document.createElement('div');
+    noData.className = 'sm-no-data';
+    noData.textContent = 'Full sheet not loaded — include "sheet" in the player object when pushing stats on /dnd load';
+    content.appendChild(noData);
+  }
+
+  document.getElementById('sheet-modal').classList.add('open');
+  document.getElementById('sheet-panel').scrollTop = 0;
+}
+
+function closeSheet() {
+  document.getElementById('sheet-modal').classList.remove('open');
+}
+
+document.getElementById('sheet-close').addEventListener('click', closeSheet);
+document.getElementById('sheet-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('sheet-modal')) closeSheet();
+});
+
+// ── SRD lookup modal ──────────────────────────────────────────────────────────
+function openSrdModal(name, category, level) {
+  const modal = document.getElementById('srd-modal');
+  const body  = document.getElementById('srd-body');
+  const badge = document.getElementById('srd-category-badge');
+  badge.textContent = '';
+  body.innerHTML = '<div id="srd-loading">Looking up…</div>';
+  modal.classList.add('open');
+  document.getElementById('srd-panel').scrollTop = 0;
+
+  const params = new URLSearchParams({ name });
+  if (category) params.set('category', category);
+  if (level)    params.set('level', level);
+  fetch('/srd-lookup?' + params)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.found) {
+        const linkHtml = data.wikidot_url
+          ? `<br><a href="${data.wikidot_url}" target="_blank" rel="noopener" style="color:#c9a84c;font-size:11px;opacity:0.85;text-decoration:none;">View on D&D 5e Wiki ↗</a>`
+          : `<br><span style="font-size:10px;opacity:0.6">May be from a supplement (Xanathar's, Tasha's, etc.)</span>`;
+        body.innerHTML = `<div id="srd-not-found">"${_esc(name)}" is not in the local dataset.${linkHtml}</div>`;
+        return;
+      }
+      badge.textContent = data.category || '';
+      // Render the pre-formatted text — first line is always "## Title [...]"
+      const lines = (data.text || '').split('\n');
+      let html = '';
+      let inDesc = false;
+      lines.forEach(line => {
+        if (line.startsWith('## ')) {
+          // Title line
+          html += `<div class="srd-title">${_esc(line.replace(/^## /, ''))}</div>`;
+        } else if (line === '') {
+          if (inDesc) html += '\n';
+        } else if (!inDesc && line.match(/^[A-Z][a-z].*:/)) {
+          // Key-value meta line
+          html += `<div class="srd-meta">${_esc(line)}</div>`;
+        } else {
+          if (!inDesc) { html += '<div class="srd-desc">'; inDesc = true; }
+          html += _esc(line) + '\n';
+        }
+      });
+      if (inDesc) html += '</div>';
+      body.innerHTML = html;
+    })
+    .catch(() => {
+      body.innerHTML = '<div id="srd-not-found">Lookup unavailable — is the display running?</div>';
+    });
+}
+
+function _esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function closeSrdModal() {
+  document.getElementById('srd-modal').classList.remove('open');
+}
+
+document.getElementById('srd-close').addEventListener('click', closeSrdModal);
+document.getElementById('srd-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('srd-modal')) closeSrdModal();
+});
+
+// Delegate clicks from sheet-content to SRD modal
+document.getElementById('sheet-content').addEventListener('click', e => {
+  const el = e.target.closest('[data-srd-name]');
+  if (!el) return;
+  e.stopPropagation();
+  const pd = _openSheetName && _playerData[_openSheetName];
+  // Prefer explicit level field; fall back to trailing number in class string ("Rogue 3" → 3)
+  let level = pd ? (pd.level || null) : null;
+  if (!level && pd && pd.class) {
+    const m = pd.class.match(/\b(\d+)\s*$/);
+    if (m) level = parseInt(m[1]);
+  }
+  openSrdModal(el.dataset.srdName, el.dataset.srdCategory || '', level);
+});
+
+// Delegated listener — catches clicks on any .sb-player card even after DOM rebuilds
+document.getElementById('sidebar').addEventListener('click', function(e) {
+  const card = e.target.closest('.sb-player[data-player-name]');
+  if (card) openSheet(card.dataset.playerName);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSheet();
+});
+
+// ── Timed effect helpers ──────────────────────────────────────────────────────
+
+function _fmtDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s <= 0) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    return min > 0 ? `${h}h ${min}m` : `${h}h`;
+  }
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function _makeEffectPill(eff, ownerName) {
+  const pill = document.createElement('span');
+  const isConc = eff.concentration;
+  let warn = false;
+
+  if (eff.duration_type === 'rounds') {
+    const r = eff.duration_remaining || 0;
+    pill.textContent = `⧗ ${eff.name} · ${r} rnd`;
+    warn = r <= 2;
+    pill.dataset.durationType = 'rounds';
+  } else if (eff.duration_type === 'minutes' || eff.duration_type === 'hours') {
+    const expireAt = (eff.started_at + eff.duration_seconds) * 1000;
+    const remaining = Math.max(0, expireAt - Date.now());
+    pill.textContent = `⧗ ${eff.name} ${_fmtDuration(remaining)}`;
+    warn = remaining < eff.duration_seconds * 100;  // last 10%
+    pill.dataset.durationType = 'time';
+    pill.dataset.expireAt     = expireAt;
+    pill.dataset.totalMs      = eff.duration_seconds * 1000;
+    pill.dataset.owner        = ownerName;
+    pill.dataset.spell        = eff.name;
+  } else {
+    pill.textContent = `⧗ ${eff.name} ∞`;
+    pill.dataset.durationType = 'indefinite';
+  }
+
+  pill.className = 'sb-effect-pill' + (isConc ? ' conc' : '') + (warn ? ' warning' : '');
+  return pill;
+}
+
+function renderEffectExpiredBlock(owner, name, wasConcentration) {
+  _flushForBlock();
+  const block = document.createElement('div');
+  block.className = 'effect-expired-block';
+  const inner = document.createElement('div');
+  inner.className = 'effect-expired-result';
+  const icon = wasConcentration ? '◈' : '⧗';
+  inner.textContent = `${icon} ${name} (${owner}) — ${wasConcentration ? 'concentration ends' : 'expired'}`;
+  block.appendChild(inner);
+  textContent.appendChild(block);
+  textScroll.scrollTop = textScroll.scrollHeight;
+}
+
+// Countdown ticker — updates time-based effect pills every second
+setInterval(() => {
+  document.querySelectorAll('.sb-effect-pill[data-duration-type="time"]').forEach(pill => {
+    if (pill.dataset.fired) return;
+    const expireAt = +pill.dataset.expireAt;
+    const remaining = Math.max(0, expireAt - Date.now());
+    const spell = pill.dataset.spell;
+    pill.textContent = `⧗ ${spell} ${_fmtDuration(remaining)}`;
+
+    const totalMs = +pill.dataset.totalMs || 1;
+    const warn = remaining < totalMs * 0.1 || remaining < 10000;
+    const isConc = pill.classList.contains('conc');
+    pill.className = 'sb-effect-pill' + (isConc ? ' conc' : '') + (warn ? ' warning' : '');
+
+    if (remaining <= 0) {
+      pill.dataset.fired = '1';
+      const owner = pill.dataset.owner;
+      fetch('/effects/expire', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(_dndToken ? {'X-DND-Token': _dndToken} : {}),
+        },
+        body: JSON.stringify({owner, name: spell}),
+      }).catch(() => {});
+    }
+  });
+}, 1000);
+
+// ── Stats update ─────────────────────────────────────────────────────────────
+
+function updateStats(stats) {
+  if (!stats || !stats.players) return;
+  const sidebar = document.getElementById('sidebar');
+  const turnSection = document.getElementById('sb-turn-section');
+  const solo = stats.players.length === 1;
+
+  // Merge incoming players into _playerData
+  stats.players.forEach(p => {
+    if (!p.name) return;
+    const existing = _playerData[p.name] || {};
+    // Deep merge hp, xp, ability_scores; replace scalars
+    for (const [k, v] of Object.entries(p)) {
+      if (v !== null && typeof v === 'object' && !Array.isArray(v) && typeof existing[k] === 'object') {
+        existing[k] = Object.assign({}, existing[k], v);
+      } else {
+        existing[k] = v;
+      }
+    }
+    _playerData[p.name] = existing;
+  });
+
+  // Rebuild all player cards (insert before turn section)
+  const names = Object.keys(_playerData);
+  names.forEach(name => {
+    const p = _playerData[name];
+    const prevHp = _prevHp[name];
+    const newHp  = p.hp ? p.hp.current : undefined;
+
+    const existing = sidebar.querySelector(`.sb-player[data-player-name="${CSS.escape(name)}"]`);
+    const newCard = _buildPlayerCard(p, solo);
+    if (existing) {
+      sidebar.insertBefore(newCard, existing);
+      existing.remove();
+    } else {
+      sidebar.insertBefore(newCard, turnSection);
+    }
+
+    // Flash HP numeral if HP changed
+    if (newHp !== undefined && prevHp !== undefined && newHp !== prevHp) {
+      const numsEl = newCard.querySelector('.sb-hp-nums');
+      if (numsEl) {
+        numsEl.classList.remove('hp-flash-dmg', 'hp-flash-heal');
+        void numsEl.offsetWidth;
+        numsEl.classList.add(newHp < prevHp ? 'hp-flash-dmg' : 'hp-flash-heal');
+      }
+    }
+    if (newHp !== undefined) _prevHp[name] = newHp;
+  });
+
+  sidebar.classList.add('has-data');
+
+  // Faction panel
+  if ('factions' in stats) {
+    const factPanel = document.getElementById('sb-factions');
+    const factions  = stats.factions || [];
+    factPanel.querySelectorAll('.sb-faction-item').forEach(el => el.remove());
+    if (factions.length) {
+      const SCLS = { allied:'allied', friendly:'friendly', neutral:'neutral',
+                     unfriendly:'unfriendly', suspicious:'suspicious', hostile:'hostile' };
+      factions.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'sb-faction-item';
+        const nm = document.createElement('span');
+        nm.className = 'sb-faction-name';
+        nm.textContent = f.name || '—';
+        const st = document.createElement('span');
+        st.className = 'sb-faction-standing ' + (SCLS[(f.standing||'').toLowerCase()] || 'unknown');
+        st.textContent = f.standing || '—';
+        item.appendChild(nm);
+        item.appendChild(st);
+        factPanel.appendChild(item);
+      });
+      factPanel.style.display = '';
+    } else {
+      factPanel.style.display = 'none';
+    }
+  }
+
+  // Turn order
+  if ('turn_order' in stats) {
+    if (!stats.turn_order) {
+      turnSection.style.display = 'none';
+    } else {
+      const to = stats.turn_order;
+      // Merge with existing if partial (only current or only round supplied)
+      const existingTo = _currentTurnOrder || {};
+      const merged = Object.assign({}, existingTo, to);
+      _currentTurnOrder = merged;
+
+      turnSection.style.display = '';
+      document.getElementById('sb-round').textContent = merged.round ?? 1;
+      const list = document.getElementById('sb-turn-list');
+      list.innerHTML = '';
+      (merged.order || []).forEach(name => {
+        const el = document.createElement('div');
+        el.className = 'sb-turn-item' + (name === merged.current ? ' sb-turn-current' : '');
+        el.textContent = name;
+        list.appendChild(el);
+      });
+    }
+  }
+}
+
+let _currentTurnOrder = null;
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO — SFX only. Python detects triggers from narration text and
+// broadcasts {"sfx": name} via SSE. Browser fetches WAV from
+// /audio/sfx/<name> and plays via Web Audio API. Toggle click is the
+// user gesture that unlocks AudioContext.
+// ═══════════════════════════════════════════════════════════════════
+
+
+const _sfxTrack = document.getElementById('sfx-track');
+let _sfxOn = false;
+
+// ── DM Help button ──────────────────────────────────────────────────
+const _dmHelpBtn = document.getElementById('dm-help-btn');
+let _helpPending = false;
+let _helpResetTimer = null;
+
+function _dmHelpReset() {
+  _helpPending = false;
+  _dmHelpBtn.disabled = false;
+  _dmHelpBtn.classList.remove('pending', 'locked');
+  _dmHelpBtn.textContent = '◈ DM Help';
+}
+
+_dmHelpBtn.addEventListener('click', async () => {
+  if (_helpPending) return;
+  _helpPending = true;
+  _dmHelpBtn.disabled = true;
+  _dmHelpBtn.classList.add('pending');
+  _dmHelpBtn.textContent = '◈ Thinking…';
+
+  try {
+    const res = await fetch('/help-request', {
+      method: 'POST',
+      headers: _dndToken ? { 'X-DND-Token': _dndToken } : {},
+    });
+    if (res.status === 409) {
+      // Another request already running
+      _dmHelpBtn.classList.remove('pending');
+      _dmHelpBtn.classList.add('locked');
+      _dmHelpBtn.textContent = '◈ Running…';
+      // Auto-reset when the tutor block arrives (see renderTutorBlock)
+      // Safety timeout in case it never arrives
+      clearTimeout(_helpResetTimer);
+      _helpResetTimer = setTimeout(_dmHelpReset, 20000);
+    } else if (res.status === 202) {
+      // Accepted — wait for the tutor SSE block to arrive
+      // renderTutorBlock will call _dmHelpReset()
+      clearTimeout(_helpResetTimer);
+      _helpResetTimer = setTimeout(_dmHelpReset, 20000);
+    } else {
+      _dmHelpReset();
+    }
+  } catch (_) {
+    _dmHelpReset();
+  }
+});
+
+// Read token from meta tag injected by Flask (LAN mode)
+const _dndTokenMeta = document.querySelector('meta[name="dnd-token"]');
+const _dndToken = _dndTokenMeta ? _dndTokenMeta.getAttribute('content') : null;
+
+// Persistent device ID — survives page refreshes, identifies this browser for DM approval
+// crypto.randomUUID() requires a secure context (HTTPS/localhost); fall back to
+// getRandomValues() which works over plain HTTP on LAN.
+function _makeUUID() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+let _deviceId = localStorage.getItem('dnd_device_id');
+if (!_deviceId) {
+  _deviceId = _makeUUID();
+  localStorage.setItem('dnd_device_id', _deviceId);
+}
+
+function _authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    ...(_dndToken    ? { 'X-DND-Token':   _dndToken  } : {}),
+    ...(_deviceId    ? { 'X-DND-Device':  _deviceId  } : {}),
+  };
+}
+
+let _actx   = null;
+let _sfxCache = {};
+
+function _setTrack(el, on) {
+  on ? el.classList.add('on') : el.classList.remove('on');
+}
+
+function _audioCtx() {
+  if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_actx.state === 'suspended') _actx.resume();
+  return _actx;
+}
+
+async function _playSfx(name) {
+  if (!_sfxOn) return;
+  try {
+    if (!_sfxCache[name]) {
+      const r = await fetch(`/audio/sfx/${name}`);
+      if (!r.ok) return;
+      const ab  = await r.arrayBuffer();
+      _sfxCache[name] = await _audioCtx().decodeAudioData(ab);
+    }
+    if (!_sfxOn) return;
+    const src = _audioCtx().createBufferSource();
+    src.buffer = _sfxCache[name];
+    src.connect(_audioCtx().destination);
+    src.start();
+  } catch (_) {}
+}
+
+document.getElementById('sfx-row').addEventListener('click', () => {
+  _sfxOn = !_sfxOn;
+  _setTrack(_sfxTrack, _sfxOn);
+  try {
+    fetch('/audio-toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sfx: _sfxOn }),
+    });
+  } catch (_) {}
+});
+
+// ── Typing speed toggle ──────────────────────────────────────────────
+const _speedSteps = [
+  { label: 'Normal',  ms: 18 },
+  { label: 'Fast',    ms: 7  },
+  { label: 'Instant', ms: 1  },
+];
+let _speedIdx = 0;
+const _speedLabel = document.getElementById('speed-label');
+document.getElementById('speed-row').addEventListener('click', () => {
+  _speedIdx = (_speedIdx + 1) % _speedSteps.length;
+  const step = _speedSteps[_speedIdx];
+  charDelay = step.ms;
+  _speedLabel.textContent = step.label;
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// PLAYER INPUT PANEL
+// ═══════════════════════════════════════════════════════════════════
+
+const _inputPanel      = document.getElementById('input-panel');
+const _inputPanelHdr   = document.getElementById('input-panel-header');
+const _inputBadge      = document.getElementById('input-badge');
+const _inputArrow      = document.getElementById('input-toggle-arrow');
+const _charTabs        = document.getElementById('char-tabs');
+const _inputText       = document.getElementById('player-input-text');
+const _stageBtn        = document.getElementById('stage-btn');
+const _skipTurnBtn     = document.getElementById('skip-turn-btn');
+const _stagedQueueEl   = document.getElementById('staged-queue');
+const _waitingEl       = document.getElementById('waiting-indicator');
+
+let _selectedChar     = 'Everybody';
+let _stagedData       = {};   // {char: {text, ready, timestamp}} — mirror of server state
+let _autorunThreshold = null; // null = use player count; int = explicit threshold
+
+// ── Toggle open/closed ────────────────────────────────────────────
+_inputPanelHdr.addEventListener('click', () => {
+  _inputPanel.classList.toggle('collapsed');
+  _inputArrow.textContent = _inputPanel.classList.contains('collapsed') ? '▲' : '▼';
+});
+
+// ── Build character tabs from stats players array ─────────────────
+function _buildCharTabs(players) {
+  const names = ['Everybody', ...(players || []).map(p => p.name).filter(Boolean)];
+  _charTabs.innerHTML = '';
+  names.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'char-tab' + (name === _selectedChar ? ' active' : '');
+    btn.dataset.char = name;
+    btn.textContent = name;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      _selectedChar = name;
+      _charTabs.querySelectorAll('.char-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.char === name)
+      );
+      _skipTurnBtn.style.display = name === 'Everybody' ? 'none' : '';
+    });
+    _charTabs.appendChild(btn);
+  });
+}
+
+// ── Render staged queue ───────────────────────────────────────────
+function _renderStagedQueue(data) {
+  _stagedData = data || {};
+  _stagedQueueEl.innerHTML = '';
+
+  const entries = Object.entries(_stagedData);
+  entries.forEach(([char, info]) => {
+    const entry = document.createElement('div');
+    entry.className = 'staged-entry' + (info.ready ? ' is-ready' : '');
+
+    const body = document.createElement('div');
+    body.className = 'staged-entry-body';
+
+    const charEl = document.createElement('div');
+    charEl.className = 'staged-char';
+    charEl.textContent = char;
+
+    const textEl = document.createElement('div');
+    textEl.className = 'staged-text';
+    textEl.textContent = info.text;
+
+    body.appendChild(charEl);
+    body.appendChild(textEl);
+
+    const acts = document.createElement('div');
+    acts.className = 'staged-actions';
+
+    const readyBtn = document.createElement('button');
+    readyBtn.className = 'ready-btn' + (info.ready ? ' is-ready' : '');
+    readyBtn.textContent = info.ready ? '✓ Ready' : 'Ready';
+    readyBtn.addEventListener('click', () => _toggleReady(char));
+
+    acts.appendChild(readyBtn);
+
+    if (!info.ready) {
+      const skipBtn = document.createElement('button');
+      skipBtn.className = 'skip-btn';
+      skipBtn.textContent = 'Skip';
+      skipBtn.title = 'Skip this character\'s turn';
+      skipBtn.addEventListener('click', () => _skipTurn(char));
+      acts.appendChild(skipBtn);
+    }
+
+    const unstageBtn = document.createElement('button');
+    unstageBtn.className = 'unstage-btn';
+    unstageBtn.title = 'Remove';
+    unstageBtn.textContent = '✕';
+    unstageBtn.addEventListener('click', () => _unstageAction(char));
+
+    acts.appendChild(unstageBtn);
+
+    entry.appendChild(body);
+    entry.appendChild(acts);
+    _stagedQueueEl.appendChild(entry);
+  });
+
+  // Badge + auto-open
+  if (entries.length > 0) {
+    _inputBadge.style.display = 'inline';
+    const readyCount = entries.filter(([, v]) => v.ready).length;
+    _inputBadge.textContent = readyCount === entries.length
+      ? `${entries.length} ready` : `${entries.length} staged`;
+    if (_inputPanel.classList.contains('collapsed')) {
+      _inputPanel.classList.remove('collapsed');
+      _inputArrow.textContent = '▼';
+    }
+  } else {
+    _inputBadge.style.display = 'none';
+  }
+
+  // Waiting / threshold indicator
+  const readyCount = entries.filter(([, v]) => v.ready).length;
+  const notReady   = entries.filter(([, v]) => !v.ready).map(([c]) => c);
+  const anyReady   = readyCount > 0;
+  // Derive display threshold: explicit override, or infer from total known players
+  const knownCount = (_charTabs ? _charTabs.querySelectorAll('.char-tab').length - 1 : 1); // excl. Everybody
+  const threshold  = _autorunThreshold !== null ? _autorunThreshold : Math.max(1, knownCount);
+  const needMore   = readyCount < threshold && !entries.some(([c, v]) => c === 'Everybody' && v.ready);
+
+  if (anyReady && notReady.length > 0) {
+    _waitingEl.style.display = 'flex';
+    const label = needMore
+      ? `${readyCount}/${threshold} ready`
+      : `Queued \u2014 fires on DM Enter`;
+    const checks = notReady.map(c => `<span class="queue-check" style="opacity:0.5">${c}</span>`).join('');
+    _waitingEl.innerHTML = `<span class="queue-label">${label}</span>${checks}`;
+  } else {
+    _waitingEl.style.display = 'none';
+  }
+}
+
+// ── Autorun cycle countdown ───────────────────────────────────────
+const _AUTORUN_CIRC = 56.55; // 2π × r=9
+let _autorunRaf = null;
+let _autorunCycleData = null;
+
+function _startAutorunCountdown(interval, ts) {
+  _autorunCycleData = { interval, ts };
+  const fill = document.querySelector('.autorun-fill');
+  const label = document.querySelector('.autorun-label');
+  cancelAnimationFrame(_autorunRaf);
+
+  // Auto-expand the panel so the countdown is visible
+  if (_inputPanel && _inputPanel.classList.contains('collapsed')) {
+    _inputPanel.classList.remove('collapsed');
+    if (_inputArrow) _inputArrow.textContent = '▼';
+  }
+
+  function tick() {
+    if (!_autorunCycleData) return;
+    const elapsed = (Date.now() / 1000) - _autorunCycleData.ts;
+    const remaining = Math.max(0, _autorunCycleData.interval - elapsed);
+    const progress = Math.min(1, elapsed / _autorunCycleData.interval);
+    if (fill) fill.setAttribute('stroke-dashoffset', (_AUTORUN_CIRC * progress).toFixed(2));
+    if (label) {
+      label.textContent = remaining > 1
+        ? `Next Turn \u2014 ${Math.ceil(remaining)}s`
+        : 'Next Turn \u2014 checking\u2026';
+    }
+    if (remaining > 0) {
+      _autorunRaf = requestAnimationFrame(tick);
+    } else {
+      // Loop: restart the countdown after a brief pause so the display stays live
+      setTimeout(() => {
+        if (_autorunCycleData) {
+          _autorunCycleData.ts = Date.now() / 1000;
+          _autorunRaf = requestAnimationFrame(tick);
+        }
+      }, 800);
+    }
+  }
+  tick();
+}
+
+function _stopAutorunCountdown() {
+  cancelAnimationFrame(_autorunRaf);
+  _autorunRaf = null;
+  _autorunCycleData = null;
+  const fill = document.querySelector('.autorun-fill');
+  if (fill) { fill.setAttribute('stroke-dashoffset', '0'); fill.classList.remove('waiting'); }
+  const label = document.querySelector('.autorun-label');
+  if (label) label.textContent = 'Next Turn';
+}
+
+// ── Queue status panel (persists until wrapper injects) ──────────
+function _renderQueueStatus(chars) {
+  if (!chars || chars.length === 0) {
+    _waitingEl.style.display = 'none';
+    _waitingEl.innerHTML = '';
+    return;
+  }
+  const checks = chars.map(c => `<span class="queue-check">✓ ${c}</span>`).join('');
+  _waitingEl.innerHTML = `<span class="queue-label">⏳ Queued — fires on DM Enter</span>${checks}`;
+  _waitingEl.style.display = 'block';
+}
+
+// ── Handle staged_inputs SSE event ───────────────────────────────
+function _handleStagedInputs(data) {
+  _renderStagedQueue(data);
+}
+
+// ── Stage an action ───────────────────────────────────────────────
+async function _stageAction() {
+  const text = _inputText.value.trim();
+  if (!text) return;
+  _stageBtn.disabled = true;
+  _stageBtn.textContent = '…';
+  try {
+    const res = await fetch('/player-input/stage', {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ character: _selectedChar, text }),
+    });
+    if (res.status === 202) {
+      _stageBtn.disabled = false;
+      _stageBtn.textContent = 'Awaiting approval…';
+      return;  // leave text in box; retry once approved
+    }
+    _inputText.value = '';
+  } catch (_) { /* silently ignore */ }
+  _stageBtn.disabled = false;
+  _stageBtn.textContent = 'Stage';
+}
+
+// ── Toggle ready for a staged char ───────────────────────────────
+async function _toggleReady(char) {
+  try {
+    await fetch('/player-input/ready', {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ character: char }),
+    });
+  } catch (_) { /* silently ignore */ }
+}
+
+// ── Remove a staged entry ────────────────────────────────────────
+async function _unstageAction(char) {
+  try {
+    await fetch('/player-input/unstage', {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ character: char }),
+    });
+  } catch (_) { /* silently ignore */ }
+}
+
+// ── Skip a character's turn ───────────────────────────────────────
+async function _skipTurn(char) {
+  try {
+    await fetch('/player-input/skip', {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ character: char }),
+    });
+  } catch (_) { /* silently ignore */ }
+}
+
+_stageBtn.addEventListener('click', _stageAction);
+_skipTurnBtn.addEventListener('click', () => _skipTurn(_selectedChar));
+
+// Ctrl/Cmd+Enter stages from textarea
+_inputText.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    _stageAction();
+  }
+});
+
+// Initialise with no extra chars (populated when stats arrive)
+_buildCharTabs([]);
+
+// ═══════════════════════════════════════════════════════════════════
+// DEVICE APPROVAL
+// ═══════════════════════════════════════════════════════════════════
+
+const _deviceApprovalsEl = document.getElementById('device-approvals');
+
+function _showDeviceRequest(dev) {
+  // Don't duplicate
+  if (document.querySelector(`[data-device-id="${dev.id}"]`)) return;
+
+  const card = document.createElement('div');
+  card.className = 'device-card';
+  card.dataset.deviceId = dev.id;
+
+  const label = document.createElement('span');
+  label.className = 'device-card-label';
+  label.textContent = 'New device requesting input access';
+
+  const ip = document.createElement('span');
+  ip.className = 'device-card-ip';
+  ip.textContent = dev.ip;
+
+  const approveBtn = document.createElement('button');
+  approveBtn.className = 'device-approve-btn';
+  approveBtn.textContent = 'Approve';
+  approveBtn.addEventListener('click', () => _respondDevice(dev.id, true));
+
+  const denyBtn = document.createElement('button');
+  denyBtn.className = 'device-deny-btn';
+  denyBtn.textContent = 'Deny';
+  denyBtn.addEventListener('click', () => _respondDevice(dev.id, false));
+
+  card.appendChild(label);
+  card.appendChild(ip);
+  card.appendChild(approveBtn);
+  card.appendChild(denyBtn);
+  _deviceApprovalsEl.appendChild(card);
+}
+
+async function _respondDevice(deviceId, approve) {
+  try {
+    await fetch(approve ? '/device/approve' : '/device/deny', {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ id: deviceId }),
+    });
+  } catch (_) { /* ignore */ }
+  document.querySelector(`[data-device-id="${deviceId}"]`)?.remove();
+}
+
+function _onDeviceApproved(deviceId) {
+  document.querySelector(`[data-device-id="${deviceId}"]`)?.remove();
+  // If it's our own device — reset stage button and retry
+  if (deviceId === _deviceId && _stageBtn.textContent === 'Awaiting approval…') {
+    _stageBtn.disabled = false;
+    _stageBtn.textContent = 'Stage';
+    _stageAction();  // auto-retry the staged action
+  }
+}
+
+function _onDeviceDenied(deviceId) {
+  document.querySelector(`[data-device-id="${deviceId}"]`)?.remove();
+  if (deviceId === _deviceId) {
+    _stageBtn.disabled = true;
+    _stageBtn.textContent = 'Access denied';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WORLD CLOCK
+// ═══════════════════════════════════════════════════════════════════
+
+const _wcEl   = document.getElementById('world-clock');
+const _wcIcon = document.getElementById('wc-icon');
+const _wcDate = document.getElementById('wc-date');
+const _wcSub  = document.getElementById('wc-sub');
+
+const TIME_ICONS = {
+  dawn:    '🌅',
+  morning: '☀',
+  midday:  '☀',
+  noon:    '☀',
+  afternoon:'☀',
+  evening: '🌆',
+  dusk:    '🌆',
+  night:   '🌙',
+  midnight:'🌙',
+  late:    '🌙',
+};
+
+const WEATHER_ICONS = {
+  rain:    '🌧',
+  storm:   '⛈',
+  fog:     '🌫',
+  snow:    '❄',
+  cloudy:  '☁',
+  overcast:'☁',
+  windy:   '💨',
+  clear:   '',
+  calm:    '',
+};
+
+function updateWorldClock(wt) {
+  if (!wt) return;
+  const timeKey    = (wt.time || '').toLowerCase();
+  const weatherKey = Object.keys(WEATHER_ICONS).find(k => (wt.weather||'').toLowerCase().includes(k)) || '';
+
+  const timeIcon    = TIME_ICONS[timeKey]    || '☀';
+  const weatherIcon = WEATHER_ICONS[weatherKey] || '';
+
+  _wcIcon.textContent = (weatherIcon || timeIcon);
+  _wcDate.textContent = wt.date    || '';
+  _wcSub.textContent  = [wt.season, wt.day_name].filter(Boolean).join(' · ');
+
+  _wcEl.classList.add('has-data');
+  skyRenderer.setState(wt);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+
+const _sidebar      = document.getElementById('sidebar');
+const _sidebarBtn   = document.getElementById('sidebar-toggle');
+const _textScroll   = document.getElementById('text-scroll');
+let _sidebarVisible = true;
+
+function _setSidebarVisible(visible) {
+  _sidebarVisible = visible;
+  if (visible) {
+    _sidebar.classList.remove('hidden');
+    _textScroll.classList.remove('sidebar-hidden');
+    _sidebarBtn.textContent = '◀ Hide';
+  } else {
+    _sidebar.classList.add('hidden');
+    _textScroll.classList.add('sidebar-hidden');
+    _sidebarBtn.textContent = '▶ Stats';
+  }
+}
+
+_sidebarBtn.addEventListener('click', () => _setSidebarVisible(!_sidebarVisible));
+
+// Toggle button becomes visible once sidebar has data (called from SSE handler)
+
+// ═══════════════════════════════════════════════════════════════════
+// SSE CONNECTION
+// ═══════════════════════════════════════════════════════════════════
+
+let evtSource = null;
+let reconnectDelay = 1000;
+
+function connect() {
+  evtSource = new EventSource('/stream');
+
+  evtSource.onopen = () => {
+    reconnectDelay = 1000;
+  };
+
+  evtSource.onmessage = (e) => {
+    let payload;
+    try { payload = JSON.parse(e.data); } catch { return; }
+
+    if (payload.stats) {
+      updateStats(payload.stats);
+      if (payload.stats.players && payload.stats.players.length > 0) {
+        _sidebarBtn.classList.add('visible');
+        _buildCharTabs(payload.stats.players);
+      }
+      if (payload.stats.world_time) {
+        updateWorldClock(payload.stats.world_time);
+      }
+    }
+    if (payload.staged_inputs !== undefined) {
+      _handleStagedInputs(payload.staged_inputs);
+    }
+    if (payload.queue_status !== undefined) {
+      _renderQueueStatus(payload.queue_status);
+    }
+    if (payload.dm_processing) {
+      _showProcessingIndicator();
+    }
+    if (payload.autorun_threshold !== undefined) {
+      _autorunThreshold = payload.autorun_threshold;
+      // Re-render staged queue so threshold counter updates immediately
+      _renderStagedQueue(_stagedData);
+    }
+    if (payload.autorun_cycle) {
+      const el = document.getElementById('autorun-indicator');
+      if (el) el.style.display = 'flex';
+      _startAutorunCountdown(payload.autorun_cycle.interval, payload.autorun_cycle.ts);
+    }
+    if (payload.autorun_waiting !== undefined) {
+      const el = document.getElementById('autorun-indicator');
+      const fill = document.querySelector('.autorun-fill');
+      if (payload.autorun_waiting) {
+        if (el) el.style.display = 'flex';
+        if (fill) fill.classList.add('waiting');
+      } else {
+        if (el) el.style.display = 'none';
+        _stopAutorunCountdown();
+      }
+    }
+    if (payload.effect_expired) {
+      const ev = payload.effect_expired;
+      renderEffectExpiredBlock(ev.owner, ev.name, ev.was_concentration);
+    }
+    if (payload.device_request) {
+      _showDeviceRequest(payload.device_request);
+    }
+    if (payload.device_approved) {
+      _onDeviceApproved(payload.device_approved);
+    }
+    if (payload.device_denied) {
+      _onDeviceDenied(payload.device_denied);
+    }
+    if (payload.clear) {
+      // Wipe sidebar player data and DOM
+      for (const key of Object.keys(_playerData)) delete _playerData[key];
+      document.querySelectorAll('.sb-player').forEach(el => el.remove());
+      const sbEl = document.getElementById('sidebar');
+      if (sbEl) sbEl.classList.remove('has-data');
+      const turnSectionEl = document.getElementById('sb-turn-section');
+      if (turnSectionEl) turnSectionEl.style.display = 'none';
+      _sidebarBtn.classList.remove('visible');
+      _setSidebarVisible(true);   // reset to visible for next campaign
+      clearDisplay();
+    }
+    if (payload.replay_batch) {
+      renderReplayBatch(payload.replay_batch);
+    }
+    if (payload.replay) {
+      renderReplay(payload.replay);  // legacy fallback
+    }
+    if (payload.scene) {
+      applyScene(payload.scene);
+    }
+    if (payload.sfx) {
+      _playSfx(payload.sfx);
+    }
+    if (payload.text) {
+      if (payload.action) {
+        renderActionBlock(payload.action, payload.text);
+      } else if (payload.player) {
+        renderPlayerBlock(payload.player, payload.text);
+      } else if (payload.npc) {
+        renderNPCBlock(payload.npc, payload.text);
+      } else if (payload.dice) {
+        renderDiceBlock(payload.text);
+      } else if (payload.tutor) {
+        renderTutorBlock(payload.text);
+      } else {
+        handleIncomingText(payload.text);
+      }
+    }
+  };
+
+  evtSource.onerror = () => {
+    evtSource.close();
+    setTimeout(() => {
+      reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
+      connect();
+    }, reconnectDelay);
+  };
+}
+
+connect();
+</script>
+</body>
+</html>

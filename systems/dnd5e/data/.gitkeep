@@ -1,0 +1,2 @@
+# SRD dataset
+Run: python3 systems/dnd5e/build_srd.py to generate dnd5e_srd.json
