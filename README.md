@@ -199,7 +199,9 @@ Campaign data lives outside the repo:
 
 The Python toolchain offloads everything mechanical — dice, HP math, initiative, timed effects, conditions — so the LLM only handles narration and judgment calls. This means smaller models remain functional even when creative output is limited.
 
-Tested on Qwen3 14B (local via LM Studio): combat mechanics, campaign state, and skill checks all functioned correctly. Narration quality and NPC distinctiveness were reduced compared to larger models but sessions were playable. For local models, writing a more directive `system.md` with explicit step-by-step procedures improves consistency.
+Early testing on Qwen3-32B via LM Studio shows script calls, campaign state, and narration all working well. Testing is being pushed down toward Qwen3-14B -- the Python toolchain offloads all mechanical computation regardless of model size, so the expected failure modes at smaller parameter counts are qualitative (shorter narration, simpler NPC voices) rather than mechanical. For local models, writing a more directive `system.md` with explicit step-by-step procedures improves consistency.
+
+See [docs/LLM-GUIDE.md](docs/LLM-GUIDE.md) for current results and hardware recommendations.
 
 See [SYSTEM-PORTING.md — What to expect from smaller/local models](SYSTEM-PORTING.md#what-to-expect-from-smallerlocal-models) for details.
 

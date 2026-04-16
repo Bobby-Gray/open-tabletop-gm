@@ -31,11 +31,23 @@ At **14B** the experience becomes genuinely good. Narration has texture, NPCs ha
 
 ## Tested models
 
-### MiniMax M1 (via OpenCode)
+### MiniMax M2.5 (via OpenCode)
 
 Initial test via the `claude-dnd-skill` version (the Claude Code-specific predecessor to this repo). OpenCode picked up the skill file without additional configuration. The model produced creative NPC responses and recognized deceptive intent layered into a player message -- more than expected for a first pass. Not deeply tested yet; results from longer sessions pending.
 
 **Verdict:** Promising. Worth testing further, especially for players who want a free-tier option without local hardware.
+
+### Qwen3-32B (via LM Studio)
+
+Early testing on open-tabletop-gm is going well -- script calls reliable, narration solid, campaign state persisting correctly across sessions. Still being evaluated; full results pending.
+
+**Verdict:** Looking good so far. More results to come.
+
+### Qwen3-14B (via LM Studio)
+
+Testing in progress on open-tabletop-gm. The Claude-specific version of the skill ran into friction at this parameter count -- the portable build is designed to address that. Results pending.
+
+**Verdict:** To be confirmed.
 
 ---
 
