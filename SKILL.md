@@ -223,7 +223,7 @@ Tutor block always goes **last** in the send sequence.
 ### `/gm new <campaign-name> [system]`
 1. If system not given, ask: *"Which game system? (dnd5e / or describe your own)"*. Load `systems/<system>/system.md`.
 2. Ask: *"Start the cinematic display companion? [y/n]"* — if yes, run `bash <skill-base>/display/start-display.sh`.
-3. Create `~/open-tabletop-gm/campaigns/<name>/characters/`. Copy templates from `<skill-base>/templates/` (state.md, world.md, npcs.md, session-log.md). Do NOT run git init.
+3. Create `~/open-tabletop-gm/campaigns/<name>/characters/`. This path is always relative to the user's home directory — NOT inside the skill base directory. Use the absolute path `$HOME/open-tabletop-gm/campaigns/<name>/characters/`. Copy templates from `<skill-base>/templates/` (state.md, world.md, npcs.md, session-log.md). Do NOT run git init.
 4. Ask party size and starting level.
 5. **Tone wizard** (one message, all four): Tone · Magic level · Setting type · Danger level.
 6. **World Foundations** — geography, magic system, pantheon, calendar → write to world.md + seed in-world date in state.md.

@@ -18,7 +18,7 @@ Do NOT run `git init` or any git commands in campaign directories. Do NOT create
 2. Ask: *"Start the cinematic display companion? [y/n]"*
    - Yes → `bash <skill-base>/display/start-display.sh`; note the URL; set `_display_running = true` in state.md
    - No → continue without display
-3. Create campaign directory: `~/open-tabletop-gm/campaigns/<name>/characters/`
+3. Create campaign directory at the absolute path `$HOME/open-tabletop-gm/campaigns/<name>/characters/` — this is always under the user's home directory, never inside the skill base directory.
    Copy blank templates from `<skill-base>/templates/` into the campaign directory: `state.md`, `world.md`, `npcs.md`, `session-log.md`
 4. Ask: **party size** and **starting level**
 5. **Tone/Genre Wizard** — present all four choices in one message:
