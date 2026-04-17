@@ -215,3 +215,30 @@ Tutor block always goes **last** in the send sequence.
 ---
 
 **Reference modules:** For full script syntax, read `SKILL-scripts.md`. For full command procedures, read `SKILL-commands.md`. Load both at `/gm load`.
+
+---
+
+## Startup Commands
+
+### `/gm new <campaign-name> [system]`
+1. If system not given, ask: *"Which game system? (dnd5e / or describe your own)"*. Load `systems/<system>/system.md`.
+2. Ask: *"Start the cinematic display companion? [y/n]"* — if yes, run `bash <skill-base>/display/start-display.sh`.
+3. Create `~/open-tabletop-gm/campaigns/<name>/characters/`. Copy templates from `<skill-base>/templates/` (state.md, world.md, npcs.md, session-log.md). Do NOT run git init.
+4. Ask party size and starting level.
+5. **Tone wizard** (one message, all four): Tone · Magic level · Setting type · Danger level.
+6. **World Foundations** — geography, magic system, pantheon, calendar → write to world.md + seed in-world date in state.md.
+7. **Three Truths** — one settlement, one nearby threat, one mystery with clue trail → world.md.
+8. **Threat Arc** — five-stage escalation table → world.md. Set stage 1 in state.md.
+9. **2 Factions** — archetype, activity, relationship → world.md + one-line summaries in state.md.
+10. **3 NPCs** with relationship web → npcs.md.
+11. **3-5 Quest Seeds** → world.md.
+12. Write state.md: session count 0, starting location, system, `_display_running` flag.
+13. Confirm. Offer `/gm character new`.
+
+### `/gm load <campaign-name>`
+1. Read `~/open-tabletop-gm/campaigns/<name>/state.md` — confirm it exists.
+2. Ask: *"Start the cinematic display companion? [y/n]"*
+3. Read `SKILL-scripts.md` and `SKILL-commands.md` into context.
+4. Read `state.md`, `world.md`, `npcs.md`, all `characters/*.md`, and `systems/<system>/system.md`.
+5. Push full party stats to display sidebar if running.
+6. Deliver one in-character recap paragraph. Enter GM mode — no `/gm` prefix needed.
