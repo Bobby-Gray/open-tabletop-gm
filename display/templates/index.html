@@ -958,6 +958,33 @@
   .sb-faction-standing.hostile   { color: rgba(220,60,60,0.80); }
   .sb-faction-standing.unknown   { color: rgba(200,185,150,0.25); }
 
+  /* ── Quest tracker ── */
+  #sb-quests {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid rgba(180,140,60,0.08);
+  }
+  .sb-quests-header {
+    font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(180,140,60,0.35); margin-bottom: 6px;
+  }
+  .sb-quest-item {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 6px; padding: 2px 0;
+  }
+  .sb-quest-name {
+    font-size: 9px; color: rgba(200,185,150,0.6);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+  }
+  .sb-quest-status {
+    font-family: 'Cinzel', serif; font-size: 7.5px;
+    letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap;
+  }
+  .sb-quest-status.active   { color: rgba(180,140,60,0.85); }
+  .sb-quest-status.threat   { color: rgba(220,60,60,0.80); }
+  .sb-quest-status.resolved { color: rgba(80,200,130,0.70); }
+  .sb-quest-status.failed   { color: rgba(200,100,80,0.50); }
+  .sb-quest-status.unknown  { color: rgba(200,185,150,0.25); }
+
   /* ── Relationships (sheet modal) ── */
   .sm-relationship { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
   .sm-rel-name {
@@ -1492,6 +1519,10 @@
   <!-- Faction standings — injected by updateStats() when factions data is present -->
   <div id="sb-factions" style="display:none">
     <div class="sb-factions-header">Factions</div>
+  </div>
+  <!-- Quest tracker — injected by updateStats() when quests data is present -->
+  <div id="sb-quests" style="display:none">
+    <div class="sb-quests-header">Quests</div>
   </div>
 </div>
 
@@ -3281,6 +3312,32 @@ function updateStats(stats) {
       factPanel.style.display = '';
     } else {
       factPanel.style.display = 'none';
+    }
+  }
+
+  // Quest panel
+  if ('quests' in stats) {
+    const questPanel = document.getElementById('sb-quests');
+    const quests = stats.quests || [];
+    questPanel.querySelectorAll('.sb-quest-item').forEach(el => el.remove());
+    if (quests.length) {
+      const QCLS = { active:'active', threat:'threat', resolved:'resolved', failed:'failed' };
+      quests.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'sb-quest-item';
+        const nm = document.createElement('span');
+        nm.className = 'sb-quest-name';
+        nm.textContent = q.name || '—';
+        const st = document.createElement('span');
+        st.className = 'sb-quest-status ' + (QCLS[(q.status||'').toLowerCase()] || 'unknown');
+        st.textContent = q.status || '—';
+        item.appendChild(nm);
+        item.appendChild(st);
+        questPanel.appendChild(item);
+      });
+      questPanel.style.display = '';
+    } else {
+      questPanel.style.display = 'none';
     }
   }
 

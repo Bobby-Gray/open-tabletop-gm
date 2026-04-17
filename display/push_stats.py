@@ -72,16 +72,15 @@ import sys
 import json
 import argparse
 import os
-import pathlib
 import ssl
 import time
 import urllib.request
 
-_DIR       = pathlib.Path(__file__).parent
-_SCHEME_FILE = _DIR / ".scheme"
-_SCHEME = _SCHEME_FILE.read_text().strip() if _SCHEME_FILE.exists() else "http"
+_DISPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
+_SCHEME_FILE = os.path.join(_DISPLAY_DIR, ".scheme")
+_SCHEME = open(_SCHEME_FILE).read().strip() if os.path.exists(_SCHEME_FILE) else "http"
 FLASK_URL  = f"{_SCHEME}://localhost:5001/stats"
-TOKEN_FILE = str(_DIR / ".token")
+TOKEN_FILE = os.path.expanduser("~/.claude/skills/dnd/display/.token")
 TIMEOUT    = 2.0
 
 # SSL context — only used when running HTTPS (self-signed cert)
@@ -151,6 +150,8 @@ def main() -> None:
                         help='Full character sheet data: {"attacks":[...],"spells":{...},"features":[...],"inventory":[...]} (requires --player)')
     parser.add_argument("--factions", metavar="JSON",
                         help='Party faction standings: [{"name":"Pale Court","standing":"Suspicious"},...]; [] clears')
+    parser.add_argument("--quests", metavar="JSON",
+                        help='Quest tracker: [{"name":"The Ward-Points","status":"resolved"},{"name":"Vedra Ceth","status":"threat"},...]; [] clears. Status values: active, threat, resolved, failed')
     parser.add_argument("--turn-order", metavar="JSON",
                         help='Full turn order JSON: {"order":[...],"current":"Name","round":1}')
     parser.add_argument("--turn-current", metavar="NAME",
@@ -250,6 +251,14 @@ def main() -> None:
             payload["factions"] = json.loads(args.factions)
         except json.JSONDecodeError as e:
             print(f"Invalid factions JSON: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # ── Quests ─────────────────────────────────────────────────────────────────
+    if args.quests is not None:
+        try:
+            payload["quests"] = json.loads(args.quests)
+        except json.JSONDecodeError as e:
+            print(f"Invalid quests JSON: {e}", file=sys.stderr)
             sys.exit(1)
 
     # ── Turn order ─────────────────────────────────────────────────────────────

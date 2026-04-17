@@ -23,7 +23,6 @@ Endpoints:
 import hmac
 import json
 import os
-import pathlib
 import queue
 import re
 import secrets
@@ -35,10 +34,8 @@ from typing import Optional
 from flask import Flask, Response, request, render_template, jsonify
 from flask_cors import CORS
 
-_DIR          = pathlib.Path(__file__).parent
-_REPO_ROOT    = _DIR.parent
-LOG_FILE      = str(_DIR / "text_log.json")
-SCRIPTS_DIR   = str(_REPO_ROOT / "scripts")
+LOG_FILE      = os.path.expanduser("~/.claude/skills/dnd/display/text_log.json")
+SCRIPTS_DIR   = os.path.expanduser("~/.claude/skills/dnd/scripts")
 
 # SRD lookup module — degrades silently if dataset not built
 if SCRIPTS_DIR not in sys.path:
@@ -60,15 +57,15 @@ try:
     _audio.init()
 except Exception:
     _audio = None   # type: ignore
-HELP_LOCK     = str(_DIR / ".help-lock")
-CAMP_FILE     = str(_DIR / ".campaign")
-STATS_FILE    = str(_DIR / "stats.json")
-TOKEN_FILE    = str(_DIR / ".token")
-INPUT_FILE    = str(_DIR / "player_input.json")
-TRIGGER_FILE  = str(_DIR / ".input_trigger")
-QUEUE_FILE    = str(_DIR / ".input_queue")
+HELP_LOCK     = os.path.expanduser("~/.claude/skills/dnd/display/.help-lock")
+CAMP_FILE     = os.path.expanduser("~/.claude/skills/dnd/display/.campaign")
+STATS_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/stats.json")
+TOKEN_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/.token")
+INPUT_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/player_input.json")
+TRIGGER_FILE  = os.path.expanduser("~/.claude/skills/dnd/display/.input_trigger")
+QUEUE_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/.input_queue")
 
-# ─── LAN mode ─────────────────────────────────────────────────────────────────
+# ─── LAN / TLS mode ───────────────────────────────────────────────────────────
 # Pass --lan to bind on 0.0.0.0 and protect write endpoints with a token.
 # Pass --tls (requires --lan) to enable HTTPS with a self-signed cert.
 # Without --lan the server binds to localhost only; no token is required.
@@ -1053,6 +1050,10 @@ def stats():
         if "factions" in data:
             _current_stats["factions"] = data["factions"]
 
+        # quests replaces entirely ([] clears)
+        if "quests" in data:
+            _current_stats["quests"] = data["quests"]
+
         current = dict(_current_stats)
 
     # autorun_waiting / autorun_cycle — display-only signals, not stored in stats
@@ -1064,7 +1065,7 @@ def stats():
                 _autorun_cycle = None
         _broadcast({"autorun_waiting": bool(data["autorun_waiting"])})
         if not any(k in data for k in ("players", "turn_order", "world_time", "factions",
-                                        "replace_players", "sheet", "autorun_cycle")):
+                                        "quests", "replace_players", "sheet", "autorun_cycle")):
             return "", 204
 
     if "autorun_cycle" in data:
