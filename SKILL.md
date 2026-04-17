@@ -178,9 +178,9 @@ Brief NPC interjections within narration don't need a separate block.
 ```bash
 # With stat changes (any HP/slot/condition that changed this turn):
 python3 ~/.claude/skills/dnd/display/send.py \
-  --stat-hp "Kat:12:17" \
-  --stat-slot-use "Ben:1" \
-  --stat-condition-add "Kat:Poisoned" << 'DNDEND'
+  --stat-hp "Aldric:12:17" \
+  --stat-slot-use "Mira:1" \
+  --stat-condition-add "Aldric:Poisoned" << 'DNDEND'
 [full narration text, word for word — every paragraph, closing prompt, roll outcome summaries]
 DNDEND
 
@@ -294,16 +294,16 @@ CAMP=<campaign-name>
 
 # After combat (exact CR calculation — preferred):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Kat,Ben" \
+  --campaign $CAMP --characters "Aldric,Mira" \
   --monsters "goblin:1/4:3,hobgoblin:1:1" --note "description"
 
 # After combat (difficulty-rated — use when monster CRs are unavailable):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Kat,Ben" --difficulty hard --type combat
+  --campaign $CAMP --characters "Aldric,Mira" --difficulty hard --type combat
 
 # After qualifying non-combat encounter:
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Kat,Ben" --difficulty medium --type noncombat \
+  --campaign $CAMP --characters "Aldric,Mira" --difficulty medium --type noncombat \
   --note "brief description"
 
 # Preview before awarding:
