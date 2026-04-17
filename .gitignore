@@ -21,3 +21,7 @@ __pycache__/
 *.pyc
 *.pyo
 campaigns/
+
+# Local-only helper files
+no_think.md
+paths.md

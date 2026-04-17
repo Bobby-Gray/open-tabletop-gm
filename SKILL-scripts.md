@@ -294,7 +294,7 @@ pip3 install -r requirements.txt
 bash <skill-base>/display/start-display.sh
 
 # Open browser before /gm load so it is connected when opening narration streams in:
-open https://localhost:5001
+open http://localhost:5001
 ```
 
 ---

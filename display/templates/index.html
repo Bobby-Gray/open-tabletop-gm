@@ -2157,6 +2157,7 @@ function typeNextChar() {
 
 function startTyping() {
   if (isTyping) return;
+  if (charDelay === 0) { instantFlush(); return; }
   isTyping = true;
   typeNextChar();
 }
@@ -3439,7 +3440,7 @@ document.getElementById('sfx-row').addEventListener('click', () => {
 const _speedSteps = [
   { label: 'Normal',  ms: 18 },
   { label: 'Fast',    ms: 7  },
-  { label: 'Instant', ms: 1  },
+  { label: 'Instant', ms: 0  },
 ];
 let _speedIdx = 0;
 const _speedLabel = document.getElementById('speed-label');

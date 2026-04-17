@@ -176,4 +176,4 @@ Toggle tutor/learning mode. Write `tutor_mode: true/false` to `state.md → ## S
 
 - `start` → `bash <skill-base>/display/start-display.sh`; print URL
 - `stop` → `kill $(cat <skill-base>/display/app.pid) 2>/dev/null && rm -f <skill-base>/display/app.pid`
-- `status` → `curl -sk https://localhost:5001/ping`
+- `status` → `curl -sk $(cat <skill-base>/display/.scheme 2>/dev/null || echo http)://localhost:5001/ping`

@@ -7,12 +7,12 @@ You continue typing in the terminal as normal.
 ```
 Terminal (you type here — claude runs directly, no wrapper needed)
     ↓ send.py calls (narration, dice, NPC dialogue, stat changes)
- Flask on https://localhost:5001
+ Flask on http://localhost:5001
     ↓ SSE stream
  Browser tab (any device on your network)
     TV — Cast tab or screen mirror
     iPad / tablet — open in Safari or Chrome via LAN
-    Second monitor — open https://localhost:5001 in a local window
+    Second monitor — open http://localhost:5001 in a local window
 ```
 
 ---
@@ -29,16 +29,23 @@ pip3 install -r requirements.txt
 ### 2. Start the Flask server
 
 ```bash
-# Localhost only (default) — auto-kills any previous instance
+# Localhost only (default) — HTTP, auto-kills any previous instance
 bash display/start-display.sh
 
-# LAN mode — serve to phones, tablets, other devices on your network
+# LAN mode — HTTP, accessible from phones, tablets, other devices on your network
 bash display/start-display.sh --lan
+
+# LAN mode with TLS — HTTPS, for public or untrusted networks
+bash display/start-display.sh --lan --tls
 ```
 
-The server runs over **HTTPS** using a self-signed certificate. Browsers will show a security
-warning on first visit — click "Advanced → Proceed" to accept. The display companion scripts
-(`send.py`, `push_stats.py`) skip certificate verification automatically for localhost.
+**HTTP is the default.** No certificate warnings — guests and new devices connect instantly
+with no setup required. This is the recommended mode for home and trusted networks.
+
+**`--tls` is an explicit opt-in** for public or untrusted networks. When `--tls` is used:
+- A self-signed certificate is auto-generated (10-year validity, LAN IP in SAN)
+- A plain HTTP server starts on `:8080` so devices can download `cert.pem`
+- Full per-platform install instructions are printed to the CLI (iOS, Android, Mac)
 
 In LAN mode a token is generated and stored at `.token`. The `send.py` and `push_stats.py`
 scripts read this file automatically.
@@ -46,15 +53,17 @@ scripts read this file automatically.
 ### 3. Open the browser tab
 
 ```
-https://localhost:5001
-# or from another device:
+http://localhost:5001
+# or from another device (LAN mode):
+http://<your-machine-ip>:5001
+# with --tls:
 https://<your-machine-ip>:5001
 ```
 
 **To display on a TV or other device:**
 - **Cast tab** — Chrome → three-dot menu → Cast → Cast tab → select your Chromecast or smart TV
 - **Screen mirror** — macOS Control Centre → Screen Mirroring → Apple TV / AirPlay receiver
-- **iPad / tablet** — start with `--lan`, open `https://<your-ip>:5001` in Safari or Chrome
+- **iPad / tablet** — start with `--lan`, open `http://<your-ip>:5001` in Safari or Chrome
 - **Second monitor** — drag the browser window to the second display
 
 ### 4. Start your Claude session
@@ -208,12 +217,13 @@ The Sound Effects toggle in the top-right corner of the display enables/disables
 ## Troubleshooting
 
 **Nothing appears on screen**
-- Confirm Flask is running: `curl -sk https://localhost:5001/ping` should return `ok`
+- Confirm Flask is running: `curl -s http://localhost:5001/ping` should return `ok` (use `https://` if started with `--tls`)
 - Confirm you're running the DM skill (`/dnd load`) rather than bare `claude`
 - Check the browser console for SSE connection errors
 
 **Browser shows certificate warning**
-- Expected — the server uses a self-signed certificate for HTTPS. Click "Advanced → Proceed" once; the browser will remember it.
+- Only expected when started with `--tls`. Click "Advanced → Proceed" once; the browser will remember it.
+- In HTTP mode (default) there are no certificate warnings.
 
 **Scene never changes**
 - Scene detection requires keywords in the DM narration
@@ -237,6 +247,11 @@ The Sound Effects toggle in the top-right corner of the display enables/disables
 - Confirm the server started with `--lan` (look for `LAN mode (0.0.0.0:5001)` in output)
 - Check your machine's firewall allows port 5001 inbound TCP
 
+**TLS cert install — iOS**
+- In Safari, open `http://<your-ip>:8080/cert.pem` → tap Allow to download
+- Go to Settings → General → VPN & Device Management → install the downloaded profile
+- Go to Settings → General → About → Certificate Trust Settings → enable full trust for the cert
+
 ---
 
 ## Quick reference
@@ -246,12 +261,15 @@ DISPLAY=display
 
 # Start the display (force-kills any previous instance)
 bash $DISPLAY/start-display.sh
-# or for LAN access:
+# or for LAN access (HTTP, no cert required):
 bash $DISPLAY/start-display.sh --lan
+# or for LAN with TLS (public/untrusted networks):
+bash $DISPLAY/start-display.sh --lan --tls
 
 # Open the display BEFORE starting your session
-open https://localhost:5001   # same machine
-# or: open https://<your-ip>:5001  (LAN device)
+open http://localhost:5001   # same machine
+# or: open http://<your-ip>:5001  (LAN device)
+# with --tls: open https://<your-ip>:5001
 
 # Start a session — no wrapper needed
 claude   # then: /dnd load <campaign>

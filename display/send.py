@@ -64,16 +64,21 @@ import ssl
 import time
 import urllib.request
 
-FLASK_URL   = "https://localhost:5001/chunk"
-STATS_URL   = "https://localhost:5001/stats"
 _DIR        = pathlib.Path(__file__).parent
+_SCHEME_FILE = _DIR / ".scheme"
+_SCHEME = _SCHEME_FILE.read_text().strip() if _SCHEME_FILE.exists() else "http"
+FLASK_URL   = f"{_SCHEME}://localhost:5001/chunk"
+STATS_URL   = f"{_SCHEME}://localhost:5001/stats"
 TOKEN_FILE  = str(_DIR / ".token")
 TIMEOUT     = 2.0
 
-# Self-signed cert — skip verification for localhost connections
-_SSL_CTX = ssl.create_default_context()
-_SSL_CTX.check_hostname = False
-_SSL_CTX.verify_mode = ssl.CERT_NONE
+# SSL context — only used when running HTTPS (self-signed cert)
+if _SCHEME == "https":
+    _SSL_CTX = ssl.create_default_context()
+    _SSL_CTX.check_hostname = False
+    _SSL_CTX.verify_mode = ssl.CERT_NONE
+else:
+    _SSL_CTX = None
 
 
 def _read_token() -> str:

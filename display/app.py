@@ -70,11 +70,15 @@ QUEUE_FILE    = str(_DIR / ".input_queue")
 
 # ─── LAN mode ─────────────────────────────────────────────────────────────────
 # Pass --lan to bind on 0.0.0.0 and protect write endpoints with a token.
+# Pass --tls (requires --lan) to enable HTTPS with a self-signed cert.
 # Without --lan the server binds to localhost only; no token is required.
 
 _LAN_MODE: bool = "--lan" in sys.argv
+_TLS_MODE: bool = "--tls" in sys.argv
 if _LAN_MODE:
     sys.argv.remove("--lan")   # prevent Flask from seeing an unknown flag
+if _TLS_MODE:
+    sys.argv.remove("--tls")
 
 
 def _get_or_create_token() -> str:
@@ -1581,20 +1585,25 @@ if __name__ == "__main__":
         _audio.set_broadcast(_broadcast)
 
     host = "0.0.0.0" if _LAN_MODE else "localhost"
-    # TLS — use cert/key if present, otherwise plain HTTP
+    # TLS — only enabled when --tls is explicitly passed; HTTP is the default.
     _display_dir = os.path.dirname(os.path.abspath(__file__))
     _cert = os.path.join(_display_dir, "cert.pem")
     _key  = os.path.join(_display_dir, "key.pem")
-    ssl_ctx = (_cert, _key) if os.path.exists(_cert) and os.path.exists(_key) else None
+    ssl_ctx = (_cert, _key) if (_TLS_MODE and os.path.exists(_cert) and os.path.exists(_key)) else None
     scheme  = "https" if ssl_ctx else "http"
+
+    # Write .scheme so push_stats.py / send.py / autorun-wait.sh know which to use
+    try:
+        with open(os.path.join(_display_dir, ".scheme"), "w") as _sf:
+            _sf.write(scheme)
+    except OSError:
+        pass
 
     if _LAN_MODE:
         print(f"DnD DM Display — LAN mode (0.0.0.0:5001) [{scheme.upper()}]")
         print(f"  Local:  {scheme}://localhost:5001")
         print("  Token stored at:", TOKEN_FILE)
         print("  POST endpoints require X-DND-Token header (send.py/push_stats.py handle this automatically)")
-        if ssl_ctx:
-            print("  TLS: self-signed cert — browser will warn, click through once")
         print()
     else:
         print(f"DnD DM Display — Flask server starting on {scheme}://localhost:5001")

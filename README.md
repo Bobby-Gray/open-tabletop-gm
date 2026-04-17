@@ -145,9 +145,10 @@ The skill walks you through world creation, tone selection, and character setup.
 An optional Flask web app that renders your session as a cinematic full-screen display — stat sidebar, live effect tracking, player input panel, animated backgrounds.
 
 ```bash
-bash display/start-display.sh          # localhost
-bash display/start-display.sh --lan    # LAN mode (phones, tablets, TV)
-open https://localhost:5001
+bash display/start-display.sh          # localhost, HTTP (default)
+bash display/start-display.sh --lan    # LAN mode (phones, tablets, TV), HTTP
+bash display/start-display.sh --lan --tls  # LAN mode, HTTPS (public/untrusted networks)
+open http://localhost:5001
 ```
 
 Runs entirely independently of the LLM. If the display isn't running, all scripts fail silently — nothing breaks.
