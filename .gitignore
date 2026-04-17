@@ -20,3 +20,4 @@ systems/dnd5e/data/dnd5e_supplemental.json
 __pycache__/
 *.pyc
 *.pyo
+campaigns/
