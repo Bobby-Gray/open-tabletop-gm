@@ -153,11 +153,43 @@ _denied_devices:   set[str]       = set()
 _pending_devices:  dict[str, dict] = {}  # device_id -> {ip, first_seen}
 _devices_lock = threading.Lock()
 
+DEVICES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".approved_devices.json")
+
+
+def _load_approved_devices() -> None:
+    """Load persisted approved device IDs from disk at startup."""
+    global _approved_devices
+    try:
+        with open(DEVICES_FILE) as f:
+            ids = json.load(f)
+        if isinstance(ids, list):
+            with _devices_lock:
+                _approved_devices = set(ids)
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"[display] warning: could not load approved devices: {e}", file=sys.stderr)
+
+
+def _persist_approved_devices() -> None:
+    """Write approved device IDs to disk. Must be called WITHOUT _devices_lock held."""
+    with _devices_lock:
+        ids = list(_approved_devices)
+    try:
+        with open(DEVICES_FILE, "w") as f:
+            json.dump(ids, f)
+    except Exception as e:
+        print(f"[display] warning: could not persist approved devices: {e}", file=sys.stderr)
+
+
+_load_approved_devices()
+
 
 def _device_ok(device_id: str, ip: str) -> str:
     """Return 'approved', 'pending', or 'denied' for a given device."""
     if not device_id:
         return "denied"
+    _need_persist = False
     with _devices_lock:
         if device_id in _approved_devices:
             return "approved"
@@ -166,16 +198,19 @@ def _device_ok(device_id: str, ip: str) -> str:
         # Localhost always auto-approved
         if ip in ("127.0.0.1", "::1"):
             _approved_devices.add(device_id)
-            return "approved"
-        # New LAN device — hold and notify DM
-        if device_id not in _pending_devices:
+            _need_persist = True
+        elif device_id not in _pending_devices:
+            # New LAN device — hold and notify DM
             _pending_devices[device_id] = {
                 "id":         device_id,
                 "ip":         ip,
                 "first_seen": _time.time(),
             }
             _broadcast({"device_request": {"id": device_id, "ip": ip}})
-        return "pending"
+    if _need_persist:
+        _persist_approved_devices()
+        return "approved"
+    return "pending"
 
 
 # ─── Staged input system ──────────────────────────────────────────────────────
@@ -409,7 +444,6 @@ SCENES: dict[str, dict] = {
         "keywords": [
             "city", "market", "street", "crowd", "village", "town",
             "square", "cobble", "district", "quarter", "merchant",
-            "ashenveil",
         ],
         "colors": ["#0a0f1a", "#15202e"],
         "accent": "#6080a0",
@@ -1046,9 +1080,20 @@ def stats():
         if "world_time" in data:
             _current_stats["world_time"] = data["world_time"]
 
-        # factions replaces entirely ([] clears)
+        # factions replaces entirely ([] clears); validate and default missing standing
         if "factions" in data:
-            _current_stats["factions"] = data["factions"]
+            _VALID_STANDINGS = {"Allied", "Friendly", "Neutral", "Unfriendly", "Hostile"}
+            validated_factions = []
+            for _f in data["factions"]:
+                if "standing" not in _f or _f["standing"] not in _VALID_STANDINGS:
+                    print(
+                        f"[display] faction '{_f.get('name','?')}' missing/invalid standing "
+                        f"— defaulting to Neutral. Valid: {sorted(_VALID_STANDINGS)}",
+                        file=sys.stderr,
+                    )
+                    _f = dict(_f, standing="Neutral")
+                validated_factions.append(_f)
+            _current_stats["factions"] = validated_factions
 
         # quests replaces entirely ([] clears)
         if "quests" in data:

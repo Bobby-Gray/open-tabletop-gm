@@ -33,4 +33,8 @@
 ## Session Flags
 *(tutor_mode, etc. — session-scoped flags set via /dnd commands)*
 
-## DM Notes (hidden from players)
+## GM Style Notes
+*Distilled calibration for this specific player — read at every /gm load, updated at /gm end only when a genuinely new pattern emerges.*
+*(none yet)*
+
+## GM Notes (hidden from players)

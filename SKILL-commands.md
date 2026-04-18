@@ -31,7 +31,7 @@ Do NOT run `git init` or any git commands in campaign directories. Do NOT create
 7. **Three Truths** — one settlement, one nearby threat, one mystery with a clue trail. Write to respective sections in world.md.
 8. **Threat Escalation Arc** — fill the five-stage table in world.md. Set current stage to 1. Write `Threat arc stage: 1` to `state.md → ## World State`.
 9. **2 Factions** — archetype, current activity, relationship to party. Write to `## Factions` in world.md and one-line summaries to `state.md → ## World State`.
-10. **3 NPCs with relationship web** — full entries: role, demeanor, motivation, secret, speech quirk, faction, current goal. Every NPC needs at least 2 relationships to others. Append to npcs.md.
+10. **3 NPCs with relationship web** — write a one-line index entry for each (name, role, demeanor, faction, current goal) to `npcs.md`. Write each NPC's full detail (personality axes, speech quirk, hidden motivation, secret, relationships) as a `## [Name]` section in `npcs-full.md`. Create that file if it does not exist. Every NPC needs at least 2 relationships to others.
 11. **3-5 Quest Seeds** from threat, factions, mystery, NPC motivations. Write to `## Quest Seed Bank` in world.md.
 12. Write state.md: session count 0, starting location, system, `_display_running` flag.
 13. Confirm creation. Offer `/gm character new`.
@@ -45,7 +45,7 @@ Do NOT run `git init` or any git commands in campaign directories. Do NOT create
    - Yes → `bash <skill-base>/display/start-display.sh`; set `_display_running = true`
    - No → continue
 3. Read `SKILL-scripts.md` (for script syntax this session)
-4. Read `state.md`, `world.md`, `npcs.md`, and all `characters/*.md` in the campaign directory.
+4. Read `state.md`, `world.md`, `npcs.md` (and `npcs-full.md` if present), and all `characters/*.md` in the campaign directory. Note: `session-log.md` is NOT loaded at session start — recent events are already in `state.md → ## Recent Events`.
 5. Load the system module: read `systems/<system>/system.md` (system is recorded in state.md).
 6. If display is running, push full party stats to the sidebar. Also push `--factions` from active faction states in `state.md → ## World State` (use `[]` if none), and `--quests` from active quests and open threads (use `[]` if none). Push turn order if combat was active. Quest status values: `active`, `threat`, `resolved`, `failed`.
 7. Deliver one in-character paragraph recapping the current situation — where the party is, what is at stake, what was last happening.
@@ -76,8 +76,9 @@ Keep only the 2 most recent full entries in session-log.md. Older entries move t
 
 1. Run `/gm save`, then:
    a. Append a Session Recap block to session-log.md with key events and open threads.
-   b. Ask: *"Quick calibration — what worked this session, and what would you adjust?"* Write to `### DM Calibration`. Skip if no answer.
+   b. Ask: *"Quick calibration — what worked this session, and what would you adjust?"* Write to `### GM Calibration`. Skip if no answer.
    c. Update `## World State` in state.md: check threat arc stage, faction states, in-world date.
+   d. If the calibration answer or session revealed a new, durable pattern about this player's preferences — update `## GM Style Notes` in state.md. Add one or two distilled principles. Do not recap the session; record the insight. Skip if nothing genuinely new emerged.
 2. If `_display_running = true`, stop the display:
    ```bash
    kill $(cat <skill-base>/display/app.pid 2>/dev/null) 2>/dev/null && rm -f <skill-base>/display/app.pid
