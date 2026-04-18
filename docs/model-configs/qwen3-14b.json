@@ -1,0 +1,130 @@
+{
+  "_model": "Qwen3 14B",
+  "_status": "in progress — silent loop under investigation",
+  "_last_tested": "2026-04-18",
+
+  "lmstudio_variants": {
+    "gguf": {
+      "identifier": "qwen_qwen3-14b",
+      "publisher": "bartowski",
+      "quantization": "Q4_K_S",
+      "max_context_length": 32768,
+      "preset": {
+        "context_length": 24576,
+        "_context_note": "System prompt (no_think+paths+SKILL+SKILL-commands) is ~18130 tokens. 16384 is too small — use 24576 minimum.",
+        "eval_batch_size": 4096,
+        "_batch_note": "CRITICAL — default 512 causes ~16 min prefill for the 18K token system prompt (35 batches × ~27s). 4096 reduces to ~5 batches, ~2-3 min. This is the primary cause of the 'silent loop' failure mode.",
+        "temperature": 0.8,
+        "top_p": 0.9,
+        "repeat_penalty": 1.1,
+        "flash_attention": true
+      },
+      "notes": "Q4_K_S is a smaller quantization than Q4_K_M — slightly lower quality but fits better in constrained VRAM. Use Q4_K_M if available."
+    },
+    "mlx": {
+      "identifier": "qwen/qwen3-14b",
+      "publisher": "qwen",
+      "quantization": "4bit",
+      "max_context_length": 40960,
+      "preset": {
+        "context_length": 16384,
+        "temperature": 0.8,
+        "top_p": 0.9,
+        "repeat_penalty": 1.1
+      },
+      "notes": "MLX build has a larger max context (40960 vs 32768 gguf) but keep context_length at 16384 for inference speed. MLX is generally faster on Apple Silicon."
+    }
+  },
+
+  "opencode_entry": {
+    "qwen_qwen3-14b": {
+      "name": "Qwen3 14b (Local)"
+    }
+  },
+
+  "system_prompt_files": [
+    "no_think.md",
+    "paths.md",
+    "SKILL.md",
+    "SKILL-commands.md"
+  ],
+
+  "thinking_mode": {
+    "default": "on — Qwen3 enables extended chain-of-thought by default",
+    "disable_token": "/no_think",
+    "enable_token": "/think",
+    "no_think_file": "no_think.md",
+    "placement_notes": "The /no_think token must appear in the system prompt OR the first user message. no_think.md is injected as the first instructions file in opencode.json, which should satisfy the system prompt requirement. If the silent loop persists, try moving /no_think into the first user message template instead.",
+    "opencode_behavior": "Unknown — need to confirm whether OpenCode strips <think>...</think> tokens from streamed output or passes them through. If passed through, the model may emit a very long thinking block before each tool call, appearing as a silent loop from the user's perspective.",
+    "recommended_for_play": "off (/no_think) — thinking mode adds per-response latency that is disruptive during real-time narration and NPC dialogue. Enable selectively for rules adjudication or complex world-building decisions."
+  },
+
+  "known_issues": [
+    {
+      "id": "silent-loop",
+      "status": "root cause revised — likely cold-start latency, not thinking tokens",
+      "description": "Model appears to enter a silent loop after issuing one or more tool calls. Previously hypothesised as Qwen3 thinking tokens accumulating in the stream.",
+      "findings": [
+        "reasoning_tokens: 1 in non-streaming probe — /no_think IS suppressing thinking mode",
+        "Cold-start first inference after model load takes 60-80s (GGUF layers loading into RAM). In OpenCode this appears as a silent pause before any output.",
+        "Subsequent inferences are 6-14s — well within expected range.",
+        "Streaming behavior unknown — OpenCode uses stream:true; LM Studio debug log capture needed to confirm thinking tokens do not appear in stream."
+      ],
+      "fix_candidates": [
+        "Wait out the cold-start: first response after /gm load may take 60-80s before anything appears — this is not a loop",
+        "Capture LM Studio debug log during an OpenCode session to confirm no <think> tokens in the stream",
+        "If thinking tokens DO appear in stream: inject /no_think into first user message in addition to system prompt"
+      ]
+    },
+    {
+      "id": "early-command-failure",
+      "status": "under investigation — may be cold-start misread as crash",
+      "description": "Campaign commands appear to fail or crash early. Observed with both mlx and gguf. Re-evaluate after accounting for 60-80s cold-start latency on first inference.",
+      "fix_candidates": [
+        "Allow 90s on first command before concluding failure",
+        "Reduce system prompt: remove SKILL.md from opencode.json instructions if commands still fail after cold-start",
+        "Test with context_length 8192 if 16384 is too slow"
+      ]
+    }
+  ],
+
+  "probe_results": {
+    "_run_date": "2026-04-18",
+    "_tools_injected": false,
+    "_system_prompt": "without SKILL.md (trimmed)",
+    "gm_list": "WARN — no tool definitions; model hallucinated campaigns (expected); first call 82.4s cold-start",
+    "gm_load": "PASS (14.4s — fast after cold-start)",
+    "gm_load_extra_args": "PASS (80.7s — slow; investigate whether reasoning or verbose response)",
+    "gm_roll": "PASS (6.1s — correctly identified dice.py call in response text)",
+    "gm_session_no_prefix": "PASS (13.3s)",
+    "gm_new": "pending"
+  },
+
+  "performance": {
+    "prefill_tokens": 18130,
+    "prefill_batch_size_default": 512,
+    "prefill_batch_size_default_time": "~16 minutes — appears as silent loop",
+    "prefill_batch_size_recommended": 4096,
+    "prefill_batch_size_recommended_time": "~2-3 minutes",
+    "warm_inference_s": "6-15",
+    "notes": "eval_batch_size is the dominant performance variable for this model+prompt combination. Default 512 is completely unworkable with an 18K token system prompt. Always load with eval_batch_size 4096 or higher."
+  },
+
+  "thinking_mode": {
+    "default": "on — Qwen3 enables extended chain-of-thought by default",
+    "disable_token": "/no_think",
+    "enable_token": "/think",
+    "no_think_file": "no_think.md",
+    "verified_suppressed": true,
+    "evidence": "reasoning_tokens: 1 in non-streaming probe response — effectively suppressed",
+    "streaming_verified": false,
+    "notes": "Non-streaming probe confirms suppression. Streaming behavior (used by OpenCode) not yet confirmed — capture LM Studio debug log to verify."
+  },
+
+  "recommendations": [
+    "Allow 90s on the first command after loading — cold-start latency is normal for gguf.",
+    "Capture LM Studio debug log during one OpenCode session to confirm: (1) no <think> tokens in stream, (2) tool definitions OpenCode injects.",
+    "MLX variant may have faster cold-start on Apple Silicon — worth benchmarking if gguf cold-start is too disruptive.",
+    "Do not remove SKILL.md unless command routing fails — probe confirms routing works without it, but DM narration quality will drop."
+  ]
+}

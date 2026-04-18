@@ -31,6 +31,34 @@ At **14B** the experience becomes genuinely good. Narration has texture, NPCs ha
 
 ## Tested models
 
+### Mistral Small 3.1 24B (via LM Studio / OpenCode)
+
+**Tool-call depth limit:** Mistral Small 3.1 24B reliably loses its instruction anchor after approximately 4–5 sequential tool calls. The `/gm load` procedure requires a pid check + 3 file reads before it can deliver the opening narration — 4 tool calls minimum, more with characters and system files. After the last read, the model resets its attention to the top of the instruction set and re-triggers Step 1, loops, or confuses content from the files it just read with new commands (e.g., treating an NPC name as a campaign name to load).
+
+This is an architectural limit of the 24B parameter count under multi-step agentic workloads, not a system prompt wording problem. Extensive instruction iteration did not resolve it. The routing architecture in SKILL-branches.md reduced the failure surface significantly but could not eliminate it.
+
+**RLHF refusal on non-standard signatures:** Passing extra positional args (e.g., `/gm load test-campaign dnd5e`) causes Mistral to refuse with "I don't have the tools needed." Always use exact command signatures.
+
+**System prompt size:** Load with at least 24,576 context. The SKILL-branches.md architecture brings the system prompt to ~2,300 tokens (down from ~18,000), which comfortably fits.
+
+**LM Studio settings:**
+```json
+{
+  "context_length": 24576,
+  "eval_batch_size": 4096,
+  "flash_attention": true,
+  "temperature": 0.75,
+  "top_p": 0.9,
+  "repeat_penalty": 1.1
+}
+```
+
+**Hardware verdict:** On a MacBook Air (24GB unified memory), Mistral Small 3.1 24B is at the practical ceiling for local inference, and the tool-call depth limit makes it unreliable for session load. **OpenRouter is the recommended path for 24GB machines** — it delivers better instruction following at no hardware cost (see OpenRouter section below).
+
+On a 64GB+ machine (M3 Max, M4 Max, or equivalent) running a 70B model, the tool-call depth issue does not appear at the same thresholds. If local inference matters to you, the minimum recommended configuration is 64GB RAM with a Qwen3-70B or equivalent.
+
+---
+
 ### MiniMax M2.5 (via OpenCode)
 
 Initial test via the `claude-dnd-skill` version (the Claude Code-specific predecessor to this repo). OpenCode picked up the skill file without additional configuration. The model produced creative NPC responses and recognized deceptive intent layered into a player message -- more than expected for a first pass. Not deeply tested yet; results from longer sessions pending.
@@ -39,15 +67,49 @@ Initial test via the `claude-dnd-skill` version (the Claude Code-specific predec
 
 ### Qwen3-32B (via LM Studio)
 
-Early testing on open-tabletop-gm is going well -- script calls reliable, narration solid, campaign state persisting correctly across sessions. Still being evaluated; full results pending.
+Not directly tested. The original entry here was speculative and has been removed.
 
-**Verdict:** Looking good so far. More results to come.
+At 32B parameters, Qwen3-32B sits below the ~70B threshold where local agentic tool-call depth becomes reliable — the same class of issue documented in the Mistral Small 3.1 24B section. On 24GB hardware it would face the same session-load reliability problems. On 64GB+ hardware (M3 Max, M4 Max, or equivalent) it should perform well given Qwen3's generally strong instruction-following.
 
-### Qwen3-14B (via LM Studio)
+If you test it and want to share results, open a GitHub Discussion with your hardware, LM Studio settings, and whether `/gm load` completes reliably.
 
-Testing in progress on open-tabletop-gm. The Claude-specific version of the skill ran into friction at this parameter count -- the portable build is designed to address that. Results pending.
+**Verdict:** Untested. Likely viable on 64GB+ hardware; not recommended for 24GB machines.
 
-**Verdict:** To be confirmed.
+### Qwen3-14B — gguf (via LM Studio)
+
+Two critical issues found during testing that affect all gguf Qwen3 variants with this skill.
+
+**Issue 1 — System prompt too large for default context:** The full instruction set is approximately 18,000 tokens. Loading the model at the default or recommended 16,384 context window will produce an immediate error: `n_keep >= n_ctx`. Load at 24,576 minimum, or remove `SKILL.md` from your OpenCode instructions file to bring the prompt under 14,000 tokens.
+
+**Issue 2 — Silent loop caused by default eval_batch_size:** This is the primary failure mode that makes Qwen3 gguf appear broken with this skill. LM Studio's default `eval_batch_size` of 512 causes the model to process the 18,000-token system prompt in approximately 35 batches at ~20-30 seconds each — totalling 10-16 minutes of silence before generating a single output token. This is indistinguishable from a hang or infinite loop.
+
+**Fix:** Always load with `eval_batch_size: 4096`. This reduces prefill to ~5 batches and 2-3 minutes. The setting is llama.cpp-specific and has no effect on MLX builds.
+
+**LM Studio settings (gguf):**
+```json
+{
+  "context_length": 24576,
+  "eval_batch_size": 4096,
+  "flash_attention": true,
+  "temperature": 0.8,
+  "top_p": 0.9,
+  "repeat_penalty": 1.1
+}
+```
+
+**Thinking mode:** Qwen3 enables chain-of-thought reasoning by default. The `/no_think` token in `no_think.md` suppresses this when injected via the OpenCode instructions array. Confirmed working — `reasoning_tokens` drops to effectively zero in non-streaming inference. Streaming behavior should be verified via LM Studio debug logs on first use.
+
+**Verdict:** Functional once both issues above are addressed, but the 2-3 minute prefill on every new session is a real usability cost. Worth testing if you have the patience; otherwise Mistral Small 24B is a more comfortable default for gguf local inference with this skill.
+
+---
+
+### Qwen3-14B — MLX (via LM Studio)
+
+**MLX backend failure — libpython3.11.dylib not found:** On some LM Studio installations, the MLX engine fails to load with a `dlopen` error citing a missing Python 3.11 shared library. The MLX backend ships with a vendored Python runtime that can fail to install correctly. If you see this error, check for a LM Studio update or reinstall the MLX backend extension from the LM Studio settings. There is no workaround short of a clean reinstall.
+
+**If MLX loads successfully:** Expect significantly faster prefill than gguf on Apple Silicon hardware — typically 3-5x — due to hardware-optimised execution via the Neural Engine and GPU cores. The `eval_batch_size` parameter does not apply to MLX; batch handling is managed by the engine internally. Load with `context_length: 24576` only.
+
+**Verdict:** Untested end-to-end due to backend installation failure. Theoretically the best Qwen3-14B option on Apple Silicon if MLX is working correctly on your system.
 
 ---
 
@@ -206,6 +268,66 @@ Strategies:
 - The archive file (session-log-archive.md) keeps history outside the active window
 - For 14B models, keep context_length at 16384 or below and rely on the summary system rather than full-log injection
 - For 32B+ models, you can increase context_length if VRAM allows; the quality of long-range consistency improves noticeably above 32k tokens
+
+---
+
+## OpenRouter
+
+OpenRouter exposes models via an OpenAI-compatible `/v1/chat/completions` endpoint. Add your API key as a bearer token. Free-tier models use a `:free` suffix; paid endpoints drop the suffix and have no meaningful rate limits.
+
+### Probe results (April 2026, SKILL-branches.md architecture)
+
+All models tested with `--skip-skill-md` (SKILL.md not in system prompt) and no tool injection. The two consistent WARNs across every model are structural, not model-specific: `/gm list` falls back to described behavior without a Glob tool call, and `/gm roll d20` returns a plausible number rather than invoking `dice.py`. Both are expected without tools.json populated.
+
+| Model | P/W/F | Avg output | ~20-turn session | Notes |
+|-------|-------|-----------|-----------------|-------|
+| openai/gpt-oss-120b | 3/2/0 | 369 tok | ~16,000 tok | Most verbose; rich narration |
+| openai/gpt-oss-20b | 3/2/0 | 370 tok | ~16,000 tok | Same quality profile as 120B at probe scale |
+| nousresearch/hermes-3-llama-3.1-405b | 3/2/0 | 141 tok | ~7,000 tok | Best balance; hallucinated on `/gm list` |
+| google/gemma-3-27b-it | 3/2/0 | 279 tok | ~12,600 tok | Clean list handling; no hallucination |
+| google/gemma-4-31b-it | 3/2/0 | 79 tok | ~4,700 tok | Very terse; fast and cheap |
+| meta-llama/llama-3.3-70b-instruct | 3/2/0 | 166 tok | ~8,400 tok | Hallucinated on `/gm list` |
+| nvidia/nemotron-3-super-120b-a12b | 3/2/0 | — | — | Free tier only; tested separately |
+| nvidia/nemotron-3-nano-30b-a3b | 3/2/0 | 333 tok | ~14,800 tok | Verbose for its size |
+| qwen/qwen3-next-80b-a3b-instruct | 3/2/0 | 127 tok | ~6,500 tok | Efficient; good instruction following |
+| qwen/qwen3-coder | 3/2/0 | 90 tok | ~5,000 tok | Terse but precise; strong on routing |
+| minimax/minimax-m2.5 | 3/2/0 | 154 tok | ~7,500 tok | 196k context; good for long sessions |
+
+**`/gm list` hallucination note:** Hermes-405B and Llama-3.3-70B invented campaign names when asked to list campaigns. GPT-OSS, Gemma, Qwen, and MiniMax responded cleanly with "no campaigns found." For `/gm list` correctness, prefer models from the second group or populate `tools.json` so the model uses Glob instead.
+
+### Free tier vs paid
+
+| | Free (`:free`) | Paid |
+|--|----------------|------|
+| Rate limit | ~200 req/day, 20 req/min | Effectively unlimited |
+| Cost | $0 | ~$0.01–0.12 per full probe run |
+| Daily sessions (20 turns) | ~10 sessions | Unlimited |
+| Model availability | Subset of paid models | All models |
+
+The free tier is viable for casual play — 10 sessions/day covers most use. For extended campaigns or group play where multiple people are making requests, load a small credit balance (~$5–10) and use paid endpoints.
+
+**Rate limit note:** Free-tier daily caps are account-wide. Running `probe/run-openrouter.sh` against multiple models in one day will exhaust the cap. Use 90s gaps between models, or use `--paid` mode.
+
+### Recommended model IDs
+
+**Best overall (paid):**
+```
+nousresearch/hermes-3-llama-3.1-405b    # richest narration, 405B
+openai/gpt-oss-120b                     # verbose, atmospheric
+qwen/qwen3-next-80b-a3b-instruct        # efficient, reliable routing
+```
+
+**Best free tier:**
+```
+nvidia/nemotron-3-super-120b-a12b:free  # only tested free model; PASS:3
+meta-llama/llama-3.3-70b-instruct:free # expect rate limits
+google/gemma-3-27b-it:free             # expect rate limits
+```
+
+**Best for long sessions (196k+ context):**
+```
+minimax/minimax-m2.5                    # 196k context window
+```
 
 ---
 

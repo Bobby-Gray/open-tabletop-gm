@@ -1,6 +1,12 @@
-# GM Skill — Scripts Reference
+# GM Skill — Scripts Reference (Legacy)
 
-Full syntax for all Python helper scripts. Read this file at `/gm load`, then it stays in context for the session.
+> **Superseded.** This file has been split into focused script reference files that are loaded on demand:
+> - `scripts/startup.md` — display push commands (session start with display ON)
+> - `scripts/combat.md` — combat.py, tracker.py (loaded at `/gm combat start`)
+> - `scripts/general.md` — dice.py, calendar.py, campaign_search.py (loaded on demand)
+> - `scripts/character.md` — ability-scores.py, character.py, xp.py (loaded for character commands)
+>
+> This file is retained for reference only. Do not load it at session start.
 
 **Skill base directory:** the directory containing SKILL.md (referenced below as `<skill-base>`)
 **Campaigns directory:** `~/open-tabletop-gm/campaigns/`

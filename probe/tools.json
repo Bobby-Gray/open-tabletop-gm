@@ -1,0 +1,11 @@
+{
+  "_instructions": "Paste the tool definitions block from a LM Studio debug log here. In the log, look for the request body sent by OpenCode — it will contain a 'tools' array. Copy that array as the value of 'tools' below. Once populated, probe.py will use these definitions for all test runs so the model can actually issue tool calls.",
+  "_how_to_capture": [
+    "1. Enable LM Studio debug logging (Server tab → Log Level: Debug)",
+    "2. Start an OpenCode session and run /gm load <campaign>",
+    "3. Open the LM Studio log (default: ~/Library/Application Support/LM Studio/logs/)",
+    "4. Find the POST /v1/chat/completions request body — it will be a large JSON object",
+    "5. Extract the 'tools' array from that JSON and paste it as the value below"
+  ],
+  "tools": []
+}

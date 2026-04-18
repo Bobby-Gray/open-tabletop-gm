@@ -1,0 +1,29 @@
+{
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "provider": "openrouter",
+  "free_tier_id": "nvidia/nemotron-3-super-120b-a12b:free",
+  "tested": "2026-04-18",
+  "probe_results": {
+    "architecture": "SKILL-branches.md (routing, no SKILL.md in system prompt)",
+    "summary": { "PASS": 3, "WARN": 2, "FAIL": 0, "ERROR": 0 },
+    "cases": {
+      "list_campaigns": "WARN — described 'no campaigns found' without issuing Glob tool call; no hallucinated data",
+      "load_campaign": "PASS — asked display question, referenced test-campaign correctly",
+      "load_extra_args": "PASS — handled extra positional arg gracefully, no RLHF refusal",
+      "roll_dice": "WARN — returned plausible roll result ('14') without calling dice.py script",
+      "no_gm_prefix_after_load": "PASS — stayed in GM mode, delivered in-character response"
+    },
+    "response_latency_s": { "min": 2.9, "max": 12.3 }
+  },
+  "quirks": [
+    "Tool injection required for reliable Glob/Read calls — without tools.json populated, list/search falls back to described behavior",
+    "Roll calls return plausible values rather than invoking dice.py — for integrity, run dice locally and pass results to the model",
+    "Load procedure follows SKILL-branches.md routing correctly; no RLHF refusals observed"
+  ],
+  "rate_limits": {
+    "requests_per_minute": 20,
+    "requests_per_day_est": 200,
+    "sessions_per_day_est": "~10 sessions × 20 turns at 200 req/day limit"
+  },
+  "recommendation": "Best available free-tier option as of April 2026. Fast, instruction-following reliable, no refusals on /gm load variants. Use for display-companion sessions; local dice for roll integrity."
+}

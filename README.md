@@ -80,9 +80,16 @@ Point OpenCode at this skill by adding the following to your OpenCode config (`~
 
 ```json
 {
-  "instructions": "/path/to/open-tabletop-gm/SKILL.md"
+  "instructions": [
+    "/path/to/open-tabletop-gm/no_think.md",
+    "/path/to/open-tabletop-gm/paths.md",
+    "/path/to/open-tabletop-gm/SKILL-commands.md",
+    "/path/to/open-tabletop-gm/SKILL-branches.md"
+  ]
 }
 ```
+
+`SKILL.md` (the GM persona) is not loaded at startup — it is read from disk the first time a session is loaded, keeping the standing system prompt lean (~2,300 tokens). See [docs/LLM-GUIDE.md](docs/LLM-GUIDE.md) for why this matters on smaller models.
 
 For a local model via LM Studio, add your provider config:
 
@@ -136,7 +143,8 @@ The skill walks you through world creation, tone selection, and character setup.
 | `/gm world` | Display world notes |
 | `/gm quests` | Display active quests and open threads |
 | `/gm tutor on\|off` | Toggle learning mode hints |
-| `/gm display start\|stop` | Start/stop the cinematic display companion |
+| `/gm display on [--lan]` | Start the cinematic display companion (optionally in LAN mode) |
+| `/gm display off` | Stop the display companion |
 
 ---
 
@@ -171,9 +179,11 @@ See [display/README.md](display/README.md) for full documentation.
 
 ```
 open-tabletop-gm/
-  SKILL.md              ← GM core (load this in OpenCode)
-  SKILL-commands.md     ← full command procedures
-  SKILL-scripts.md      ← script syntax reference
+  SKILL.md              ← GM persona and craft (read at session load, not startup)
+  SKILL-commands.md     ← command signature reference (always in context)
+  SKILL-branches.md     ← branch router: maps each command to its procedure (always in context)
+  no_think.md           ← suppresses chain-of-thought preamble on local models
+  paths.md              ← absolute path constants for this installation
   SYSTEM-PORTING.md     ← guide for adding new game systems
   systems/
     dnd5e/              ← D&D 5e reference implementation
@@ -184,8 +194,15 @@ open-tabletop-gm/
       data/             ← bundled SRD dataset
     TEMPLATE.md         ← scaffold for building a new system module
   scripts/              ← universal scripts (dice, combat, tracker, calendar, search)
+    startup.md          ← display push syntax (loaded only when display is ON at session start)
+    combat.md           ← combat script syntax (loaded only at /gm combat start)
+    general.md          ← dice, calendar, search syntax (loaded on demand)
+    character.md        ← character creation script syntax (loaded on demand)
   display/              ← cinematic display companion (Flask)
   templates/            ← blank campaign file templates
+  probe/                ← model probe tool for testing instruction-following
+    probe.py            ← runs 5 test cases against any OpenAI-compatible endpoint
+    run-openrouter.sh   ← sequential runner for OpenRouter free/paid models
 ```
 
 Campaign data lives outside the repo:
@@ -200,9 +217,14 @@ Campaign data lives outside the repo:
 
 The Python toolchain offloads everything mechanical — dice, HP math, initiative, timed effects, conditions — so the LLM only handles narration and judgment calls. This means smaller models remain functional even when creative output is limited.
 
-Early testing on Qwen3-32B via LM Studio shows script calls, campaign state, and narration all working well. Testing is being pushed down toward Qwen3-14B -- the Python toolchain offloads all mechanical computation regardless of model size, so the expected failure modes at smaller parameter counts are qualitative (shorter narration, simpler NPC voices) rather than mechanical. For local models, writing a more directive `system.md` with explicit step-by-step procedures improves consistency.
+The main constraint for local models is **agentic tool-call depth**. open-tabletop-gm is not a chatbot — it executes sequences of tool calls (bash, file reads) before responding. Models below ~70B parameters degrade after 4–5 sequential tool calls, drifting from their instructions toward the most recently read content. The routing architecture in SKILL-branches.md reduces the standing system prompt to ~2,300 tokens (down from ~18,000) to mitigate this, but it does not eliminate it at 24B and below.
 
-See [docs/LLM-GUIDE.md](docs/LLM-GUIDE.md) for current results and hardware recommendations.
+**Practical hardware guidance:**
+- **MacBook Air / 24GB unified memory:** Local inference below 70B is unreliable for session load. Use OpenRouter instead — 10 models tested, all scored cleanly, cost is ~$0.01–0.05/session on paid endpoints.
+- **64GB+ machine (M3 Max, M4 Max, or equivalent):** Local inference becomes viable at 70B. Qwen3-70B is the recommended starting point.
+- **Multi-GPU workstation:** All local models viable.
+
+See [docs/LLM-GUIDE.md](docs/LLM-GUIDE.md) for full probe results, token usage data, and hardware recommendations.
 
 See [SYSTEM-PORTING.md — What to expect from smaller/local models](SYSTEM-PORTING.md#what-to-expect-from-smallerlocal-models) for details.
 
