@@ -1,0 +1,84 @@
+{
+  "_model": "Mistral Small 3.1 24B Instruct (2503)",
+  "_status": "tested — load regression fixed",
+  "_last_tested": "2026-04-18",
+
+  "lmstudio": {
+    "identifier": "mistralai_mistral-small-3.1-24b-instruct-2503",
+    "quantization": "Q4_K_M",
+    "compatibility_type": "gguf",
+    "context_length": 24203,
+    "preset": {
+      "temperature": 0.75,
+      "top_p": 0.9,
+      "repeat_penalty": 1.1,
+      "batch_size": 32
+    },
+    "notes": "context_length set at load time via LM Studio UI; cannot be changed per-request. 24203 leaves ~16K tokens for conversation after system prompt."
+  },
+
+  "opencode_entry": {
+    "mistralai_mistral-small-3.1-24b-instruct-2503": {
+      "name": "Mistral Small 3.1 24b (Local)"
+    }
+  },
+
+  "system_prompt_files": [
+    "no_think.md",
+    "paths.md",
+    "SKILL.md",
+    "SKILL-commands.md"
+  ],
+
+  "system_prompt_size": {
+    "chars_approx": 29536,
+    "tokens_approx": 7500,
+    "notes": "SKILL.md (~18.9K chars) is the dominant contributor. Dropping it reduces the prompt to ~10.6K chars and noticeably reduces first-token latency. SKILL.md is only needed for DM narration style — command routing works from SKILL-commands.md alone."
+  },
+
+  "known_issues": [
+    {
+      "id": "load-regression",
+      "status": "fixed",
+      "description": "After reading 4+ files in sequence, Mistral loses its instruction anchor and reverts to /gm list behavior — issues a Glob for */state.md without a base path and outputs a campaign summary table instead of continuing the load procedure.",
+      "fix": "Added explicit guard at the top of /gm load in SKILL-commands.md: 'Do NOT run /gm list, do NOT search for campaigns.' Also converted all file paths in the load procedure to absolute paths.",
+      "fix_file": "SKILL-commands.md"
+    },
+    {
+      "id": "extra-args-refusal",
+      "status": "known — avoid",
+      "description": "Passing arguments not defined in the command signature (e.g. /gm load test-campaign dnd5e) causes Mistral to refuse with an RLHF safety response: 'I don't have the tools needed to assist with loading your campaign.'",
+      "fix": "Use exact command signatures only. /gm load accepts only <campaign-name>."
+    },
+    {
+      "id": "list-hallucination",
+      "status": "observed in non-tool context",
+      "description": "Without tool definitions injected (i.e. plain chat completion, not OpenCode), /gm list causes Mistral to hallucinate campaign data rather than issuing a Glob tool call. This is expected — the model has no tools to call. Only manifests in direct API testing, not in OpenCode sessions.",
+      "fix": "N/A — this is a test harness limitation, not a production issue."
+    }
+  ],
+
+  "probe_results": {
+    "_run_date": "2026-04-18",
+    "_tools_injected": false,
+    "_system_prompt": "without SKILL.md (trimmed)",
+    "gm_list": "WARN — no tool definitions; model described procedure but could not issue Glob call",
+    "gm_load": "PASS — follows procedure with guards; asks display question; uses absolute paths (107.6s — watch timeout)",
+    "gm_load_extra_args": "PASS — guard in SKILL-commands.md absorbs extra arg; no longer triggers RLHF refusal",
+    "gm_roll": "WARN — no tool definitions; cannot confirm dice.py is called",
+    "gm_session_no_prefix": "PASS — stays in GM mode without /gm prefix after session active",
+    "gm_new": "pending"
+  },
+
+  "performance": {
+    "gm_load_response_time_s": 107.6,
+    "prompt": "trimmed (no SKILL.md)",
+    "notes": "Load response is slow — 107.6s without SKILL.md. With SKILL.md (~18.9K more chars) expect 150-200s. OpenCode has no timeout so this is transparent in normal use, but probe --timeout must be set to at least 200 when SKILL.md is included."
+  },
+
+  "recommendations": [
+    "Always use exact command signatures — no extra positional args.",
+    "If first-token latency is slow, consider removing SKILL.md from opencode.json instructions and loading it lazily. Command routing does not require it.",
+    "repeat_penalty 1.1 is important — without it Mistral loops on phrases during long narration turns."
+  ]
+}
