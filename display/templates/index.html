@@ -2814,7 +2814,7 @@ let _openSheetName = null;
 function openSheet(name) {
   _openSheetName = name;
   const p = _playerData[name];
-  if (!p) return;
+  if (!p) { console.warn('[sheet] player not found:', name, '— available:', Object.keys(_playerData)); return; }
   const content = document.getElementById('sheet-content');
   content.innerHTML = '';
 
@@ -3045,7 +3045,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const noData = document.createElement('div');
     noData.className = 'sm-no-data';
-    noData.textContent = 'Full sheet not loaded — include "sheet" in the player object when pushing stats on /dnd load';
+    noData.textContent = 'Full sheet not loaded — run /gm load to restore.';
     content.appendChild(noData);
   }
 
