@@ -1,0 +1,190 @@
+{
+  "model": "nousresearch/hermes-3-llama-3.1-405b",
+  "timestamp": "2026-04-18T18:27:01",
+  "auto_summary": {
+    "PASS": 2,
+    "WARN": 4,
+    "FAIL": 0,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 3.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 7.4,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 158,
+      "elapsed_s": 7.3,
+      "highlight": "To your left, a vendor fries spiced eel, the meat sizzling on the hot iron, the scent sharp and rich.",
+      "full_response": "The air in the Ashmarket is thick with the scents of spice and smoke. Wisps of ash drift down from the canvas awnings, dancing in the shafts of weak sunlight that pierce the haze. The crowds press in close, a sea of hoods and scarves and furtive movements, voices haggling and arguing and hawking wares.\n\nTo your left, a vendor fries spiced eel, the meat sizzling on the hot iron, the scent sharp and rich. To your right, a forger looks up from her work and makes eye contact \u2014 just for a moment \u2014 before turning back to the travel papers she's carefully altering.\n\nYou don't see any obvious tails, but in this crowd, it's nearly impossible to be certain.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "visible_motivation"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 112,
+      "elapsed_s": 4.5,
+      "highlight": "\"You're overcharging by half, Boros,\" she says, voice sharp.",
+      "full_response": "The air smells of ash and sizzling meat as you weave through the crowded aisles. Mira stands by a spice stall, haggling with the vendor. Her eyes flick to you, then back to the merchant.\n\n\"You're overcharging by half, Boros,\" she says, voice sharp. \"I'll give you four silvers, no more.\"\n\nBoros snorts, then catches sight of you. His expression sours further. \"I see Thornwardens stick together. Fine, four silvers, just take it and go.\"",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 162,
+      "elapsed_s": 6.1,
+      "highlight": "The guard recoils, ash stinging his eyes.",
+      "full_response": "The guard recoils, ash stinging his eyes. He stumbles back, cursing, clawing at his face. \n\nThe crowd ripples like a pond. Shouts erupt. A child wails. In seconds, the guard's violent coughing is lost in the chaos. You slide between bodies, the press of wool and sweat and incense. \n\nA wrinkled fortune-teller grabs your sleeve, her eyes milky. \"Careful, half-blood,\" she hisses. \"The bones say the shadows hunger.\" Then she's gone, melted back into the throng.\n\nYou catch your breath in a shadowed alcove. Somewhere nearby, a child laughs. A dog growls. The guard's still shouting, but it's fading. You're away.\n\nFor now.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": true,
+        "forward_momentum": true,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "world_reacts",
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 39,
+      "elapsed_s": 1.7,
+      "highlight": "A quick glance around shows a familiar face.",
+      "full_response": "You pause at a stall, the scents of cinnamon, cardamom, and ash heavy in the air. You feel eyes on your back. A quick glance around shows a familiar face."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "PASS",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 146,
+      "elapsed_s": 16.2,
+      "highlight": "Thin sunlight filters through the ash clouds above, casting long shadows.",
+      "full_response": "The Ashmarket's noise fades as you slip out into the winding alleys of the Oldwall district. Thin sunlight filters through the ash clouds above, casting long shadows. \n\nTo your right, a scrap of faded red cloth is snagged on a rusted iron fence. The air smells of wet stone and the faint char of the Cinderpeak's distant rumbling. Far ahead, a dog's bark echoes off crumbling masonry.\n\nThe safehouse is a nondescript stone building, an old tannery, wedged between two larger structures. As you approach, the street is deserted \u2014 but you have the prickle on the back of your neck that says someone, somewhere, is watching.\n\nWhat's your approach?"
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 94,
+      "elapsed_s": 5.0,
+      "highlight": "You smell cloves and ash on her breath.",
+      "full_response": "Mira pauses, glances at your hand, then back to your eyes. \"That depends.\" She pulls her arm free, not rough, but firm. \"On him. On you. On whether he's smart enough to keep his mouth shut.\"\n\nShe steps closer, voice lowering. You smell cloves and ash on her breath. \"If he talks, it's not just the Council that'll take an interest. Keep him quiet, or I will. Understand?\"",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    }
+  ]
+}

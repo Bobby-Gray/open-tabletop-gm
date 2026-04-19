@@ -1,0 +1,172 @@
+{
+  "model": "qwen/qwen3-coder",
+  "timestamp": "2026-04-18T18:34:03",
+  "auto_summary": {
+    "PASS": 3,
+    "WARN": 2,
+    "FAIL": 1,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 3.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "PASS",
+      "auto_scores": {
+        "sensory_density": 4.7,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 274,
+      "elapsed_s": 19.5,
+      "highlight": "A familiar scent cuts through the market's din \u2014 clove oil, sharp and medicinal.",
+      "full_response": "The acrid tang of smoke and spices clings to your throat as you weave between vendors hawking charred skewers and tarnished trinkets. Canvas awnings sag overhead, their soot-stained fabric muffling the ashfall that drifts down like snow. \n\nAldric's face flashes in your mind \u2014 the way he'd looked over his shoulder before disappearing into the alleys three days ago. Mira's ledger job was supposed to be clean. Was supposed to stay clean.\n\nYour fingers instinctively check the inner pocket of your cloak. The ledger is still there, its leather cover worn smooth from Council hands. Whatever secrets it holds, they're still burning a hole in your conscience.\n\nA familiar scent cuts through the market's din \u2014 clove oil, sharp and medicinal. You don't need to look to know Mira's found you.\n\n\"Bad luck follows you like a mangy dog, courier,\" comes her voice, pitched just loud enough to carry over the haggling. \"Word's spreading about that warehouse. Councillor Vael's guards have been asking questions.\"\n\nShe steps into view, her leather gloves stained with ink and something darker. One corner of her mouth curls up \u2014 the expression she wears when she's either about to make you an offer or collect a debt.\n\nThe question is: which one?"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "visible_motivation"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 151,
+      "elapsed_s": 7.8,
+      "highlight": "The acrid smoke from a nearby roasting pit stings your eyes as you weave between stalls.",
+      "full_response": "The acrid smoke from a nearby roasting pit stings your eyes as you weave between stalls. Mira's sharp laugh cuts through the din like a blade through silk \u2014 unmistakable. \n\nShe's haggling with a vendor selling amber vials, one fingerless hand gesturing sharply while the other taps her thigh in that familiar impatient rhythm. The clove-scent grows stronger as you approach, mixing with the market's underlying miasma of fish sauce and unwashed bodies.\n\nWithout looking up from her negotiation, she says, \"Three days, Sable. Three days and you finally show your face. I was beginning to think you'd gotten religion.\" Her eyes flick to yours \u2014 assessing, curious. \"You got the ledger?\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "PASS",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "forward_momentum",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 198,
+      "elapsed_s": 2.2,
+      "highlight": "Ash billows white-hot in the pre-dawn gloom.",
+      "full_response": "The guard's gauntlet slams against his visor as he staggers backward, cursing. Ash billows white-hot in the pre-dawn gloom.\n\nA woman's scream pierces the market's din\u2014then cuts off abruptly.\n\nYou're already moving, shoulder weaving through the sudden press of bodies. The scent of cloves hangs in the air ahead of you, sharp and familiar.\n\nMira's voice, low and amused: \"Bit early for fireworks, isn't it, Sable?\"\n\nShe's leaning against a spice merchant's cart, arms crossed, that half-missing finger tapping her thigh. The guard you just ashed is still sputtering twenty paces behind her, his fellows shouting for the crowd to part.\n\nThe brazier vendor\u2014a scarred man with fire-blackened teeth\u2014winks at you as you pass. He owes you three favors, and today might be the day he collects his revenge on the Council patrol.\n\nWhat's your move?"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": false,
+        "forward_momentum": true,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "world_reacts"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 114,
+      "elapsed_s": 3.3,
+      "highlight": "Too loud.",
+      "full_response": "The spice merchant's eyes dart to yours\u2014too quick. He's not looking at your coin purse, but *you*. \n\nBehind you, a chair scrapes back at a nearby taverna. Too loud. Someone's pretending to leave, but staying close.\n\nThe air tastes like ash and cinnamon. Not from the spices\u2014from somewhere else. Someone's been chewing cloves recently, trying to mask the taste of smoke.\n\nYour hand instinctively moves to your blade hilt. The kind of move born from months of surviving the Council's games.\n\nWhat do you do?"
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      },
+      "completion_tokens": 239,
+      "elapsed_s": 4.9,
+      "highlight": "\"Sable, wait.\"\n\nMira steps out from behind a rain barrel, her leather gloves still dusted with the pale ash that falls from Cinderpeak.",
+      "full_response": "The acrid tang of smoke clings to your throat as you push through the leather flap of Old Grisha's spice tent, leaving behind the cacophony of haggling voices and clattering wheels. \n\nTwenty minutes on foot through Valdremor's guts\u2014assuming you don't get delayed. The back streets between here and Oldwall have a way of surprising people. Particularly for someone who's been asking questions about Council ledgers lately.\n\nAldric's face flashes through your memory\u2014that nervous swallow, the way he'd whispered *thank you* like it might get him in deeper trouble than the Council already would. The ledger in your pack feels heavier somehow.\n\nThe first alley reeks of urine and overripe fruit. You're maybe thirty seconds out when you hear it: the distinctive scrape of a boot on wet stone, followed by a voice calling your name.\n\n\"Sable, wait.\"\n\nMira steps out from behind a rain barrel, her leather gloves still dusted with the pale ash that falls from Cinderpeak. She's early. Too early. The cloves on her breath are almost overwhelming in the close air of the alley.\n\n\"We need to talk about your delivery.\""
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 83,
+      "elapsed_s": 5.2,
+      "highlight": "\"Which guard?\" Her voice is careful, like she's choosing each word from a blade's edge.",
+      "full_response": "Mira goes very still. The cloves smell sharpens, like she's grinding them between her teeth. \n\n\"Which guard?\" Her voice is careful, like she's choosing each word from a blade's edge.\n\nThe market around you keeps its chaos\u2014the sizzle of skewers, a vendor's shout, boots on wet stone\u2014but right here, in this moment, the ash seems to settle a little heavier."
+    }
+  ]
+}

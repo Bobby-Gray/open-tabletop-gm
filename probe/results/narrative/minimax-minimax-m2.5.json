@@ -1,0 +1,176 @@
+{
+  "model": "minimax/minimax-m2.5",
+  "timestamp": "2026-04-18T18:35:20",
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 4,
+    "FAIL": 2,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 4.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 2.5,
+        "length": "DUMP",
+        "forward_momentum": true,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 430,
+      "elapsed_s": 4.7,
+      "highlight": "Hawkers shout overlapping prices for salt fish, stolen glass, cures for ailments no one admits to having.",
+      "full_response": "The Ashmarket lives up to its name \u2014 a perpetual haze hangs beneath the tarpaulin roofs, carrying the bite of woodsmoke and the copper tang of freshly spilled blood from a butcher's stall. The crowd presses tight; elbows and shoulders jostling you from every direction. Hawkers shout overlapping prices for salt fish, stolen glass, cures for ailments no one admits to having.\n\nYou keep your hood down and your eyes up.\n\nTwo blocks in, you catch it: a man near the spice merchant's stall, pretending to haggle over cumin but watching you in his peripheral vision. Thin. Wiry. A scar bisecting his left eyebrow \u2014 looks like a blade wound, years healed. Not Thornwarden colors, but not Council cut either.\n\nThen again, you're in Thornwarden territory. This could be anyone.\n\nThe question is: do you loop around and get a better look at him, or trust the crowd and keep moving toward wherever you were headed?"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "has_trait_marker",
+          "visible_motivation"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": true,
+        "has_physical_gesture": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "visible_motivation"
+      ],
+      "failed_dimensions": [
+        "has_physical_gesture",
+        "length"
+      ],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 4,
+        "gm_craft": 4
+      },
+      "completion_tokens": 436,
+      "elapsed_s": 3.2,
+      "highlight": "She doesn't turn as you approach, but her voice cuts through the market din: \"Three weeks late for a debrief, courier.",
+      "full_response": "The Ashmarket never sleeps \u2014 or at least, it never stops coughing. A haze of woodsmoke and frying oil hangs beneath the canvas canopies, threading between stalls of brass pots, salted fish, and one cart selling nothing but small cages of singing birds.\n\nMira stands at a textile stall, running her thumb along a bolt of deep-blue dye like she's assessing a wound. She's got her back to a spice merchant, close enough to steal his inventory but not close enough to seem threatening. Smart positioning. She's always smart.\n\nHer missing finger is wrapped in black cloth today \u2014 old habit or fresh wound, you can't tell.\n\nShe doesn't turn as you approach, but her voice cuts through the market din: \"Three weeks late for a debrief, courier. I was starting to think you'd finally taken that boat to Kessering and left me holding your mess.\"\n\nA pause. Then she glances over her shoulder, eyes like two chips of flint.\n\n\"The ledger's contents have been *interesting*, by the way. You're going to want to tell me about the guard you let walk free. Personally, I think that's a story I need to hear twice.\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 18.7,
+      "highlight": "The ash blooms outward like a dark flower, catching the guard full in the face.",
+      "full_response": "The ash blooms outward like a dark flower, catching the guard full in the face. He chokes, staggered, hands flying to his eyes \u2014 and you're already moving,Shoulder-first into"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": true,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 476,
+      "elapsed_s": 5.7,
+      "highlight": "Smoke from the southern foundries hangs low, mingling with the smell of cardamom and smoked eel.",
+      "full_response": "Smoke from the southern foundries hangs low, mingling with the smell of cardamom and smoked eel. The stall owner \u2014 a thick-armed woman with ash in her hair \u2014 gestures at you to buy or move on.\n\nYou're not wrong to pause. Two minutes back, a figure in Council gray hung back at a fishmonger's stall. Young. Fidgeting. Checking you over a string of silver perch and failing to look casual.\n\nIt's the guard. The one you let go.\n\nAldric's got a new bruise on his jaw \u2014 Council issue \u2014 and he's chewing his lip like he's working up the nerve for something. He's keeping distance, but not enough. Three weeks working the streets and he'd already learn how to tail someone properly.\n\nHe hasn't made a move yet. The question is whether you want to let him close the gap or slip into the crowd and see if he follows."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "DUMP",
+        "forward_momentum": true,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 444,
+      "elapsed_s": 5.6,
+      "highlight": "You\u8a18\u5f97 she said it was \"damp, dark, and full of rats, but no Watch.\" You've never used it.",
+      "full_response": "The Ashmarket's din fades behind you as you duck into the narrow passage between a cured-meat smoker and a tailor's workshop. The change is immediate \u2014 quieter, darker, the stone walls here slick with condensation and grime.\n\nThe back streets to Oldwall snake through the lower district's underbelly. You know these alleys by now: the one that always smells of lamp oil, the junction where someone carved a crow into the lintel (Thornwarden marking, meaning the path is safe), the collapsed arch that forces a detour through a courtyard full of chained dogs.\n\nA few things to consider:\n\n- **Direct route** through the main back channel \u2014 faster but more foot traffic, including City Watch patrols that stick to the wider alleys.\n- **Slower route** through the sinking district \u2014 half-collapsed buildings, fewer people, but the footing is treacherous and you'd be exposed if anything goes wrong.\n- **Mira's shortcut** \u2014 she mentioned once that there's a passage through the old cistern system. You\u8a18\u5f97 she said it was \"damp, dark, and full of rats, but no Watch.\" You've never used it.\n\nWhich way you heading?"
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "WARN",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 12.3,
+      "highlight": "\"That depends on who he talks to and what he remembers.\" She rolls her shoulder free of your grip \u2014 not hard, just done.",
+      "full_response": "Mira's eyes drop to your hand on her arm, then back up to your face. No flinching. No pulling away.\n\n\"That depends on who he talks to and what he remembers.\" She rolls her shoulder free of your grip \u2014 not hard, just done. \"He's Aldric. Works the night shift at the Sevenspool warehouse. Grew up in the Cindermouth. Father was a smelter. Died when the furnace blew.\" She ticks off facts like she's reading a manifest. \"He's not Council-born. They don't trust him. They never will. That's why they put him on dead-end posts.\"\n\nShe glances toward the eastern archway, where a fishmonger is shouting about halved carp.\n\n\"He's scared. Scared men make mistakes \u2014 they talk too much, or they don't talk at all and someone notices the silence.\" She pulls a slender pipe from her belt, not lighting it, just turning it in her fingers. \"Right now he's got two choices: tell the Council some half-formed story about a thief who spared him, or keep his mouth shut and hope nobody asks.\"\n\n\"And if someone asks?\"\n\nMira's"
+    }
+  ]
+}

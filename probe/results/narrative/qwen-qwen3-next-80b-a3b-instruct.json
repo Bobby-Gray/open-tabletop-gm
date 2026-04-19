@@ -1,0 +1,175 @@
+{
+  "model": "qwen/qwen3-next-80b-a3b-instruct",
+  "timestamp": "2026-04-18T18:32:53",
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 3,
+    "FAIL": 3,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 4.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 4.1,
+        "length": "DUMP",
+        "forward_momentum": true,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 4,
+        "gm_craft": 4
+      },
+      "completion_tokens": 488,
+      "elapsed_s": 4.6,
+      "highlight": "You hear it then\u2014a soft, wet *click*.",
+      "full_response": "The air in the Ashmarket clings like wet wool\u2014thick with the stink of charred eel, burning cloves, and something sweeter, rotting beneath the stalls. Ash spirals down through the cracked canopy overhead, fine as powdered bone, glittering in the dim lantern light. You keep your hood low, shoulder brushing the damp wool of a spice-seller\u2019s tarp as you slip past a stall where a woman is hawking \u201cauthentic Cinderpeak relics\u201d\u2014a pile of blackened bones strung on twine that *definitely* didn\u2019t come from a goat.\n\nYour boots crunch on ash and broken ceramic. To your left, a child with soot-streaked cheeks offers you a skewer of charred limes. You shake your head. She shrugs and mutters, \u201cLast one before the Wardens come.\u201d\n\nYou glance over your shoulder.\n\nThree paces behind\u2014a man in a stained Council courier\u2019s coat. Not old enough to be a veteran. Too clean for this district. And he\u2019s not looking at the goods. He\u2019s looking at *you*.\n\nHe adjusts his satchel. A little too high. Too tight. Someone\u2019s got a blade strapped under there.\n\nThen\u2014movement to your right. A hunched vendor selling \u201cclean ash\u201d (it\u2019s just pulverized brick, but people buy it for rituals) drops her basket. As she bends, her sleeve rides up.\n\nA Thornwarden tattoo. A thorn wrapped around a broken key.\n\nIt\u2019s Mira\u2019s mark.\n\nAnd she\u2019s not selling ash.\n\nShe\u2019s watching *him*.\n\nThe courier doesn\u2019t know he\u2019s being watched.\n\nAnd you?\n\nYou\u2019re standing right between them.\n\nThe ash keeps falling.\n\nThe vendor straightens. Her eyes meet yours\u2014just for a heartbeat.\n\nShe gives the tiniest nod.\n\n*He\u2019s not here for the ledger.*\n\n*He\u2019s here for you.*\n\nAnd now you\u2019ve got two shadows.\n\nOne in Council blue.\n\nOne in Guild thorn.\n\nAnd the third? The one you can\u2019t see yet.\n\nThe one who left the warehouse guard alive.\n\nYou hear it then\u2014a soft, wet *click*.\n\nLike a finger tapping bone.\n\nFrom the alley behind you.\n\n*Someone\u2019s counting steps.*\n\nYou\u2019ve got three seconds before the crowd swallows you\u2014or the knives come out.\n\nWhat do you do?"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "physical_gesture",
+          "visible_motivation"
+        ],
+        "has_dialogue": false,
+        "visible_motivation": true,
+        "has_physical_gesture": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "visible_motivation",
+        "has_physical_gesture"
+      ],
+      "failed_dimensions": [
+        "has_dialogue",
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 5.9,
+      "highlight": "Her eyes are the color of old bruises.",
+      "full_response": "The ash drifts like greasy snow between the stalls, catching in the folds of Mira\u2019s coat as she leans against a stall selling blackened lanterns\u2014each one etched with the cracked face of some forgotten god. She\u2019s not waiting. Not exactly. But she\u2019s not moving, either. Her left hand\u2014missing the tip of the index finger\u2014drags idly along the edge of a stack of forged Council seals, smudging charcoal dust into the grooves.\n\nYou see her before she sees you.\n\nThe scent hits first\u2014cloves, sharp and sweet, cutting through the smoke of roasting eel and the sour tang of wet wool drying on lines overhead. She doesn\u2019t turn. Doesn\u2019t need to.\n\n\u201cDidn\u2019t think you\u2019d come back,\u201d she says, voice like gravel wrapped in silk. \u201cMost people who let guards walk away from a job don\u2019t come back to the people who paid them.\u201d\n\nA stallhand nearby drops a basket of dried fungus. It clatters like bones. Mira doesn\u2019t flinch.\n\nShe finally turns. One eyebrow arched. Her eyes are the color of old bruises.\n\n\u201cYou got the ledger,\u201d she says. \u201cAnd you let Aldric live. That\u2019s\u2026 inconvenient. And oddly noble. For you.\u201d\n\nShe pulls a small, leather-bound book from under her coat. Not the ledger. Something else. Thicker. Soaked in oil at the spine.\n\n\u201cGuess what came in this morning,\u201d she murmurs, thumbing the cover. \u201cA letter. Signed by Councillor Vael. Addressed to the Ashwardens.\u201d\n\nShe flips it open. A single line, written in crisp, cold script:\n\n> *The courier who spared the guard is a liability. Eliminate him before he talks.*\n\nShe snaps it shut.\n\n\u201cYour face,\u201d she adds, voice dropping lower, \u201chas suddenly got a very high price tag.\u201d\n\nA gust of wind kicks up a swirl of ash between you. Somewhere, a child laughs. A hawker shouts about *authentic* relics from the Old Empire.\n\nMira holds the book out\u2014just an inch.\n\n\u201cYou want to live through the week?\u201d she says. \u201cYou take this. You find out what Vael\u2019s planning next. And you don\u2019t let him find you before you do.\u201d\n\nShe doesn\u2019t say *I\u2019m helping you*. She doesn\u2019t have to.\n\nHer missing finger taps the cover once.\n\n*Tick"
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 4.1,
+      "highlight": "Not rough.",
+      "full_response": "The ash hits like a cloud of ground bone \u2014 gritty, hot, and smelling faintly of charred meat and old regret. The guard yelps, clawing at his eyes, stumbling backward into a cart of pickled eel. The scent of brine and vinegar explodes into the air as the cart tips, sending glass jars clattering like broken teeth.\n\nPeople scream. Someone drops a sack of dried mushrooms. A street vendor yells, \u201cThat\u2019s my third cart this week!\u201d \u2014 then immediately starts looting the spilled goods.\n\nYou\u2019re already gone \u2014 ducking under a awning strung with lanterns that sway like guilty spirits \u2014 but you don\u2019t make it far.\n\nA hand grabs your wrist. Not rough. Not threatening. *Trembling.*\n\nYou turn.\n\nIt\u2019s Aldric.\n\nHe\u2019s wearing a ragged Council livery, but it\u2019s open over a patched tunic. His face is pale, sweat-slick under the ashfall, eyes wide \u2014 not with fear of you\u2026 but with *hope.*\n\n\u201cSable,\u201d he breathes, voice barely louder than the hiss of falling ash. \u201cYou\u2014 you\u2019re alive. I *knew* you\u2019d come back.\u201d\n\nBehind him, the guard is still howling, \u201cTHIEF! WHITE-HANDED THIEF!\u201d \u2014 but the crowd is too busy laughing, stealing, and stepping over spilled pickles to care.\n\nAldric\u2019s grip tightens. He pulls you sideways into a narrow alley between a cobbler and a fortune-teller who\u2019s selling \u201cAsh-Proof Luck Charms\u201d (three copper, guaranteed to repel curses\u2026 or at least, she says that\u2019s what the last guy claimed).\n\nHe glances over his shoulder \u2014 then shoves a folded slip of parchment into your hand.\n\n\u201cIt\u2019s a list,\u201d he whispers. \u201cNames. Locations. Shift changes. I copied it from the barracks ledger last night. I\u2026 I didn\u2019t know what else to do.\u201d\n\nHis voice cracks.\n\n\u201cI\u2019m not a hero. But I can\u2019t be a puppet anymore.\u201d\n\nAbove you, the ash falls heavier now, like the sky is weeping cinders.\n\nAnd in his eyes \u2014 you see it.\n\nThe same look you had, the night you saw Vael order the execution of a child who knew too much.\n\nYou didn\u2019t save him.\n\nBut maybe\u2026 you can save this one.\n\nWhat do you do?\n\n*(The parchment is"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": true,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 476,
+      "elapsed_s": 14.2,
+      "highlight": "Not ash.",
+      "full_response": "You pause at the spice stall \u2014 not because you want cardamom or saffron, but because the scent of *cloves* is thick in the air, and you know better than to ignore a feeling that tastes like old smoke and bad decisions.\n\nThe vendor, a one-eyed woman with fingers stained ochre from crushed peppers, slides a tiny sack of black pepper toward you without looking up. \u201cThree copper. For the cough. Or the conscience.\u201d\n\nYou don\u2019t take it.\n\nBehind the stack of dried mushrooms and powdered ashroot, you see him.\n\nAldric.\n\nHe\u2019s leaning against a rusted lantern post three stalls down, pretending to tie his bootlace. But his hands are shaking. His uniform tunic \u2014 the Council\u2019s dull grey wool with the silver thread insignia \u2014 is newsprint-stained at the collar. He\u2019s been wearing it since the warehouse. *Too long.* And he\u2019s not looking at the crowd. He\u2019s looking at *you.*\n\nOne of his boots is unlaced. The other? Perfectly tied.\n\nHe hasn\u2019t moved in five minutes. Not because he\u2019s hiding \u2014 because he\u2019s *terrified* of moving.\n\nA whiff of smoke curls past you. Not ash. Not spices.\n\n*Cloves.*\n\nYou don\u2019t turn.\n\nBut you feel her before you see her.\n\nMira slides up beside you like ink in water, her left hand tucked behind her back \u2014 the one missing the fingertip. She doesn\u2019t look at Aldric. Doesn\u2019t need to.\n\n\u201cThought you were done with grateful guards,\u201d she murmurs, voice like rusted hinges. \u201cHe\u2019s been circling since the smoke bells rang. Thinks you\u2019re his salvation. Or his doom. Hard to tell which.\u201d\n\nShe plucks a single clove from the stall\u2019s display, rolls it between her thumb and forefinger, and drops it into your coat pocket.\n\n\u201cDon\u2019t let him talk,\u201d she says. Then, softer: \u201cYou let him live. Now he\u2019s got a voice. And voices\u2026 have weight.\u201d\n\nAldric takes a step forward.\n\nHe opens his mouth.\n\nThe spice vendor glances at him \u2014 once \u2014 and returns to rearranging her sacks. As if she\u2019s seen this before.\n\nAnd maybe she has.\n\nThe clove in your pocket is still warm."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "FAIL",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 484,
+      "elapsed_s": 6.4,
+      "highlight": "But you feel it: eyes.",
+      "full_response": "The Ashmarket hums like a wasp\u2019s nest\u2014steam from dumpling carts curls into the ash-flecked air, haggling voices rise and fall, and somewhere nearby, a child laughs too loud, drawing a sharp *shhh* from her mother. You slip between a stall selling glowing lichen tea and a man peddling \u201cauthentic Cinderpeak relics\u201d (mostly broken pottery and one very suspiciously carved rat).\n\nYou\u2019ve got the ledger tucked inside your coat\u2014stiff with dried ink and secrets\u2014and your boots are silent on the wet cobbles. But you feel it: eyes. Not the usual market-greedy kind. The *watching* kind.\n\nA flicker of movement near a rusted iron gate\u2014*him*. Aldric. The guard you let live.\n\nHe\u2019s half-hidden behind a stack of fish crates, pale face smudged with soot, eyes wide with panic. He\u2019s not armed. No uniform. Just a stained tunic and a scarf wound tight around his neck like he\u2019s trying to hide something\u2014or *someone*.\n\nHe doesn\u2019t call out. Doesn\u2019t wave. Just lifts his left hand\u2014index finger broken off at the knuckle, like he\u2019s holding a ghost\u2014and presses it against his chest.\n\n*He remembers.*\n\nAnd then\u2014a clove-scented whisper cuts through the crowd.\n\n> \u201cYou\u2019re walking like a man who knows he\u2019s already been marked, Sable.\u201d\n\nMira steps from the shadow of a puppet booth, her missing fingertip tapping against a brass pocket watch. She doesn\u2019t smile. That\u2019s worse than any sneer.\n\n> \u201cYou\u2019ve got ten minutes before the Council\u2019s enforcers swarm the Oldwall alleys. Aldric here? He\u2019s got a better route. \u2026And a debt to collect.\u201d\n\nBehind her, the sound of boots on brick. Close.\n\nThe market\u2019s noise fades to a dull roar.\n\nYour move.\n\n**What do you do?**\n\n- Trust Aldric. Follow him\u2014quick, quiet, through the trash-choked tunnels under the fishmongers.\n- Trust Mira. Let her lead\u2014you know she\u2019s got a hidden path, and you know she\u2019s got leverage.\n- *Do something else.* (You\u2019ve got the ledger. You\u2019ve got skills. And you\u2019re not walking into a trap without a plan.)"
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "WARN",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 463,
+      "elapsed_s": 13.8,
+      "highlight": "Lets the silence thicken.",
+      "full_response": "Mira doesn\u2019t flinch. Doesn\u2019t pull away. Just turns her head slow, eyes like obsidian chips catching the flicker of a nearby lantern. The scent of cloves grows sharper, cloying, almost medicinal.\n\n\u201cYou let him live,\u201d she says. Not a question. A verdict.\n\nA vendor two stalls down drops a crate of dried river-moss. It crashes like a thousand brittle bones. The crowd murmurs, but no one looks over.\n\nShe leans in. Close enough that you feel the heat of her breath, the whisper of a scar along her jaw.\n\n\u201cHe\u2019s *young*, Sable. Scared. Wears his guilt like a second skin. He didn\u2019t see your face. Not clearly. Not enough to name you.\u201d\n\nShe pauses. Lets the silence thicken.\n\n\u201cBut he *saw you care*.\u201d\n\nHer missing finger taps once against your wrist\u2014quick, sharp, a warning.\n\n\u201cHe\u2019s been asking questions. Down at the Ashmarket\u2019s back alleys. Slipping coin to beggars who used to work the Council\u2019s docks. Saying he \u2018owes a debt to the one who didn\u2019t kill him.\u2019\u201d\n\nMira\u2019s mouth quirks\u2014not quite a smile.\n\n\u201cThe Thornwarden don\u2019t like loose ends that *remember kindness*.\u201d\n\nShe pulls free, steps back. Pulls a small, crumpled scroll from her sleeve. Tosses it into your palm.\n\n\u201cHere\u2019s your next job. Find the ledger\u2019s twin\u2014hidden in the old granary beneath the Clockspire. It\u2019s got names. *Real* names. Not the ones the Council burns.\u201d\n\nShe turns again, but pauses.\n\n\u201cOh. And Sable?\u201d\n\nHer voice drops, low, almost a whisper over the market\u2019s din.\n\n\u201cIf Aldric\u2019s still alive by dawn\u2026 he\u2019s not a liability anymore.\u201d\n\nShe\u2019s gone before you can reply.\n\nBehind you, someone drops a clay cup. It shatters. Ash swirls in the air like faulty snow.\n\nAnd in your hand\u2014the scroll\u2019s wax seal is cracked. Half-melted.\n\nIt\u2019s not the Thornwarden\u2019s thorn-and-chain.\n\nIt\u2019s a raven. With one broken wing.\n\nAnd a single word, scratched beneath it in charcoal:\n\n> *Remember.*"
+    }
+  ]
+}

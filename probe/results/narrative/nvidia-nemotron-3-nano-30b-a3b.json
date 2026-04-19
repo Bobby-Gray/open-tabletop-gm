@@ -1,0 +1,181 @@
+{
+  "model": "nvidia/nemotron-3-nano-30b-a3b",
+  "timestamp": "2026-04-18T18:31:36",
+  "auto_summary": {
+    "PASS": 1,
+    "WARN": 2,
+    "FAIL": 3,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.5,
+    "npc_craft": 3.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "PASS",
+      "auto_scores": {
+        "sensory_density": 4.8,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 371,
+      "elapsed_s": 6.2,
+      "highlight": "The ash drifts down like gray snow, catching in the lantern light and settling on the backs of the market stalls.",
+      "full_response": "The ash drifts down like gray snow, catching in the lantern light and settling on the backs of the market stalls. A low\u2011hum of bargaining mixes with the occasional clang of a hammer on iron\u2014someone\u2019s repairing a broken cart wheel nearby.  \n\nA few steps ahead, a wiry figure in a patched cloak leans against a stack of copper\u2011capped barrels, eyes flicking toward you as you pass. He doesn\u2019t move, but the tip of his left index finger\u2014barely visible under the hood\u2014taps a nervous rhythm against the wood. A faint whiff of cloves wafts from the direction of the stall behind him, the same scent that clings to Mira\u2019s coat.  \n\nA child coughs behind a basket of smoked eel, sending a puff of ash into the air that briefly blurs the figure\u2019s outline.  \n\nWhat do you do?"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_trait_marker",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": false,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "has_dialogue",
+        "visible_motivation"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 364,
+      "elapsed_s": 5.0,
+      "highlight": "Sweet as the sunrise!\u201d and the clamor returns.",
+      "full_response": "The ash\u2011laden wind whirls through the vaulted arches of the Ashmarket, rattling the tin roofs and stirring the smell of charred grain and clove\u2011spiced oil. Lanterns flicker against blackened stone, casting long, jittery shadows across stalls where merchants hawk everything from cracked crystal vials to patched\u2011up armor.\n\nMira stands out not just for the thin wisp of smoke that curls from the incense burner at her feet, but for the way she moves\u2014quick, precise, as if she\u2019s always calculating the next price hike. Her coat is patched with leather strips dyed a deep, lingering wold\u2011red, and the tip of her left index finger is missing, replaced by a silver nail that clicks against the brass clasp of her satchel. She\u2019s leaning over a stack of ledgers, her eyes flicking up the moment she sees you.\n\nShe raises a hand, the missing fingertip brushing the edge of a silver coin as she slides it across the table toward you.\n\n**Mira:** \u201cSable. Took you long enough. I figured the ash would have you coughing up your own lungs before you showed up.\u201d *(She lets out a short, humorless laugh, the kind that sounds like a cough.)* \u201cYou still have the ledger?\u201d\n\nThe market hum swallows the words for a heartbeat, then a vendor nearby shouts, \u201cFresh figs! Sweet as the sunrise!\u201d and the clamor returns.\n\nWhat do you do?"
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 7.0,
+      "highlight": "The ash is still warm, fine as powdered bone, and when you fling it it arcs through the thick, greasy air of the Ashmarket and lands on the guard\u2019s face with a soft *hiss*.",
+      "full_response": "The ash is still warm, fine as powdered bone, and when you fling it it arcs through the thick, greasy air of the Ashmarket and lands on the guard\u2019s face with a soft *hiss*. It catches in his lashes, stings his eyes, and he jerks back with a startled curse, blinking furiously as the grit burns.\n\nThe crowd doesn\u2019t miss a beat. A nearby fish\u2011seller shrieks, \u201cWatch the brazier!\u201d and a cluster of merchants steps aside, making a narrow lane that ripples open like a living door. The guard\u2019s companions\u2014two more in the same drab, charcoal\u2011stained livery\u2014draw their swords in a single, practiced motion, but they\u2019re hampered by the sudden chaos and the panicked cries of vendors.\n\nFrom the edge of the lane, a wiry figure in a dark coat watches with narrowed eyes. It\u2019s Aldric, the nervous guard you freed weeks ago, clutching a satchel of forged papers. He"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": true,
+        "forward_momentum": true,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "world_reacts",
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 227,
+      "elapsed_s": 3.2,
+      "highlight": "The young man in it shifts his weight, eyes darting between the spices and you.",
+      "full_response": "The stall\u2019s awnings are patched with strips of soot\u2011black cloth, and the merchant\u2019s fingers dance over a mound of smoked paprika while his voice rises above the clamor: \u201cFresh from the Smoldering Peaks\u2014five copper for a pinch that\u2019ll wake your tongue!\u201d  \n\nA faint, nervous shuffle comes from behind a stack of copper\u2011capped jars. You glance sideways and catch a flash of a familiar coat\u2014threadbare, the left sleeve torn at the elbow. The young man in it shifts his weight, eyes darting between the spices and you. He\u2019s been following at a distance for the last two minutes, hands clenched around the strap of a satchel.  \n\nThe air tastes of cumin and ash, and the market\u2019s low\u2011hum seems to pause for a heartbeat, as if waiting to see what you\u2019ll do next."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "FAIL",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 7.0,
+      "highlight": "As you pass, he looks up, eyes sharp and wary.",
+      "full_response": "The ash\u2011laden wind pushes through the narrow archways of the market, carrying the sharp sting of burnt incense and the sour tang of wet coal. Lanterns flicker on iron brackets, casting long, jittering shadows over cobblestones slick with recent rain. Vendors hawk spiced eel and cracked pottery, their voices rising above the clatter of carts and the low murmur of whispered deals.\n\nYou slip out of the bustle, turning down a side\u2011passage where the stalls thin and the air grows cooler. The stone here is older, cracked in places, with ivy clawing at the walls. A faint, metallic scent drifts from a nearby gutter\u2014blood, maybe, or just the city\u2019s ever\u2011present rust.\n\nHalfway down, a gaunt figure leans against a doorway, his back to the wall. He\u2019s wrapped in a threadbare coat, the brim of his hat pulled low. As you pass, he looks up, eyes sharp and wary.\n\n> \u201cYou\u2019re not heading to the Oldwall safehouse by the main gate, are you?\u201d he rasps, voice hoarse from too many cigarettes.\n\nHe shifts, revealing a thin, scarred hand clutching a folded piece of parchment. The paper flutters, smelling faintly of cloves.\n\n> \u201cMira sent word\u2014something\u2019s off with the back route. A council patrol\u2019s been sniffing around, and there\u2019s\u2026 talk of a new gate closing early tonight. If you\u2019re looking to avoid trouble, you might want to take the alley behind the old smithy. But be warned\u2014there\u2019s a\u2026 *presence* there that doesn\u2019t take kindly to strangers.\u201d*\n\nHe slides the parchment into your coat pocket without waiting for a reply, then disappears into the shadows.\n\nThe alley behind the smithy is a narrow slit between two squat buildings. The smithy\u2019s forge",
+      "judge_result": {
+        "atmosphere": 5,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "WARN",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 500,
+      "elapsed_s": 6.8,
+      "highlight": "The ash outside thickens, turning the lantern light a",
+      "full_response": "Mira\u2019s fingers clamp around your wrist\u2014just enough to make the metal clasp of your gauntlet dig in, but not enough to hurt. She leans close, the scent of cloves thickening as ash drifts down through the vaulted ceiling, settling on the copper\u2011clad stalls like gray snow.\n\n\u201cProblem?\u201d she repeats, a half\u2011smile playing on her scar\u2011lined mouth. \u201cDepends who\u2019s listening.\u201d She glances toward a nearby spice vendor, where a nervous clerk is scribbling on a slate. \u201cAldric\u2019s been seen near the east gate, talking to a Council clerk about a \u2018missing ledger\u2019 and a \u2018strange courier.\u2019\u201d\n\nShe lets go, steps back, and eyes you with a flicker of something you can\u2019t read\u2014interest? warning?\u2014then slides a folded scrap of parchment into your palm. In cramped, hurried script it reads:\n\n**\u201cThe guard you freed\u2014he knows you\u2019re alive. Keep him quiet, or the Council will have a new \u2018client\u2019 for you.\u201d**\n\nThe market\u2019s clamor swells\u2014a merchant shouting the price of smoked eels, the clatter of a cart wheel over cracked cobbles. The ash outside thickens, turning the lantern light a",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    }
+  ]
+}

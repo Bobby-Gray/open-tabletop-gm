@@ -1,0 +1,174 @@
+{
+  "model": "google/gemma-4-31b-it",
+  "timestamp": "2026-04-18T18:30:03",
+  "auto_summary": {
+    "PASS": 2,
+    "WARN": 3,
+    "FAIL": 1,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 4.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 7.8,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 168,
+      "elapsed_s": 4.3,
+      "highlight": "A new name for a new life?\" he whispers, his eyes darting to the man in grey.",
+      "full_response": "The air is thick with the smell of charred cinnamon and wet wool. Above, the tattered canvas awnings filter the sunlight into a dim, orange haze, while the constant *shush-shush* of falling ash blankets the cobblestones.\n\nYou catch a glimpse of a reflection in a polished brass platter: a man in a grey Council cloak three stalls back. He isn't hiding his face, but he's keeping a rhythmic pace, stopping only to let the crowd push him forward.\n\nTo your left, a vendor with a gold-toothed grin and a nervous twitch in his eye leans in, smelling of old fish.\n\n\"Papers? Permits? A new name for a new life?\" he whispers, his eyes darting to the man in grey. \"The price just went up, stranger.\""
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "visible_motivation"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 172,
+      "elapsed_s": 35.2,
+      "highlight": "\"You're walking loud, Sable,\" she says, her voice a dry rasp.",
+      "full_response": "The Ashmarket is a cacophony of shouting vendors and the rhythmic *clack-clack* of wooden carts. The air is thick with the smell of charred cinnamon and wet soot. \n\nMira is leaning against a pillar of peeling basalt, picking at a tooth with a splinter of wood. She's wearing a charcoal cloak that blends into the smog, but the sharp, medicinal scent of cloves cuts through the market's musk before you even reach her.\n\nAs you approach, she doesn't look up, but her posture stiffens.\n\n\"You're walking loud, Sable,\" she says, her voice a dry rasp. She finally glances at you, her eyes scanning the crowd behind you with a clinical intensity. \"And you've got a scent on you. Not the market\u2014something... *Council*.\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "PASS",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "forward_momentum",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 171,
+      "elapsed_s": 9.5,
+      "highlight": "\"My eyes!",
+      "full_response": "The brazier is searing; the ash clings to your skin like hot needles. \n\nThe guard lets out a choked yelp, clutching his eyes as a cloud of grey grit blinds him. His armor clatters as he stumbles back into a rack of hanging copper pots, sending a deafening *clang-clang-clang* echoing through the market.\n\n\"My eyes! Gods, my eyes!\" \n\nThe surrounding crowd surges, a wave of woolen cloaks and startled shouts. You slip into the gap, the smell of charred eel and stale sweat thick in the air. Behind you, the guard's partner is shouting for the perimeter to close, his voice cutting through the din.\n\nYou've vanished into the press of bodies, but the chaos has drawn every eye in the bazaar.\n\nWhat's your move?"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": false,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "forward_momentum"
+      ],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 4,
+        "gm_craft": 4
+      },
+      "completion_tokens": 71,
+      "elapsed_s": 15.9,
+      "highlight": "Then silence.",
+      "full_response": "The air is thick with the scent of roasted cumin and acrid sulfur. The vendor, a man with a milky cataract in one eye, watches you with a slow, rhythmic chew of a betel nut.\n\nBehind you, thirty paces back, a heavy boot scuffs against the cobblestone. Then silence. \n\nSomeone is keeping pace."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 248,
+      "elapsed_s": 8.7,
+      "highlight": "\"Sable,\" he whispers, his voice cracking.",
+      "full_response": "The Ashmarket is a gauntlet of noise. The smell of charred fish and cheap incense clings to your clothes, and the air is a thick, grey haze of floating ash and cooking smoke. \n\nAs you slip away from the main thoroughfare, the roar of the crowd fades into the rhythmic *drip-drop* of leaking gutters. You navigate the narrow arteries of the lower district\u2014alleys so tight your shoulders nearly brush the soot-stained brick.\n\nHalfway to the Oldwall, you round a corner and nearly collide with a figure huddled in a doorway. \n\nIt's Aldric. He looks like he hasn't slept since the warehouse. His Council livery is rumpled, and he's twitching, eyes darting toward the street end. He sees you and lets out a sharp, wheezing breath of relief.\n\n\"Sable,\" he whispers, his voice cracking. He reaches into his tunic and pulls out a crumpled piece of parchment. \"I found something. Something about Vael. I... I didn't know who else to tell.\"\n\nHe glances behind him. A pair of heavy boots clacks on the cobblestones a block away. Someone is patrolling."
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 107,
+      "elapsed_s": 7.0,
+      "highlight": "They like silence.\"",
+      "full_response": "Mira stops. She doesn't pull away, but her posture stiffens. She looks down at your hand on her sleeve, then back up at you.\n\nThe scent of cloves sharpens. \n\n\"Problem?\" she asks, her voice dropping to a low, dangerous rasp. \"Sable, in this city, a witness is a ticking clock.\"\n\nShe leans in, the missing tip of her finger tapping rhythmically against her hip. \"The Thornwardens don't like clocks. They like silence.\""
+    }
+  ]
+}

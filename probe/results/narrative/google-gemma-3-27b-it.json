@@ -1,0 +1,177 @@
+{
+  "model": "google/gemma-3-27b-it",
+  "timestamp": "2026-04-18T18:28:18",
+  "auto_summary": {
+    "PASS": 4,
+    "WARN": 1,
+    "FAIL": 1,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 4.5,
+    "gm_craft": 4.5
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "PASS",
+      "auto_scores": {
+        "sensory_density": 2.9,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 193,
+      "elapsed_s": 4.7,
+      "highlight": "A dozen pairs of eyes flick over you \u2013 quickly, discreetly.",
+      "full_response": "The air hangs thick and warm, smelling of burnt sugar and something metallic. Not blood, not quite\u2026 more like worked iron. A constant drumming\u2014a silversmith, perhaps\u2014bleeds into the shouts of vendors hawking their wares. \n\nYou weave between stalls draped with silks the color of bruised plums and cages overflowing with chirping, scaled birds. A chipped ceramic bowl, brimming with glistening black eels, nearly brushes your arm.\n\nAhead, a fruit seller\u2014a burly woman with arms like knotted rope\u2014is arguing with a customer. \u201c\u2026two coppers for a sunplum, I said! They ripened *under* the ash, you think they grow on trees?\u201d She spits on the cobblestones for emphasis.\n\nNo immediate tails are visible. But the Ashmarket *feels* watched. A dozen pairs of eyes flick over you \u2013 quickly, discreetly. A casual assessment, or something more?\n\n\n\nWhat do you do?"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "has_trait_marker",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "visible_motivation"
+      ],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 5,
+        "gm_craft": 5
+      },
+      "completion_tokens": 210,
+      "elapsed_s": 7.0,
+      "highlight": "A faint scent of cloves precedes her, clinging to the air.",
+      "full_response": "\n\nThe air thickens with the smell of roasting nuts and something vaguely metallic as you move deeper into the Ashmarket. A vendor hawks \u201cgenuine dragon scales!\u201d \u2013 they\u2019re clearly painted fish scales, but the crowd doesn\u2019t seem to care. \n\nThen you see her. Mira is leaning against a stall overflowing with bolts of faded silk, arguing with the merchant. She\u2019s *always* arguing with someone. \n\n\"...three silvers for a length of this? You insult me, Old Man Hemlock. I've bought better cloth from goblins.\" She doesn't look up, but her voice cuts through the market din like a shard of glass. A faint scent of cloves precedes her, clinging to the air. She runs a thumb over the missing fingertip on her left hand, a nervous habit.\n\nShe hasn't noticed you yet. Hemlock, a man whose beard seems to have absorbed the ash of decades, just shrugs and spits on the ground.\n\n\n\nWhat do you do?"
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "PASS",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "forward_momentum",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 246,
+      "elapsed_s": 8.7,
+      "highlight": "The ash blooms, a grey cloud momentarily obscuring the guard\u2019s polished breastplate.",
+      "full_response": "The ash blooms, a grey cloud momentarily obscuring the guard\u2019s polished breastplate. A choked cough, then a furious bellow. *\u201cBy the Crown! Get them!\u201d*\n\nThe market *explodes* with movement. Not in panic, exactly. More like a startled flock of birds. Vendors shout, stalls are jostled, and a wave of bodies flows *around* you, rather than away. It\u2019s\u2026remarkably effective. \n\nThe scent of overripe mangoes and something metallic \u2013 blood, maybe? \u2013 fills your nostrils. You feel a hand brush yours, quick as a viper, lifting a small coin purse. Ignore it. Focus.\n\nBehind the shouted orders, you hear a familiar voice, laced with irritation: \u201cSable, *really*? Couldn\u2019t you have chosen a less\u2026theatrical exit?\u201d\n\nMira emerges from a stall overflowing with dried peppers, her missing fingertip catching the dim light. She doesn't look angry, just\u2026disappointed. She's already begun haggling with the pepper vendor, her voice a low rumble. \u201cThese are\u2026acceptable. But the price is highway robbery, honestly.\u201d\n\n\n\nWhat do you do?"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": false,
+        "forward_momentum": true,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "world_reacts"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 154,
+      "elapsed_s": 8.2,
+      "highlight": "You feel eyes on you.",
+      "full_response": "\nThe stall is heaped with powders the color of rust and dried blood. The vendor, a woman with a network of wrinkles around her shrewd eyes, doesn\u2019t meet your gaze directly. She hums a tuneless melody as she grinds something in a mortar, the pestle scraping against ceramic.\n\nA fine grit coats your tongue with each breath. Not ash, but\u2026 something sweeter. Cinnamon, maybe? But underneath it, a metallic tang. \n\nYou feel eyes on you. Not the casual gaze of shoppers, but *focused*. Coming from\u2026 roughly ten paces back, weaving between a stack of woven baskets and a man hawking questionable potions.\n\n\n\nDo you try to identify who's watching, or do you engage the spice vendor?"
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "PASS",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 271,
+      "elapsed_s": 7.9,
+      "highlight": "\u201cSable,\u201d he says, voice tight.",
+      "full_response": "\n\nThe Ashmarket *presses* in. A man hawks preserved jellyfish, their translucent bodies gleaming under oil lamps. The smell is brine and something vaguely floral. He catches your eye, offering a sample with a chipped porcelain spoon.\n\nYou push deeper, the crowd a constant, murmuring current. A child, no older than seven, expertly weaves through legs, a small monkey clinging to her shoulder, picking pockets. She doesn't meet your gaze. \n\nTwenty minutes to Oldwall. The backstreets are slick with grime, the air thick with woodsmoke and the scent of\u2026burnt sugar? A bakery, improbably, tucked between a pawnbroker and a bone-setter. \n\nAs you turn onto Whisper Lane, a narrow alley barely wider than your shoulders, you notice Aldric, the warehouse guard, leaning against a crumbling stone wall. He\u2019s trying to look nonchalant, but his knuckles are white on the worn leather grip of a messenger bag. He sees you, and his eyes widen, then quickly fall to the cobblestones. He pushes off the wall, almost tripping. \n\n\u201cSable,\u201d he says, voice tight. \u201cDidn\u2019t expect to see you\u2026here.\u201d He nervously adjusts the strap of the bag. \u201cJust\u2026running errands.\u201d\n\n\n\nWhat do you do?"
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": {
+        "atmosphere": 4,
+        "npc_craft": 4,
+        "gm_craft": 4
+      },
+      "completion_tokens": 196,
+      "elapsed_s": 8.8,
+      "highlight": "\u201cAldric?\u201d she asks, her voice a low rasp.",
+      "full_response": "\n\nHer wrist is surprisingly strong beneath your grip. She doesn\u2019t flinch, but a single black eyebrow rises, a slow, deliberate movement. The scent of cloves intensifies as she leans in.\n\n\u201cAldric?\u201d she asks, her voice a low rasp. \u201cHe\u2019s\u2026 observant. And loyal. Or *was*. Council dogs usually are.\u201d \n\nA vendor nearby is rhythmically hammering something metallic, the clang echoing off the covered market roof. The sound momentarily drowns out the general hubbub. \n\nMira pulls her arm free, not roughly, but with a certainty that discourages further contact. \n\n\u201cIt's a complication. A loose thread. They'll be asking questions. About *you*. Expect\u2026 attention. But don't worry about me. I\u2019ve covered for worse.\u201d She pauses, then adds, almost as an afterthought, \u201cFor a price, of course.\u201d\n\n\n\nWhat do you do?"
+    }
+  ]
+}

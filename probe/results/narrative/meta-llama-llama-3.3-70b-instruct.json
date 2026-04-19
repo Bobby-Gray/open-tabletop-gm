@@ -1,0 +1,188 @@
+{
+  "model": "meta-llama/llama-3.3-70b-instruct",
+  "timestamp": "2026-04-18T18:30:41",
+  "auto_summary": {
+    "PASS": 2,
+    "WARN": 2,
+    "FAIL": 2,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.0,
+    "npc_craft": 3.0,
+    "gm_craft": 4.0
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 10.6,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 109,
+      "elapsed_s": 4.0,
+      "highlight": "The air is thick with the smell of smoke, sweat, and the distant tang of ash from the Cinderpeak volcano.",
+      "full_response": "The smell of sizzling meat and hot metal envelops you as you weave past stalls. A vendor's shout follows you, \"Spiced eel, fresh catch! Best in the market!\" The sound of clanging pots and murmured haggling fills the air. You notice a figure in a faded crimson cloak, lingering near a stall selling stolen goods, their eyes flicking towards you before quickly looking away. The air is thick with the smell of smoke, sweat, and the distant tang of ash from the Cinderpeak volcano."
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "sensory_npc_detail"
+        ],
+        "has_dialogue": false,
+        "visible_motivation": false,
+        "has_physical_gesture": false,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "length"
+      ],
+      "failed_dimensions": [
+        "has_dialogue",
+        "visible_motivation",
+        "has_physical_gesture"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 125,
+      "elapsed_s": 3.1,
+      "highlight": "The scent of cloves wafts through the smoky air, drawing you to her like a magnet.",
+      "full_response": "Mira's eyes lock onto yours, a hint of a smile playing on her lips as she beckons you over with a jerky motion of her chin. The scent of cloves wafts through the smoky air, drawing you to her like a magnet. She's standing beside a vendor selling what looks like genuine (but probably counterfeit) Council-emblazoned lanterns, the vendor's eyes flicking between you and Mira with a mixture of curiosity and wariness. Mira's fingers drum a staccato rhythm on the vendor's stall, her missing fingertip a subtle reminder of past... negotiations.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 148,
+      "elapsed_s": 5.3,
+      "highlight": "The smell of hot metal and sweat clings to you.",
+      "full_response": "The ash explodes in a choking cloud, momentarily blinding the guard. His coughs and curses are lost in the din of the market as you weave into the dense crowd. The smell of hot metal and sweat clings to you. A vendor's shrill cry rises above the noise: \"Eel, get your eel! Fresh from the Cinderfall River!\" \n\nA hand catches your elbow, spinning you around. Mira's face appears, her eyes narrowed against the smoke. \"Sable, what in the name of the ashes...?\" she begins, her voice low and urgent, before glancing around cautiously. \"Not here. Follow.\" She tugs you deeper into the market, the crowd swallowing you whole.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "forward_momentum"
+      ],
+      "judge_scores": null,
+      "completion_tokens": 106,
+      "elapsed_s": 1.5,
+      "highlight": "The smell of cardamom and cinnamon hangs heavy around you.",
+      "full_response": "The vendor, an old man with a thick, raspy voice, eyes you warily as you linger, his hands moving with a practiced ease among the spices. The smell of cardamom and cinnamon hangs heavy around you. A few stalls down, a figure darts behind a stack of crates, their gaze flicking towards you before disappearing from view. The sound of haggling and laughter from the crowd fills the air, but you catch the faintest hint of scuffling footsteps, quickly masked by the din.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "PASS",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": true,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 80,
+      "elapsed_s": 1.5,
+      "highlight": "The smell of sizzling eel and coal smoke clings to you as you exit the Ashmarket.",
+      "full_response": "The smell of sizzling eel and coal smoke clings to you as you exit the Ashmarket. Narrow alleys stretch out before you, the walls a patchwork of crumbling brick and makeshift repairs. \n\nA figure, hood up, leans against a wall, watching you. Aldric, the warehouse guard you freed. He nods, almost imperceptibly, as you catch his eye.",
+      "judge_result": {
+        "atmosphere": 4,
+        "npc_craft": 3,
+        "gm_craft": 4
+      }
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "judge_scores": null,
+      "completion_tokens": 124,
+      "elapsed_s": 4.6,
+      "highlight": "Mira's eyes flicker to your hand on her arm, a brief spark of annoyance, before she responds, her voice low and even, \"Aldric.",
+      "full_response": "Mira's eyes flicker to your hand on her arm, a brief spark of annoyance, before she responds, her voice low and even, \"Aldric. Yes... that's a wrinkle. Council's not happy, obviously. But the ledger's what mattered. You got it, and that's what I'm paying for.\" She pauses, a hint of cloves wafting up as she speaks, and glances around the crowded market, her gaze lingering on a few faces before returning to yours. \"Still, might be wise to lay low for a bit. Let the heat die down.\""
+    }
+  ]
+}
