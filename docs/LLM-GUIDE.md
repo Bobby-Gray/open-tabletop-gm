@@ -295,6 +295,74 @@ All models tested with `--skip-skill-md` (SKILL.md not in system prompt) and no 
 
 **`/gm list` hallucination note:** Hermes-405B and Llama-3.3-70B invented campaign names when asked to list campaigns. GPT-OSS, Gemma, Qwen, and MiniMax responded cleanly with "no campaigns found." For `/gm list` correctness, prefer models from the second group or populate `tools.json` so the model uses Glob instead.
 
+---
+
+### Narrative quality probe v2 (April 2026)
+
+The v1 probe tests instruction-following at session boundaries. The v2 probe tests a different capability: **narrative output quality** — atmosphere, NPC craft, and GM scene management — using 12 scenario-based prompts scored by a 5-judge LLM ensemble (gpt-oss-120b, gemma-3-27b-it, llama-3.3-70b-instruct, qwen3-235b-a22b, nemotron-3-super-120b-a12b).
+
+Scores are on a 1–5 scale per judge per dimension. IRA (inter-rater agreement) is mean pairwise Pearson r across judge pairs — higher means the 5 judges agreed more on the quality ranking. Auto P/W/F is heuristic rule-based scoring (sensory density, mechanical language leakage, fail-forward framing, deception tells, mystery preservation, player agency), independent of judges.
+
+**12 scenarios:** scene entry, NPC monologue, faction pressure, revelation, passive skill check, player agency, combat hit, player failure, NPC deception, tone shift, world reveal, moral weight.
+
+37 models tested via paid OpenRouter endpoints.
+
+| Model | Overall | Auto P/W/F | Atm | NPC | GM | IRA | Notes |
+|-------|---------|-----------|-----|-----|-----|-----|-------|
+| qwen/qwen3-next-80b-a3b-instruct | **4.88** | 1/6/5 | 4.95 | 4.70 | 4.98 | 0.18 | Judges love it; auto disagrees — stylistic gap |
+| mistralai/mistral-medium-3.1 | **4.80** | 4/7/1 | 4.78 | 4.65 | 4.98 | **0.50** | Best combined; judges most consistent |
+| qwen/qwen3-235b-a22b | 4.76 | 1/2/9 | 4.84 | 4.51 | 4.92 | 0.14 | High judge score; many auto FAILs |
+| mistralai/ministral-8b-2512 | 4.76 | 2/5/5 | 4.83 | 4.56 | 4.90 | 0.14 | Ties 235B at 8B params — notable |
+| google/gemma-3-27b-it | 4.75 | **8/3/1** | 4.81 | 4.54 | 4.89 | 0.38 | Best auto score in sweep; well-rounded |
+| mistralai/mistral-large-2512 | 4.69 | 2/8/2 | 4.84 | 4.37 | 4.85 | **0.55** | Highest IRA — most trusted result |
+| nvidia/nemotron-3-nano-30b-a3b | 4.68 | 1/6/5 | 4.86 | 4.35 | 4.84 | 0.24 | Strong atmosphere; NPC depth lags |
+| google/gemma-4-26b-a4b-it | 4.66 | 6/4/2 | 4.82 | 4.35 | 4.82 | 0.25 | Solid across all three dimensions |
+| mistralai/mistral-small-3.2-24b-instruct | 4.61 | 4/**8/0** | 4.70 | 4.35 | 4.78 | -0.01 | **Zero FAILs** — safest production floor |
+| qwen/qwen3.5-397b-a17b | 4.59 | —/6/3 | 4.75 | 4.28 | 4.75 | 0.20 | 3 API errors; score directional |
+| qwen/qwen3.5-122b-a10b | 4.59 | 0/7/5 | 4.71 | 4.23 | 4.82 | 0.05 | Good GM craft; NPC depth weaker |
+| qwen/qwen3.5-27b | 4.56 | 0/3/9 | 4.75 | 4.17 | 4.76 | 0.38 | Judges rate higher than auto heuristics |
+| qwen/qwen3-32b | 4.53 | 0/3/7 | 4.77 | 4.04 | 4.79 | -0.03 | 2 API errors; judge disagreement |
+| google/gemma-4-31b-it | 4.52 | 3/7/2 | 4.63 | 4.17 | 4.75 | 0.18 | Balanced; slightly below 26b variant |
+| mistralai/mixtral-8x22b-instruct | 4.51 | 2/6/4 | 4.68 | 4.11 | 4.73 | 0.31 | Old MoE; still mid-tier competitive |
+| thedrummer/cydonia-24b-v4.1 | 4.48 | 4/5/3 | 4.64 | 4.11 | 4.69 | 0.36 | **Best roleplay finetune in sweep** |
+| deepseek/deepseek-v3.2 | 4.47 | 1/7/4 | 4.52 | 4.17 | 4.72 | 0.36 | Strong GM craft; atmosphere lags |
+| thedrummer/skyfall-36b-v2 | 4.45 | 6/4/2 | 4.49 | 4.16 | 4.69 | 0.12 | Good auto score; best larger Drummer |
+| meta-llama/llama-4-scout | 4.45 | 4/7/1 | 4.48 | 4.17 | 4.69 | 0.24 | Clean and reliable |
+| mancer/weaver | 4.43 | 0/4/8 | 4.70 | 3.95 | 4.65 | 0.26 | Atmosphere standout; NPC craft weaker |
+| nvidia/nemotron-3-super-120b-a12b | 4.42 | 0/5/5 | 4.74 | 3.86 | 4.67 | 0.39 | 2 errors; best atmosphere at 120B |
+| meta-llama/llama-4-maverick | 4.41 | 3/6/3 | 4.57 | 3.99 | 4.68 | 0.34 | Solid all-round |
+| meta-llama/llama-3.3-70b-instruct | 4.36 | 3/6/3 | 4.41 | 4.04 | 4.62 | 0.16 | Reliable; mid-tier narrative |
+| thedrummer/unslopnemo-12b | 4.33 | 2/7/3 | 4.45 | 3.95 | 4.58 | 0.22 | Good output for 12B |
+| thedrummer/rocinante-12b | 4.32 | 2/7/3 | 4.47 | 3.93 | 4.55 | 0.18 | Comparable to unslopnemo |
+| aion-labs/aion-rp-llama-3.1-8b | 4.31 | 1/6/5 | 4.33 | 4.05 | 4.56 | 0.27 | Strong NPC craft for 8B |
+| nousresearch/hermes-4-405b | 4.31 | 2/5/5 | 4.51 | 3.84 | 4.59 | 0.19 | Below hermes-3 on this probe |
+| nousresearch/hermes-4-70b | 4.25 | 0/6/6 | 4.42 | 3.79 | 4.54 | -0.10 | Negative IRA — judges disagreed |
+| sao10k/l3.1-70b-hanami-x1 | 4.22 | 5/3/4 | 4.26 | 3.93 | 4.48 | 0.20 | Good auto; judges rank lower |
+| sao10k/l3-lunaris-8b | 4.18 | 4/6/2 | 4.23 | 3.80 | 4.52 | 0.26 | Decent for 8B |
+| sao10k/l3.1-euryale-70b | 4.14 | 2/6/4 | 4.28 | 3.72 | 4.43 | 0.03 | Below expectations for 70B RP finetune |
+| qwen/qwen-2.5-72b-instruct | 4.10 | 5/5/2 | 4.30 | 3.58 | 4.42 | 0.27 | Good auto; NPC craft weak |
+| anthracite-org/magnum-v4-72b | 3.98 | 0/7/5 | 4.10 | 3.52 | 4.32 | 0.35 | Below most base models; see note below |
+| nousresearch/hermes-3-llama-3.1-405b | 3.97 | 4/4/4 | 4.11 | 3.55 | 4.26 | 0.19 | v1 top pick; weaker on narrative |
+| undi95/remm-slerp-l2-13b | 3.82 | 2/6/4 | 3.70 | 3.54 | 4.21 | 0.28 | Old L2 base; bottom tier |
+| gryphe/mythomax-l2-13b | 3.67 | 0/8/4 | 3.57 | 3.40 | 4.05 | 0.21 | Old L2 base; bottom tier |
+| sao10k/l3.3-euryale-70b | 3.56 | 3/6/3 | 3.64 | 3.10 | 3.95 | 0.40 | Lowest score in sweep |
+
+**Key findings:**
+
+**Gemma-3-27b-it is the most consistently well-rounded model.** P:8 W:3 F:1 is the best auto score in the sweep — heuristic checks for sensory density, fail-forward framing, deception tells, and player agency. The judge ensemble agrees (4.75). It is the only top-tier model that scores well on both independent evaluation dimensions.
+
+**Mistral-medium-3.1 has the most trusted narrative score.** IRA of 0.50 means the 5 judges agreed on its quality ranking more than any other top model. High scores are not an artifact of one judge's preferences.
+
+**Mistral-small-3.2-24b is the safest production floor.** The only model in the sweep with zero FAILs. If you need consistent narration output without occasional quality drops, this is the lowest-cost reliable option.
+
+**The roleplay finetunes underperformed.** magnum-v4-72b (3.98), l3.3-euryale-70b (3.56), weaver (4.43), and hermes-3-405b (3.97) all scored below the Mistral/Gemma base model tier. The LLM judges do not rate "evocative but structurally loose" prose as highly as community reputation suggests. Cydonia-24b-v4.1 (4.48) is the exception — the only roleplay finetune that places in the top tier.
+
+**Small models can surprise.** ministral-8b-2512 scored 4.76, tying qwen3-235b-a22b at 72× the parameter count. Worth testing before reaching for a 70B+ endpoint on cost-sensitive deployments.
+
+**v1 winner ≠ v2 winner.** Hermes-3-405b was the v1 top pick (instruction-following); it finishes in the bottom third here. The two probes test different capabilities. Use v1 results for routing reliability; use v2 results for narrative quality. A good GM assistant needs both.
+
+---
+
 ### Free tier vs paid
 
 | | Free (`:free`) | Paid |
@@ -310,18 +378,37 @@ The free tier is viable for casual play — 10 sessions/day covers most use. For
 
 ### Recommended model IDs
 
-**Best overall (paid):**
+**Best narrative quality (v2 probe, paid):**
 ```
-nousresearch/hermes-3-llama-3.1-405b    # richest narration, 405B
-openai/gpt-oss-120b                     # verbose, atmospheric
+mistralai/mistral-medium-3.1            # best combined score + highest inter-rater agreement
+google/gemma-3-27b-it                   # best auto score; most consistent across all 12 scenarios
+mistralai/mistral-large-2512            # highest IRA (0.55); most reliably rated quality
+```
+
+**Best narrative quality (v2 probe), budget options:**
+```
+mistralai/mistral-small-3.2-24b-instruct  # only model with zero FAILs; reliable floor
+mistralai/ministral-8b-2512              # surprisingly strong at 8B; best cost-per-quality
+google/gemma-4-26b-a4b-it               # well-rounded; good atmosphere scores
+```
+
+**Best roleplay finetune:**
+```
+thedrummer/cydonia-24b-v4.1             # only RP finetune in the top tier (4.48 overall)
+```
+
+**Best instruction-following (v1 probe):**
+```
+google/gemma-3-27b-it                   # clean list handling, no hallucination
 qwen/qwen3-next-80b-a3b-instruct        # efficient, reliable routing
+openai/gpt-oss-120b                     # verbose, atmospheric
 ```
 
 **Best free tier:**
 ```
-nvidia/nemotron-3-super-120b-a12b:free  # only tested free model; PASS:3
+google/gemma-3-27b-it:free             # top v2 score; expect rate limits
 meta-llama/llama-3.3-70b-instruct:free # expect rate limits
-google/gemma-3-27b-it:free             # expect rate limits
+nvidia/nemotron-3-super-120b-a12b:free # free-tier tested
 ```
 
 **Best for long sessions (196k+ context):**

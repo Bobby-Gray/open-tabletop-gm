@@ -1,0 +1,166 @@
+{
+  "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+  "timestamp": "2026-04-19T09:04:00",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 0,
+    "ERROR": 12
+  },
+  "judge_averages": {},
+  "overall_judge_score": null,
+  "inter_rater_agreement": {},
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.1,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "ERROR",
+      "error": "{\"error\":{\"message\":\"No endpoints found for cognitivecomputations/dolphin-mistral-24b-venice-edition.\",\"code\":404},\"user_id\":\"user_3CXuYItp19O9JNRY48pm8xylvDf\"}",
+      "elapsed_s": 0.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    }
+  ]
+}

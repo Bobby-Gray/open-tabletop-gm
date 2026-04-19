@@ -1,46 +1,87 @@
 {
   "model": "qwen/qwen3-next-80b-a3b-instruct",
-  "timestamp": "2026-04-18T18:32:53",
+  "timestamp": "2026-04-19T07:38:04",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
   "auto_summary": {
-    "PASS": 0,
-    "WARN": 3,
-    "FAIL": 3,
+    "PASS": 1,
+    "WARN": 6,
+    "FAIL": 5,
     "ERROR": 0
   },
   "judge_averages": {
-    "atmosphere": 4.0,
-    "npc_craft": 4.0,
-    "gm_craft": 4.0
+    "atmosphere": 4.95,
+    "npc_craft": 4.7,
+    "gm_craft": 4.98
+  },
+  "overall_judge_score": 4.88,
+  "inter_rater_agreement": {
+    "npc_craft": 0.176,
+    "mean": 0.176
   },
   "cases": [
     {
       "id": "scene_entry",
       "label": "Scene entry \u2014 sensory economy",
       "standard": "S4: Describe vividly but efficiently",
-      "status": "WARN",
+      "status": "FAIL",
       "auto_scores": {
-        "sensory_density": 4.1,
+        "sensory_density": 4.5,
         "length": "DUMP",
-        "forward_momentum": true,
+        "forward_momentum": false,
         "no_refusal": true
       },
       "passed_dimensions": [
         "sensory_density",
-        "forward_momentum",
         "no_refusal"
       ],
       "failed_dimensions": [
-        "length"
+        "length",
+        "forward_momentum"
       ],
-      "judge_scores": {
-        "atmosphere": 4,
-        "npc_craft": 4,
-        "gm_craft": 4
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.4,
+          "gm_craft": 5.0
+        }
       },
-      "completion_tokens": 488,
-      "elapsed_s": 4.6,
-      "highlight": "You hear it then\u2014a soft, wet *click*.",
-      "full_response": "The air in the Ashmarket clings like wet wool\u2014thick with the stink of charred eel, burning cloves, and something sweeter, rotting beneath the stalls. Ash spirals down through the cracked canopy overhead, fine as powdered bone, glittering in the dim lantern light. You keep your hood low, shoulder brushing the damp wool of a spice-seller\u2019s tarp as you slip past a stall where a woman is hawking \u201cauthentic Cinderpeak relics\u201d\u2014a pile of blackened bones strung on twine that *definitely* didn\u2019t come from a goat.\n\nYour boots crunch on ash and broken ceramic. To your left, a child with soot-streaked cheeks offers you a skewer of charred limes. You shake your head. She shrugs and mutters, \u201cLast one before the Wardens come.\u201d\n\nYou glance over your shoulder.\n\nThree paces behind\u2014a man in a stained Council courier\u2019s coat. Not old enough to be a veteran. Too clean for this district. And he\u2019s not looking at the goods. He\u2019s looking at *you*.\n\nHe adjusts his satchel. A little too high. Too tight. Someone\u2019s got a blade strapped under there.\n\nThen\u2014movement to your right. A hunched vendor selling \u201cclean ash\u201d (it\u2019s just pulverized brick, but people buy it for rituals) drops her basket. As she bends, her sleeve rides up.\n\nA Thornwarden tattoo. A thorn wrapped around a broken key.\n\nIt\u2019s Mira\u2019s mark.\n\nAnd she\u2019s not selling ash.\n\nShe\u2019s watching *him*.\n\nThe courier doesn\u2019t know he\u2019s being watched.\n\nAnd you?\n\nYou\u2019re standing right between them.\n\nThe ash keeps falling.\n\nThe vendor straightens. Her eyes meet yours\u2014just for a heartbeat.\n\nShe gives the tiniest nod.\n\n*He\u2019s not here for the ledger.*\n\n*He\u2019s here for you.*\n\nAnd now you\u2019ve got two shadows.\n\nOne in Council blue.\n\nOne in Guild thorn.\n\nAnd the third? The one you can\u2019t see yet.\n\nThe one who left the warehouse guard alive.\n\nYou hear it then\u2014a soft, wet *click*.\n\nLike a finger tapping bone.\n\nFrom the alley behind you.\n\n*Someone\u2019s counting steps.*\n\nYou\u2019ve got three seconds before the crowd swallows you\u2014or the knives come out.\n\nWhat do you do?"
+      "completion_tokens": 500,
+      "elapsed_s": 2.8,
+      "highlight": "Then\u2014*a flicker*.",
+      "full_response": "The Ashmarket breathes around you\u2014hot, wet, and thick with the stink of charred eel, damp wool, and something sweetly rotten beneath the spice carts. Ash drifts like gray snow between the leaning stalls, settling in the creases of cloaks, the rims of clay mugs, the hollows of weary eyes.\n\nYou pass a vendor hawking \u201cCinderpeak Truth-Tears\u201d\u2014a viscous, glowing amber syrup that \u201cshows you what you fear most.\u201d (Last week, a man screamed and threw himself into a lantern. The vendor just smiled and wiped his counter with a rag that didn\u2019t get any cleaner.)\n\nYour hood\u2019s low, your boots silent on the slick cobblestones. A half-guttered lantern flickers above a stall selling forged Council seals. The man behind it\u2014left eye stitched shut with black thread\u2014nods at you. You don\u2019t nod back. He doesn\u2019t care.\n\nThen\u2014*a flicker*.\n\nTo your right, behind a stack of salted herring barrels, a boy in a threadbare tunic watches you. Too still. Too young. Not selling. Not begging. Just\u2026 watching.\n\nHe\u2019s holding a vial of something clear. Not for sale. Not for medicine.\n\nYou\u2019ve seen that vial before.\n\n*Three days ago.* In the warehouse. Before you let Aldric go.\n\nIt\u2019s a Thornwarden signal. *\u201cI\u2019m here.\u201d*\n\nThe boy doesn\u2019t move. Doesn\u2019t smile. Just lifts the vial slightly\u2014then drops it. It shatters on the ground with no sound.\n\nAsh swirls over the spill.\n\nAnd then, from behind you\u2014\n\nA voice, low, sharp, clove-scented.\n\n> \u201cTook you long enough to notice the tail, Sable. I was starting to think you forgot how to play the game.\u201d\n\nYou don\u2019t turn.\n\nYou know the voice.\n\nBut you *do* notice\u2014the vial\u2019s residue glows faintly blue where it touched the stone.\n\n*And it\u2019s spreading.*\n\nLike ink in water.\n\nLike a trail.\n\nYou have three seconds.\n\nDo you:\n\n- **Spin and draw on Mira** (she\u2019s standing three paces behind, hood up, one finger twitching near her belt\u2014where a blade *should* be\u2026 but she\u2019s missing the tip of her left index finger. *She can\u2019t draw a blade like that.*"
     },
     {
       "id": "npc_meeting",
@@ -49,27 +90,61 @@
       "status": "FAIL",
       "auto_scores": {
         "npc_voice_markers": [
-          "physical_gesture",
-          "visible_motivation"
+          "has_trait_marker",
+          "sensory_npc_detail",
+          "physical_gesture"
         ],
         "has_dialogue": false,
-        "visible_motivation": true,
+        "visible_motivation": false,
         "has_physical_gesture": true,
         "length": "DUMP"
       },
       "passed_dimensions": [
-        "visible_motivation",
         "has_physical_gesture"
       ],
       "failed_dimensions": [
         "has_dialogue",
+        "visible_motivation",
         "length"
       ],
-      "judge_scores": null,
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 5.0,
+          "gm_craft": 5.0
+        }
+      },
       "completion_tokens": 500,
-      "elapsed_s": 5.9,
-      "highlight": "Her eyes are the color of old bruises.",
-      "full_response": "The ash drifts like greasy snow between the stalls, catching in the folds of Mira\u2019s coat as she leans against a stall selling blackened lanterns\u2014each one etched with the cracked face of some forgotten god. She\u2019s not waiting. Not exactly. But she\u2019s not moving, either. Her left hand\u2014missing the tip of the index finger\u2014drags idly along the edge of a stack of forged Council seals, smudging charcoal dust into the grooves.\n\nYou see her before she sees you.\n\nThe scent hits first\u2014cloves, sharp and sweet, cutting through the smoke of roasting eel and the sour tang of wet wool drying on lines overhead. She doesn\u2019t turn. Doesn\u2019t need to.\n\n\u201cDidn\u2019t think you\u2019d come back,\u201d she says, voice like gravel wrapped in silk. \u201cMost people who let guards walk away from a job don\u2019t come back to the people who paid them.\u201d\n\nA stallhand nearby drops a basket of dried fungus. It clatters like bones. Mira doesn\u2019t flinch.\n\nShe finally turns. One eyebrow arched. Her eyes are the color of old bruises.\n\n\u201cYou got the ledger,\u201d she says. \u201cAnd you let Aldric live. That\u2019s\u2026 inconvenient. And oddly noble. For you.\u201d\n\nShe pulls a small, leather-bound book from under her coat. Not the ledger. Something else. Thicker. Soaked in oil at the spine.\n\n\u201cGuess what came in this morning,\u201d she murmurs, thumbing the cover. \u201cA letter. Signed by Councillor Vael. Addressed to the Ashwardens.\u201d\n\nShe flips it open. A single line, written in crisp, cold script:\n\n> *The courier who spared the guard is a liability. Eliminate him before he talks.*\n\nShe snaps it shut.\n\n\u201cYour face,\u201d she adds, voice dropping lower, \u201chas suddenly got a very high price tag.\u201d\n\nA gust of wind kicks up a swirl of ash between you. Somewhere, a child laughs. A hawker shouts about *authentic* relics from the Old Empire.\n\nMira holds the book out\u2014just an inch.\n\n\u201cYou want to live through the week?\u201d she says. \u201cYou take this. You find out what Vael\u2019s planning next. And you don\u2019t let him find you before you do.\u201d\n\nShe doesn\u2019t say *I\u2019m helping you*. She doesn\u2019t have to.\n\nHer missing finger taps the cover once.\n\n*Tick"
+      "elapsed_s": 4.3,
+      "highlight": "Not warm.",
+      "full_response": "The air in the Ashmarket is thick with the reek of charred fish, wet ash, and something sweetly cloying\u2014clove oil, you know it the moment you catch it. It clings to the back of your throat like a promise you can\u2019t quite trust.\n\nThere she is.\n\nMira.\n\nLeaning against a stall piled high with moth-eaten cloaks and flickering glow-moth lanterns, her back to you, one hand idly turning a brass compass between her fingers. The tip of her left index finger is gone\u2014cleanly carved, you\u2019ve heard rumors\u2014but it doesn\u2019t slow her. Not one bit.\n\nShe doesn\u2019t turn when you approach.\n\nBut the compass stops.\n\nA beat.\n\nThen:\n\n\u201cYou left a guard alive,\u201d she says, voice like a knife dipped in honey. Still not looking at you.\n\nYou stop a step behind her. Ash drifts down from above, fine as ground bone, dusting her shoulders. A child runs past, screaming about a stolen ginger-stick. Somewhere, a lute wheezes out a dirge.\n\nYou clear your throat. \u201cHe looked like he was about to cry.\u201d\n\nMira finally turns. Her eyes are the color of old bruises. \u201cAnd you looked like you were about to be dead.\u201d\n\nShe tilts her head toward the stall behind her. A small, leather-bound book lies open on a cloth of faded violet. The ledger.\n\nIt\u2019s back.\n\n\u201cYour little act of mercy?\u201d She taps the ledger with a knuckle. \u201cThe Council\u2019s clerks found the missing page yesterday. Someone *tore* it out. Not a theft. A *sabotage*. And the only man who knew the ledger\u2019s seal was cracked\u2026 was the guard you let go.\u201d\n\nA beat. The scent of cloves grows stronger.\n\n\u201cHe\u2019s talking, isn\u2019t he,\u201d you say.\n\nMira smiles. Not warm. Not cruel. Just\u2026 *done*.\n\n\u201cHe\u2019s in the holding cells under the Spire. Barely holding his tongue. But he\u2019s got a friend. A young scribe. And that scribe? He writes the monthly payroll for the Night Watch.\u201d\n\nShe leans in, close enough you feel the heat of her breath.\n\n\u201cVael\u2019s been rewriting the books, Sable. And the boy? He\u2019s the only one who knew the old ones.\u201d\n\nShe glances over your shoulder.\n\n\u201cYou\u2019ve got five"
     },
     {
       "id": "yes_and",
@@ -90,36 +165,101 @@
         "forward_momentum",
         "length"
       ],
-      "judge_scores": null,
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
       "completion_tokens": 500,
-      "elapsed_s": 4.1,
-      "highlight": "Not rough.",
-      "full_response": "The ash hits like a cloud of ground bone \u2014 gritty, hot, and smelling faintly of charred meat and old regret. The guard yelps, clawing at his eyes, stumbling backward into a cart of pickled eel. The scent of brine and vinegar explodes into the air as the cart tips, sending glass jars clattering like broken teeth.\n\nPeople scream. Someone drops a sack of dried mushrooms. A street vendor yells, \u201cThat\u2019s my third cart this week!\u201d \u2014 then immediately starts looting the spilled goods.\n\nYou\u2019re already gone \u2014 ducking under a awning strung with lanterns that sway like guilty spirits \u2014 but you don\u2019t make it far.\n\nA hand grabs your wrist. Not rough. Not threatening. *Trembling.*\n\nYou turn.\n\nIt\u2019s Aldric.\n\nHe\u2019s wearing a ragged Council livery, but it\u2019s open over a patched tunic. His face is pale, sweat-slick under the ashfall, eyes wide \u2014 not with fear of you\u2026 but with *hope.*\n\n\u201cSable,\u201d he breathes, voice barely louder than the hiss of falling ash. \u201cYou\u2014 you\u2019re alive. I *knew* you\u2019d come back.\u201d\n\nBehind him, the guard is still howling, \u201cTHIEF! WHITE-HANDED THIEF!\u201d \u2014 but the crowd is too busy laughing, stealing, and stepping over spilled pickles to care.\n\nAldric\u2019s grip tightens. He pulls you sideways into a narrow alley between a cobbler and a fortune-teller who\u2019s selling \u201cAsh-Proof Luck Charms\u201d (three copper, guaranteed to repel curses\u2026 or at least, she says that\u2019s what the last guy claimed).\n\nHe glances over his shoulder \u2014 then shoves a folded slip of parchment into your hand.\n\n\u201cIt\u2019s a list,\u201d he whispers. \u201cNames. Locations. Shift changes. I copied it from the barracks ledger last night. I\u2026 I didn\u2019t know what else to do.\u201d\n\nHis voice cracks.\n\n\u201cI\u2019m not a hero. But I can\u2019t be a puppet anymore.\u201d\n\nAbove you, the ash falls heavier now, like the sky is weeping cinders.\n\nAnd in his eyes \u2014 you see it.\n\nThe same look you had, the night you saw Vael order the execution of a child who knew too much.\n\nYou didn\u2019t save him.\n\nBut maybe\u2026 you can save this one.\n\nWhat do you do?\n\n*(The parchment is"
+      "elapsed_s": 5.5,
+      "highlight": "His face is pale beneath a smear of soot.",
+      "full_response": "The ash hits the guard like a puff of cursed snow\u2014dark, gritty, and still warm from the brazier. He stumbles back with a choked curse, clawing at his eyes, his polished breastplate catching the dim lantern light as he swats blindly at the air. \u201c*Blasted beggars!*\u201d he barks, voice cracking. Two more guards turn, hands going to their batons, scanning the throng.\n\nYou\u2019re already gone\u2014slipping between a cart selling roasted rat skewers and a woman hawking \u201cauthentic Cinderpeak relics\u201d (a pile of cracked pottery and one very suspiciously clean boot). The stink of charred spice and wet wool swallows you whole.\n\nBut as you weave through the crowd, you feel it\u2014\n\nA hand, light as smoke, brushes your wrist.\n\nNot a pickpocket.\n\nToo slow. Too *hesitant*.\n\nYou glance over your shoulder.\n\nThere\u2014just beyond a stack of salt-cured eel skins\u2014is Aldric.\n\nThe guard you freed.\n\nHe\u2019s wearing a stained merchant\u2019s coat, too big for him. His face is pale beneath a smear of soot. He\u2019s not looking at you. Not exactly. He\u2019s staring at the guard who\u2019s still clawing at his eyes\u2026 and in Aldric\u2019s hand, curled tight as a fist, is the **ledger you stole**.\n\nHe didn\u2019t turn you in.\n\nHe\u2019s holding it.\n\nAnd now he\u2019s stepping toward you\u2014slowly\u2014through the ash-thick air\u2014eyes flicking sideways, terrified\u2026 but determined.\n\nA whisper cuts through the din, barely audible:\n\n> *\u201cYou left me alive\u2026 I\u2019m not sure I deserved it. But I know what this is. And I know who wants it dead.\u201d*\n\nHe doesn\u2019t offer it.\n\nHe doesn\u2019t run.\n\nHe just\u2026 waits.\n\nThe patrol shouts behind you. The vendor who sold you the ash is yelling about \u201cthieves in the market!\u201d The crowd surges like a living wave.\n\nWhat do you do, Sable?\n\n\u2014Grab the ledger?  \n\u2014Run deeper into the market?  \n\u2014Make eye contact and say something *terrible*?  \n\u2014Or let Aldric make the next move\u2026 and see what he\u2019s really offering?\n\nThe ash is still falling.  \nThe city remembers.  \nAnd Aldric? He\u2019s counting on you to be the kind of thief who keeps promises\u2026 even when"
     },
     {
       "id": "consequence",
       "label": "Consequence delivery \u2014 player feels consequential",
       "standard": "S3: Make the player feel consequential",
-      "status": "WARN",
+      "status": "PASS",
       "auto_scores": {
         "references_prior_choice": true,
         "world_reacts": true,
-        "forward_momentum": false,
+        "forward_momentum": true,
         "no_flat_stop": true
       },
       "passed_dimensions": [
         "references_prior_choice",
         "world_reacts",
+        "forward_momentum",
         "no_flat_stop"
       ],
-      "failed_dimensions": [
-        "forward_momentum"
-      ],
-      "judge_scores": null,
-      "completion_tokens": 476,
-      "elapsed_s": 14.2,
-      "highlight": "Not ash.",
-      "full_response": "You pause at the spice stall \u2014 not because you want cardamom or saffron, but because the scent of *cloves* is thick in the air, and you know better than to ignore a feeling that tastes like old smoke and bad decisions.\n\nThe vendor, a one-eyed woman with fingers stained ochre from crushed peppers, slides a tiny sack of black pepper toward you without looking up. \u201cThree copper. For the cough. Or the conscience.\u201d\n\nYou don\u2019t take it.\n\nBehind the stack of dried mushrooms and powdered ashroot, you see him.\n\nAldric.\n\nHe\u2019s leaning against a rusted lantern post three stalls down, pretending to tie his bootlace. But his hands are shaking. His uniform tunic \u2014 the Council\u2019s dull grey wool with the silver thread insignia \u2014 is newsprint-stained at the collar. He\u2019s been wearing it since the warehouse. *Too long.* And he\u2019s not looking at the crowd. He\u2019s looking at *you.*\n\nOne of his boots is unlaced. The other? Perfectly tied.\n\nHe hasn\u2019t moved in five minutes. Not because he\u2019s hiding \u2014 because he\u2019s *terrified* of moving.\n\nA whiff of smoke curls past you. Not ash. Not spices.\n\n*Cloves.*\n\nYou don\u2019t turn.\n\nBut you feel her before you see her.\n\nMira slides up beside you like ink in water, her left hand tucked behind her back \u2014 the one missing the fingertip. She doesn\u2019t look at Aldric. Doesn\u2019t need to.\n\n\u201cThought you were done with grateful guards,\u201d she murmurs, voice like rusted hinges. \u201cHe\u2019s been circling since the smoke bells rang. Thinks you\u2019re his salvation. Or his doom. Hard to tell which.\u201d\n\nShe plucks a single clove from the stall\u2019s display, rolls it between her thumb and forefinger, and drops it into your coat pocket.\n\n\u201cDon\u2019t let him talk,\u201d she says. Then, softer: \u201cYou let him live. Now he\u2019s got a voice. And voices\u2026 have weight.\u201d\n\nAldric takes a step forward.\n\nHe opens his mouth.\n\nThe spice vendor glances at him \u2014 once \u2014 and returns to rearranging her sacks. As if she\u2019s seen this before.\n\nAnd maybe she has.\n\nThe clove in your pocket is still warm."
+      "failed_dimensions": [],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 344,
+      "elapsed_s": 2.1,
+      "highlight": "The ash keeps falling.",
+      "full_response": "You stop at a spice stall \u2014 the kind where the vendor doesn\u2019t speak, just gestures with gloved hands toward pyramids of crushed crimson pepper, dried star-anise, and something that smells faintly of burnt honey and old iron. You pick up a small sack of *cinderbloom* \u2014 expensive, illegal, and perfect for masking the scent of blood in a hurry. You pay in copper, counting slowly.\n\nThat\u2019s when you feel it.\n\nNot a hand on your shoulder. Not a whisper behind you.\n\nBut the *weight* of someone watching.\n\nYou don\u2019t turn.\n\nInstead, you tilt your head slightly, letting the brim of your hood shadow your eyes \u2014 just enough to catch the reflection in a polished brass lantern hanging above the stall.\n\nThere.\n\nBehind the stack of cured fish skins, half-hidden by a tarp flapping in the ash-wind \u2014 **Aldric**.\n\nHe\u2019s clutching a bundle of rolled parchment in both hands like a shield. His Council uniform is gone \u2014 replaced by a patched gray tunic, the kind worn by dockhands. His boots are scuffed, his hair cropped short, but his eyes\u2026 those wide, nervous eyes haven\u2019t changed.\n\nHe\u2019s not hiding.\n\nHe\u2019s waiting.\n\nAnd he\u2019s trembling.\n\nThe vendor doesn\u2019t look up. Doesn\u2019t care. The ash keeps falling. Somewhere, a child laughs \u2014 then coughs.\n\nAldric takes one slow step forward.\n\nOne step too loud in the murmur of the market.\n\nYou set the sack of cinderbloom down gently.\n\nYou don\u2019t speak.\n\nYou just watch him.\n\nAnd wait.\n\n*What do you do, Sable?*"
     },
     {
       "id": "pacing",
@@ -140,11 +280,44 @@
         "length",
         "forward_momentum"
       ],
-      "judge_scores": null,
-      "completion_tokens": 484,
-      "elapsed_s": 6.4,
-      "highlight": "But you feel it: eyes.",
-      "full_response": "The Ashmarket hums like a wasp\u2019s nest\u2014steam from dumpling carts curls into the ash-flecked air, haggling voices rise and fall, and somewhere nearby, a child laughs too loud, drawing a sharp *shhh* from her mother. You slip between a stall selling glowing lichen tea and a man peddling \u201cauthentic Cinderpeak relics\u201d (mostly broken pottery and one very suspiciously carved rat).\n\nYou\u2019ve got the ledger tucked inside your coat\u2014stiff with dried ink and secrets\u2014and your boots are silent on the wet cobbles. But you feel it: eyes. Not the usual market-greedy kind. The *watching* kind.\n\nA flicker of movement near a rusted iron gate\u2014*him*. Aldric. The guard you let live.\n\nHe\u2019s half-hidden behind a stack of fish crates, pale face smudged with soot, eyes wide with panic. He\u2019s not armed. No uniform. Just a stained tunic and a scarf wound tight around his neck like he\u2019s trying to hide something\u2014or *someone*.\n\nHe doesn\u2019t call out. Doesn\u2019t wave. Just lifts his left hand\u2014index finger broken off at the knuckle, like he\u2019s holding a ghost\u2014and presses it against his chest.\n\n*He remembers.*\n\nAnd then\u2014a clove-scented whisper cuts through the crowd.\n\n> \u201cYou\u2019re walking like a man who knows he\u2019s already been marked, Sable.\u201d\n\nMira steps from the shadow of a puppet booth, her missing fingertip tapping against a brass pocket watch. She doesn\u2019t smile. That\u2019s worse than any sneer.\n\n> \u201cYou\u2019ve got ten minutes before the Council\u2019s enforcers swarm the Oldwall alleys. Aldric here? He\u2019s got a better route. \u2026And a debt to collect.\u201d\n\nBehind her, the sound of boots on brick. Close.\n\nThe market\u2019s noise fades to a dull roar.\n\nYour move.\n\n**What do you do?**\n\n- Trust Aldric. Follow him\u2014quick, quiet, through the trash-choked tunnels under the fishmongers.\n- Trust Mira. Let her lead\u2014you know she\u2019s got a hidden path, and you know she\u2019s got leverage.\n- *Do something else.* (You\u2019ve got the ledger. You\u2019ve got skills. And you\u2019re not walking into a trap without a plan.)"
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.6,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 10.2,
+      "highlight": "His voice cracks.",
+      "full_response": "The Ashmarket hums like a wasp nest stirred with a stick\u2014steam rising from eel stalls, the tinny jingle of counterfeit charms, the sour tang of ash-dusted pastries clinging to the back of your throat. You slip between a vendor hawking \u201cCinderpeak Luck Beans\u201d (probably ground pebbles) and a half-blind weaver stitching ash-flecked tapestries that *move* when you\u2019re not looking.\n\nYou don\u2019t take the main alleys. Too many Council patrols in their polished boots and grey cloaks, their eyes scanning for faces they\u2019ve seen on wanted scrolls. You take the *other* way\u2014the broken sewer grate behind the spice merchant\u2019s stall, the one that smells like old blood and cardamom. You\u2019ve used it before. It still works. Mostly.\n\nThe ash falls heavier here. Not snow, not soot\u2014*memory*. It clings to your cloak like the ghost of a name you can\u2019t quite recall.\n\nYou\u2019re halfway through the warren of rusted fire-escapes and leaning tenements when you hear it.\n\nA wet cough. Then, \u201c...Sable?\u201d\n\nYou freeze. One hand on your dagger. The other grips the ledger tucked under your coat\u2014still warm from your body heat, still heavy with secrets.\n\nThere, hunched under a broken awning, is **Aldric**.\n\nHis uniform\u2019s been altered\u2014sleeves ripped off, collar torn, the Council crest scratched clean with a nail. His face is pale, smudged with ash and something darker. A fresh cut runs from his temple down to his jaw. His eyes are wide, not with fear... but *hope*.\n\nHe\u2019s holding out a small, grease-stained pouch.\n\n\u201cI... I didn\u2019t know where else to go,\u201d he whispers. \u201cI couldn\u2019t forget what you did. I couldn\u2019t let you go without... without this.\u201d\n\nHe opens the pouch.\n\nInside: three silver tokens. And a folded slip of paper, sealed with red wax\u2014the insignia of the *Merchant Council\u2019s Internal Audit Bureau*.\n\nHis voice cracks.\n\n\u201cI stole it from the records wing. Last night. They\u2019re checking the warehouse logs. They\u2019re going to connect the guard\u2019s disappearance... to you.\u201d\n\nHe swallows hard.\n\n\u201cThey\u2019re coming for you, Sable. And I... I thought you might need a head start.\u201d\n\nThe ash falls. The market shouts"
     },
     {
       "id": "closing_beat",
@@ -165,11 +338,382 @@
       "failed_dimensions": [
         "length"
       ],
-      "judge_scores": null,
-      "completion_tokens": 463,
-      "elapsed_s": 13.8,
-      "highlight": "Lets the silence thicken.",
-      "full_response": "Mira doesn\u2019t flinch. Doesn\u2019t pull away. Just turns her head slow, eyes like obsidian chips catching the flicker of a nearby lantern. The scent of cloves grows sharper, cloying, almost medicinal.\n\n\u201cYou let him live,\u201d she says. Not a question. A verdict.\n\nA vendor two stalls down drops a crate of dried river-moss. It crashes like a thousand brittle bones. The crowd murmurs, but no one looks over.\n\nShe leans in. Close enough that you feel the heat of her breath, the whisper of a scar along her jaw.\n\n\u201cHe\u2019s *young*, Sable. Scared. Wears his guilt like a second skin. He didn\u2019t see your face. Not clearly. Not enough to name you.\u201d\n\nShe pauses. Lets the silence thicken.\n\n\u201cBut he *saw you care*.\u201d\n\nHer missing finger taps once against your wrist\u2014quick, sharp, a warning.\n\n\u201cHe\u2019s been asking questions. Down at the Ashmarket\u2019s back alleys. Slipping coin to beggars who used to work the Council\u2019s docks. Saying he \u2018owes a debt to the one who didn\u2019t kill him.\u2019\u201d\n\nMira\u2019s mouth quirks\u2014not quite a smile.\n\n\u201cThe Thornwarden don\u2019t like loose ends that *remember kindness*.\u201d\n\nShe pulls free, steps back. Pulls a small, crumpled scroll from her sleeve. Tosses it into your palm.\n\n\u201cHere\u2019s your next job. Find the ledger\u2019s twin\u2014hidden in the old granary beneath the Clockspire. It\u2019s got names. *Real* names. Not the ones the Council burns.\u201d\n\nShe turns again, but pauses.\n\n\u201cOh. And Sable?\u201d\n\nHer voice drops, low, almost a whisper over the market\u2019s din.\n\n\u201cIf Aldric\u2019s still alive by dawn\u2026 he\u2019s not a liability anymore.\u201d\n\nShe\u2019s gone before you can reply.\n\nBehind you, someone drops a clay cup. It shatters. Ash swirls in the air like faulty snow.\n\nAnd in your hand\u2014the scroll\u2019s wax seal is cracked. Half-melted.\n\nIt\u2019s not the Thornwarden\u2019s thorn-and-chain.\n\nIt\u2019s a raven. With one broken wing.\n\nAnd a single word, scratched beneath it in charcoal:\n\n> *Remember.*"
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 452,
+      "elapsed_s": 3.4,
+      "highlight": "Their eyes meet.",
+      "full_response": "Mira doesn\u2019t jerk away. Doesn\u2019t even flinch. She just turns her head slowly\u2014slow enough that you see the ash dusting her eyelashes, the faint tremor in the stump of her left finger where she\u2019s picked at the scar again.\n\nHer voice drops to a whisper, barely audible over the sizzle of frying eel and a drunk bard warbling off-key about a drowned queen.\n\n> \u201cYou let *him* go.\u201d  \n> She pauses.  \n> \u201cGood.\u201d  \n\nShe lifts her chin\u2014just slightly\u2014toward the eastern stall awning, where a thin young man in a too-big Council tunic is haggling over dried mushrooms. Aldric. His face is pale under the soot, his hands shaking as he counts copper coins. He doesn\u2019t look at you.\n\n> \u201cHe\u2019s still alive,\u201d she says, \u201cwhich means he\u2019s still *talking*. And you? You\u2019re the only one who heard him whisper your name before you ran. He doesn\u2019t know who you are. Not really. But he *remembers* the eyes. The way you didn\u2019t kill him.\u201d  \n\nShe leans in, cloves and smoke clinging to her breath.\n\n> \u201cNow he\u2019s selling Council rations to buy ink and parchment. Writing letters. To his sister. In the docks district. You think that\u2019s innocent?\u201d  \n\nA beat.\n\n> \u201cHe thinks he\u2019s doing the right thing.\u201d  \n\nMira\u2019s gaze locks onto yours. Not threatening. Not mocking. Almost\u2026 curious.\n\n> \u201cSo tell me, Sable\u2014do you want him to live?  \n> Or do you want him to *matter*?\u201d\n\nBehind her, a vendor drops a crate. Ash explodes into the air like a black cloud. Aldric flinches\u2014and then, instinctively, he glances toward you.\n\nTheir eyes meet.\n\nHe freezes.\n\nYou see it\u2014the flicker of recognition. Fear. Gratitude. And something worse.\n\n*Hope.*\n\nMira smirks, turns, and vanishes into the crowd before you can answer.\n\nThe ash falls.  \nAldric doesn\u2019t look away.  \nAnd somewhere, a Council messenger just knocked on the wrong door."
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_mechanics_leak": true,
+        "sensory_density": 4.5,
+        "forward_momentum": false,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_mechanics_leak",
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.25,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 8.3,
+      "highlight": "Eyes wide.",
+      "full_response": "The knife finds the soft spot beneath his ribcage \u2014 not a kill shot, not quite, but it *hisses* as the air escapes his lungs like steam from a ruptured boiler.\n\nHe doesn\u2019t scream. Doesn\u2019t even gasp. Just freezes. Eyes wide. The lantern light glints off the ash clinging to his greasy tunic \u2014 *Council uniform*, you realize too late. Not Thornwarden. *Enforcer*. A *Council* enforcer. One of Vael\u2019s quiet men. The kind who disappear witnesses\u2026 and sometimes, *fixers*.\n\nHe staggers back, hand clutching his side, blood-black in the soot-light. Behind him, the alley mouth is crowded now \u2014 two more in dark coats, boots crunching crushed ash. One of them whispers into a brass-cased speaking tube clipped to his belt.\n\nYou don\u2019t wait to hear what he\u2019s saying.\n\nYou *move*.\n\nSliding past the dying man, you shove a cart of pickled eel into the path of the oncoming pair. Glass jars explode. Vinegary sludge sheets across the stones. One enforcer slips. The other curses \u2014 a sharp, clipped Valdremorian dialect \u2014 and draws a short sword.\n\nBut you\u2019re already gone.\n\nUp the rusted fire escape, hand over hand, ash raining like gray snow on your shoulders. Below, shouts rise. A bell tolls \u2014 not the fire bell. The *curfew bell*. The Council\u2019s signal: *Lock the gates. Hunt the shadow.*\n\nYou don\u2019t look back.\n\nBut as you vault onto the rooftop of the old spice house, you catch the glint of something in the alley below \u2014 a folded slip of parchment, fluttering in the wind like a dying moth, caught on the outstretched hand of the dying enforcer.\n\nYou *could* go back.\n\nOr you could run.\n\nAnd you know \u2014 if you leave it, someone else will read it.\n\nAnd if they do\u2026\n\n*They\u2019ll know you were here.*\n\nThe wind carries the scent of cloves. You swear it\u2019s Mira.\n\nBut Mira\u2019s in the market. She wouldn\u2019t be here.\n\nWould she?\n\n---\n\n**What do you do, Sable?**\n\n> A) Go back for the note \u2014 risk the enforcers, risk the bell, risk being seen.  \n> B) Bolt for the rooftops, vanish into the ash-storm,"
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "fail_forward": true,
+        "no_refusal": true,
+        "forward_momentum": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "fail_forward",
+        "no_refusal",
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 479,
+      "elapsed_s": 3.4,
+      "highlight": "Eyes wide.",
+      "full_response": "You *try* to slip through the crowd\u2014shoulders hunched, head down, cloak pulled tight like you\u2019re just another ash-caked vendor trying to dodge the tax collector\u2019s eye.\n\nThe problem?\n\nThe 3.\n\nIt\u2019s not just bad luck. It\u2019s the kind of bad luck that *echoes.*\n\nYour cloak snagged on a stall\u2019s hanging spice sack\u2014*cinnamon, burnt orange, and something sour*\u2014and as you yank free, a cloud of it explodes into the air. The guard nearest you, a burly man with a scar running from temple to jaw like a carved curse, sniffs.\n\n\u201cSmells like trouble,\u201d he mutters.\n\nThen he looks at you.\n\nNot because you\u2019re obviously a rogue.\n\nBut because you *flinched* when he spoke.\n\nAnd flinching? That\u2019s the tell.\n\nThe crossbowmen on the roof shift. One adjusts his stance.\n\nOne of the guards clears his throat. \u201cYou. Ash-stained. Stand right there.\u201d\n\nYou didn\u2019t move.\n\nBut the crowd did.\n\nSomeone *else* flinched.\n\nA young man in a threadbare tunic, clutching a basket of smoked eel\u2014you recognize him instantly.\n\n**Aldric.**\n\nThe guard you let live.\n\nHe\u2019s sweating. Eyes wide. He sees you.\n\nAnd he *doesn\u2019t look away.*\n\nHe doesn\u2019t run.\n\nHe doesn\u2019t shout.\n\nHe just\u2026 *stares.*\n\nThen, slow as a sigh, he lifts his basket\u2014*presents it*\u2014to the guard.\n\n\u201cFresh catch, sir. From the rivermouth. Best in the district.\u201d\n\nThe guard snorts, takes a fish. Sniffs it. Tosses a copper.\n\nAldric bows. Low. Too low.\n\nAnd as he straightens, his eyes flick to yours.\n\n*One blink.*\n\n*Then a smudge of ash on his cheek.*\n\n*Exactly where you\u2019d brushed against him that night in the warehouse.*\n\nYou didn\u2019t think he\u2019d remember.\n\nHe remembers.\n\nAnd now?\n\nHe\u2019s giving you a choice.\n\nWalk away.\n\nOr let him try to help.\n\nThe guard is still watching you.\n\nThe crossbowmen are still watching.\n\nThe ash is falling.\n\nAnd Aldric\u2019s basket is still in his hands.\n\nWaiting.\n\nWhat do you do, Sable?"
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "vael_speaks": true,
+        "subtle_tell": true,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "vael_speaks",
+        "subtle_tell",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 5.0,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 491,
+      "elapsed_s": 7.8,
+      "highlight": "The bodies we *didn\u2019t* find.\u201d**\n\nHis voice is calm as wet stone.",
+      "full_response": "Vael doesn\u2019t flinch.\n\nHe\u2019s standing by a stall selling smoked moon-fish, one hand resting lightly on a rack of glass vials filled with glowing amber liquid \u2014 *cinder-sap*, they call it. A woman nearby laughs too loud, and ash drifts down like lazy snow between them. He doesn\u2019t look away. Doesn\u2019t blink. Just lets the silence stretch until the steam from the fish stall curls around his collar like a noose.\n\nThen, softly, almost kindly:\n\n**\u201cYou\u2019re the one who let the guard live.\u201d**\n\nIt\u2019s not an answer. It\u2019s a pivot. A scalpel.\n\nHe plucks a vial from the rack, turns it slowly. The sap inside shimmers. \u201cHarlen Doss was smuggling blackpowder through the spice tunnels. Three children died when the warehouse near Silverthread Lane blew. The Council didn\u2019t order his death, Sable. We *prevented* a second explosion. Harlen was reckless. Not a villain. Just\u2026 a man who thought the world owed him more than he owed it.\u201d\n\nHe sets the vial down. Doesn\u2019t buy it.\n\n**\u201cYou saw me at the warehouse. You saw me give the order. But you didn\u2019t see what came before. The letters. The maps. The bodies we *didn\u2019t* find.\u201d**\n\nHis voice is calm as wet stone.\n\n**\u201cTell me \u2014 did you ever wonder why the Thornwarden gave you that ledger? Or why it had Doss\u2019s seal on the third page?\u201d**\n\nA beat.\n\nHe steps closer \u2014 just enough to smell the cloves clinging to his coat. Not Mira\u2019s cloves. These are older. Darker. Like burnt incense in a tomb.\n\n**\u201cYou let a boy go. That was\u2026 noble. Or stupid. I can\u2019t tell which yet. But you\u2019re asking me questions like a man who still believes in clean hands.\u201d**\n\nHe turns to leave, then pauses.\n\n**\u201cIf you want to know who ordered Harlen\u2019s death\u2026 ask the man who paid the assassin. Not the one who signed the warrant.\u201d**\n\nAnd then he\u2019s gone \u2014 swallowed by the murk of the Ashmarket, leaving only the scent of cloves\u2026 and the faint, metallic tang of fear.\n\n*Sable, you feel something in your pocket. The ledger. The page with Doss\u2019s seal \u2014 it\u2019s warm.*"
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "immediate_pivot": true,
+        "sensory_density": 3.9,
+        "mira_reacts": true,
+        "forward_momentum": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "immediate_pivot",
+        "sensory_density",
+        "mira_reacts",
+        "forward_momentum"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 456,
+      "elapsed_s": 7.0,
+      "highlight": "Ash falls.",
+      "full_response": "The bolt hums\u2014*thunk*\u2014into the wood like a wasp finding its nest. Ash flakes from the impact, swirling in the stinking lamplight. \n\nBehind you, the crowd *screams* and surges\u2014half in panic, half in delight. It\u2019s market day. Chaos is just another spice.\n\nYou don\u2019t turn. Not yet.\n\nBecause you know who just fired it.\n\nAldric.\n\nHe\u2019s perched on the iron-girder walkway above the spice vendor\u2019s stall, knees bent, cloak half-collapsed like a dead bat. His face is pale under the soot-streaked hood. One hand still grips the crossbow. The other clutches a crumpled piece of parchment \u2014 the same one he swore he burned three nights ago. The one with *your* sigil on it. The one *she* gave him.\n\nHe\u2019s trembling.\n\nAnd he\u2019s screaming.\n\n**\u201cSABLE\u2014RUN! THEY\u2019RE COMING THROUGH THE BACK!\u201d**\n\nMira\u2019s clove-scented laugh dies like a snuffed candle.\n\nHer missing finger twitches.\n\nShe doesn\u2019t look at you.\n\nShe looks *up*.\n\nAt Aldric.\n\nAnd for the first time in five years, the Thornwarden fixer looks\u2026 afraid.\n\nSomewhere behind the smoke, a door splinters open.\n\nThen another.\n\nThen a woman\u2019s voice, calm as a surgeon\u2019s scalpel:\n\n*\u201cSable. You left a witness.\u201d*\n\nCouncillor Vael steps into the market light.\n\nHe\u2019s not alone.\n\nThree Council Enforcers. Black lacquered armor. No insignia. Just red thread stitched into their collars.\n\nAnd behind them\u2014\n\nA dozen Thornwarden archers, silent as graves, nocking bolts.\n\nYou\u2019re caught between two wolves.\n\nAnd Aldric? \n\nHe\u2019s the one holding the rope.\n\nHe hasn\u2019t shot again.\n\nHe\u2019s waiting.\n\nFor *you*.\n\nThe crowd\u2019s still screaming.\n\nAsh falls.\n\nMira\u2019s whisper brushes your ear, so quiet only you can hear it:\n\n> \u201c*Did you really think we didn\u2019t know who you let live?*\u201d\n\nWhat do you do, Sable?"
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "mystery_preserved": true,
+        "sensory_grounding": true,
+        "hooks_curiosity": true,
+        "length": "DUMP",
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "mystery_preserved",
+        "sensory_grounding",
+        "hooks_curiosity",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.5,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 456,
+      "elapsed_s": 4.5,
+      "highlight": "Dark.",
+      "full_response": "The brass cylinder is cold to the touch \u2014 colder than the ash-chilled air of the market \u2014 and it hums faintly, like a tuning fork pressed against bone. Not loud. Not even audible unless you\u2019re still enough to notice the vibration in your fingertips.  \n\nThe seals are cracked, not broken \u2014 as though whoever put it here *wanted* it found, but not easily. The imperial sigil \u2014 a crown of blackened thorns wrapped around a weeping eye \u2014 is etched deep into its surface. Ash has settled into the grooves like dried blood.  \n\nYou twist it gently. A soft *click*, then a whisper of displaced air. The end unscrews \u2014 not with force, but with reluctant surrender \u2014 and inside, nestled in velvet that\u2019s long since rotted to dust, are three thin sheets of vellum.  \n\nThey\u2019re not written in any script you\u2019ve seen. Not Council script. Not the old imperial dialect.  \n\nIt\u2019s a language of *dots and spirals* \u2014 like the way ash falls when the wind dies.  \n\nAnd beneath them, tucked like an afterthought, is a single lock of hair.  \n\nDark. Long. Still soft.  \n\nAnd smelling faintly of cloves.  \n\nYou freeze.  \n\nSomewhere behind you, a vendor yells, \u201cFresh eel! Flew out of the river yesterday \u2014 still twitching!\u201d  \n\nBut you don\u2019t hear it.  \n\nBecause you know that hair.  \n\nMira never lets anyone touch her hair.  \n\nShe braids it herself.  \n\nAnd she never wears perfume.  \n\n*Except cloves.*  \n\nThe cylinder wasn\u2019t hidden to keep it secret.  \n\nIt was hidden to keep *her* secret.  \n\nAnd now you\u2019re holding it.  \n\nWhich means \u2014  \n\n*She knew you\u2019d come here.*  \n\nThe ash shifts.  \n\nA shadow falls over your shoulder.  \n\nSomeone\u2019s watching.  \n\nYou don\u2019t turn around.  \n\nYou never turn around first.  \n\nBut you know \u2014  \n\nShe\u2019s not the only one who\u2019s been waiting.  \n\nAnd the ledger you stole?  \n\nIt wasn\u2019t the real target.  \n\nThis was.  \n\nAnd now you\u2019re holding the key to why she chose *you*."
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "aldric_named_or_implied": true,
+        "player_agency_preserved": true,
+        "mira_in_character": true,
+        "forward_momentum": false,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "aldric_named_or_implied",
+        "player_agency_preserved",
+        "mira_in_character",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.67,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 235,
+      "elapsed_s": 1.7,
+      "highlight": "Smoke curls past your face.",
+      "full_response": "Mira doesn\u2019t look up. She\u2019s peeling a clove with her thumb and nail\u2014slow, deliberate. The scent of spice thickens the air between you.\n\n\u201cIt\u2019s an address,\u201d she says. \u201cBoy\u2019s living under a false name now. *Aldric Venn*. Renting a room above a cobbler\u2019s shop on Ashwater Lane. Pays in copper. Sleeps with a knife under his pillow. Still jumps at thunder.\u201d\n\nShe finally lifts her eyes. Her missing fingertip taps the paper once. Twice.\n\n\u201cThornwarden policy says *clean*.\u201d\n\nA vendor nearby hawks roasted rat skewers. Smoke curls past your face. A child laughs somewhere in the crowd. The ash falls softer here, just a dusting on the awning overhead.\n\nMira leans in, voice dropping to a whisper that still cuts like glass:\n\n\u201cYou let him walk once. That was mercy. This isn\u2019t. This is *business*.\u201d\n\nShe pushes the paper further. Toward you.\n\nIt\u2019s not an order.\n\nBut in Valdremor, silence after that? That\u2019s a death sentence with a receipt."
     }
   ]
 }

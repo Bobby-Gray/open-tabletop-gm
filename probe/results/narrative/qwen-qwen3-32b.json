@@ -1,0 +1,623 @@
+{
+  "model": "qwen/qwen3-32b",
+  "timestamp": "2026-04-19T07:32:37",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 3,
+    "FAIL": 7,
+    "ERROR": 2
+  },
+  "judge_averages": {
+    "atmosphere": 4.77,
+    "npc_craft": 4.04,
+    "gm_craft": 4.79
+  },
+  "overall_judge_score": 4.53,
+  "inter_rater_agreement": {
+    "atmosphere": -0.357,
+    "npc_craft": 0.446,
+    "gm_craft": -0.189,
+    "mean": -0.033
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "sensory_density": 3.2,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 2,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 2,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 2.5,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 6.8,
+      "highlight": "The Ashmarket\u2019s canopy of damp canvas muffles the world outside, but the air thrums with life.",
+      "full_response": "The Ashmarket\u2019s canopy of damp canvas muffles the world outside, but the air thrums with life. Beneath your hood, you catch the tang of cardamom and charred fish, the sour metallic edge of coin-changers, and the musk of bodies packed close under soot-streaked banners. A weaver in the corner demonstrates a loom spitting out crimson thread that glows like embers\u2014**"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "sensory_npc_detail",
+          "physical_gesture",
+          "visible_motivation"
+        ],
+        "has_dialogue": false,
+        "visible_motivation": true,
+        "has_physical_gesture": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "visible_motivation",
+        "has_physical_gesture"
+      ],
+      "failed_dimensions": [
+        "has_dialogue",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 15.8,
+      "highlight": "Her eyes flick to your shoulders, where a patch of ash clings\u2014*not* from the volcano.",
+      "full_response": "The Ashmarket roars around you\u2014spiced eel smoke curls through the rafters, a street performer\u2019s lute strings buzz like wasps, and the ever-present ash from Cinderpeak dusts your shoulders like a curse. Mira stands by a cart of counterfeit jewels, her missing finger tapping a rhythm of impatience on her cane. Her cloak smells of cloves and irritation.  \n\n**Mira:** (leaning in, voice low-over-the-crowd sharp) \u201cYou *really* know how to turn a pretty heist into a funeral, Sable. That ledger\u2019s a fire waiting to burn us all. And your little *pity party*\u2014\u201d (she spits the words like rotten fruit) \u201c\u2014let a Council guard walk away. You think Aldric\u2019s going to keep his mouth shut? Men like him? They *pry* until they break.\u201d  \n\nShe produces the ledger from her coat, its pages frayed and stained with ink that looks like blood. A Council emblem glints on the cover. Her eyes flick to your shoulders, where a patch of ash clings\u2014*not* from the volcano.  \n\n**Mira:** \u201cYou\u2019ve got two options. Hand me the ledger *and"
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 7.4,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": false,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.67,
+          "npc_craft": 3.33,
+          "gm_craft": 4.67
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 8.4,
+      "highlight": "The air at the spice stall is a cloying fog of cinnamon and charred clove\u2014too sweet, like the vendor\u2019s smile.",
+      "full_response": "The air at the spice stall is a cloying fog of cinnamon and charred clove\u2014too sweet, like the vendor\u2019s smile. The seller, a h"
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "DUMP",
+        "forward_momentum": true,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 3.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 1519,
+      "elapsed_s": 13.9,
+      "highlight": "The ledger\u2019s still warm in your hand.",
+      "full_response": "The Ashmarket\u2019s canopy is a tangle of rusted chains and soot-blackened tarps, straining under the weight of charred beams from the empire\u2019s long-dead palaces. Spices smolder in clay pots\u2014smoked paprika, burnt cinnamon\u2014while the hiss of a nearby blacksmith\u2019s forge mixes with the rattle of dice from shadowed corners. You edge past a vendor hawking iridescent beetle-pearl powder (it *hurts*, in the best way) and a weaver whose tapestries depict the Merchant Council as ash-covered serpents. The ledger tucked under your cloak feels unnervingly light, like something vital\u2019s been pried loose from your soul.  \n\nThe backstreets of Lower Valdremor open up with a claustrophobic exhale. Narrow alleys split by cracked cobblestones and the occasional burst of overgrowth\u2014thornvines twist around a crumbling archway, their serrated edges glinting with oil-slick rain. A flickering lamplight reveals a Thornwarden symbol etched into a soot-stained wall: a single clove pressed into the mortar beside a wolf\u2019s paw. You hear it first\u2014a scrape of steel on stone\u2014then see it: a Council enforcer\u2019s uniform caught in a rusted gutter spout, abandoned. A bad sign.  \n\nFootsteps. Three pairs. One is Aldric\u2019s nervous shuffle, another the smooth glide of a Thornwarden, but the third\u2026 it\u2019s too deliberate. *Too clean.* Someone\u2019s mapping your route. The air ahead of you turns colder, like it\u2019s been funneled through a tomb.  \n\nDo you:  \n1. Duck into a shadowed alcove and let the pursuers pass?  \n2. Follow Aldric\u2019s trail to see what he\u2019s hiding?  \n3. Smash a fruit cart to create a diversion and take a riskier shortcut?  \n\nThe ledger\u2019s still warm in your hand. Ash falls harder now, like it\u2019s the Cinderpeak\u2019s way of watching."
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "WARN",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 396,
+      "elapsed_s": 12.4,
+      "highlight": "Mira\u2019s laugh is a dry, metallic sound like a coin being dragged over stone.",
+      "full_response": "Mira\u2019s laugh is a dry, metallic sound like a coin being dragged over stone. She jerks her arm free, but not before her thumb flicks a tiny pinch of clove-scented powder into the air between you\u2014a subtle ward or a threat, you can\u2019t tell which. \"Aldric\u2019s a loose thread,\" she says, eyes narrowing as the market\u2019s clamor drowns out a clanging bell from a spice cart nearby. \"Pull him too tight, he\u2019ll cut you. Let him dangle too long, the Council\u2019ll find him. Either way\u2026 you\u2019re tangled in the same rug.\" Her gaze drifts past you, as if tracking a ghost in the smoke. \"He\u2019s got a ledger to remember you by now, don\u2019t he?\""
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_mechanics_leak": true,
+        "sensory_density": 5.0,
+        "forward_momentum": false,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_mechanics_leak",
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 3.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 623,
+      "elapsed_s": 6.1,
+      "highlight": "The dagger flickers in the dim, ash-choked light as it slices through the Thornwarden\u2019s ribs like softened butter.",
+      "full_response": "The dagger flickers in the dim, ash-choked light as it slices through the Thornwarden\u2019s ribs like softened butter. He grunts, a wet, gurgling sound, and his ironwood staff clatters to the cobblestones. Smoke curls from the wound\u2014**the stink of blood and singed fur**\u2014as he collapses into a heap of black cloak and twitching fingers. His eyes meet yours, wide and glassy, and you swear you see the faintest shimmer of a **dragon-scale tattoo** on his neck before he goes still. \n\nThe alley stays deathly silent for a heartbeat. Then, a screech of iron hinges. A nearby spice stall erupts in a burst of crushed saffron and star anise as someone yanks it shut, and the clatter of boots echoes on the far side of the market. You\u2019ve bought time, not escape\u2014Mira\u2019s going to *hate* that ledger\u2019s now stained with more than just ink. \n\nBut the real trouble? That\u2019s in the way Aldric\u2019s been staring at the wall since you left the warehouse. He\u2019s not looking at the Ashmarket anymore."
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "fail_forward": true,
+        "no_refusal": true,
+        "forward_momentum": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "fail_forward",
+        "no_refusal",
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 1026,
+      "elapsed_s": 31.6,
+      "highlight": "Then, a **voice you recognize** cuts through the fray\u2014a tremulous, high tenor.",
+      "full_response": "The Ashmarket\u2019s usual din reaches a fever pitch as you near the north gate\u2014clattering trays of pickled beetle larvae, the whine of a minstrel\u2019s fiddle, and the acrid stench of charred wood from the checkpoint\u2019s roaring braziers. Your 3 on Stealth feels like being doused in firelight; the guards\u2019 eyes flick to you twice, once as you jostle for space in the crush of bodies, the second time when your hand brushes a ledger-thick scroll tucked awkwardly beneath your cloak.  \n\nA grizzled patrolwoman with a scar like a **molten wax seal** on her cheek mutters to her companion, \u201c*Third one today with a scuffed vial of**smokeoil **in their belt. Council\u2019s got too many secrets in this market.*\u201d She doesn\u2019t call you out, but the crossbowmen on the rafters lean a bit more into the shadows, their boots scuffing the wooden beams like **crickets before a storm**.  \n\nThen, a **voice you recognize** cuts through the fray\u2014a tremulous, high tenor. Aldric. The young guard from the warehouse, still in his threadbare Council uniform, is half-hidden among the crowd, eyes darting between you and the checkpoint. He lurches forward as if to say something, but stops himself, hands clenching into fists. A third guard, a brash rookie with a badge on his belt that smells of **burnt sage and desperation**, narrows his eyes at the bulge under your cloak.  \n\n\u201c**You there**,\u201d he says, stepping into your path. \u201cCouncil business? That ledger\u2019ll cost you double to inspect. Move along, the rest of you.\u201d  \n\nMira\u2019s clove-scented voice loops in your memory: _\u201c\u6254\u6389\u5b83\uff0c\u8981\u4e0d\u5c31\u85cf\u597d\u5b83\u3002\u201d_ *Drop it or hide it better.* The crowd parts slightly, revealing a **stall of stolen silks** nearby\u2014maybe just enough time to pass it off. Or you could let Aldric\u2019s debt come due\u2026 if you signal him properly. What do you do?"
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "vael_speaks": true,
+        "subtle_tell": false,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "vael_speaks",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "subtle_tell",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 658,
+      "elapsed_s": 6.4,
+      "highlight": "The spice smuggler?",
+      "full_response": "The Ashmarket\u2019s smoke curls like ghostly fingers around you, carrying the scent of charred wood and Mira\u2019s lingering clove oil. You\u2019re in Vael\u2019s study now\u2014third floor of his merchant-row mansion, the windows half-shoved open to let out the reek of burning ledger paper. He doesn\u2019t blink as he adjusts his cufflink, the gold *clink* sharp against the hum of distant ash-chutes outside. \n\n**Councillor Vael:** \u201cHarlen Doss? The spice smuggler? *He* disappeared.\u201d His voice is polished, like a blade wrapped in velvet. \u201cI\u2019m not a man who issues orders I can\u2019t... *trace*. But if you\u2019re curious, Sable, you might ask Aldric about the *real* reason Doss vanished. Our young guard has a\u2026 habit of misunderstanding obligations.\u201d \n\nHe leans forward, ash drifting into the wineglass on his desk. For a heartbeat, his smirk falters\u2014a flicker of something cold and coiled, like a serpent catching its own tail. The ledger you stole burns in the fireplace behind him, its cinders black as teeth. *Watch the corners. Vael never tells a lie outright, but he\u2019ll carve one slow and neat.* \n\n(What do you do with the bait? Aldric\u2019s nervous face flashes in your memory\u2014did *he* kill Doss? Or is Vael dangling a noose for you?)"
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 7.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "mystery_preserved": false,
+        "sensory_grounding": true,
+        "hooks_curiosity": false,
+        "length": "DUMP",
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_grounding",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "mystery_preserved",
+        "hooks_curiosity",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.5,
+          "npc_craft": 3.25,
+          "gm_craft": 4.5
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 25.0,
+      "highlight": "The brass is cold, not from the night air but from *age*\u2014thick with tarnish, pitted like a coin dusted with ash.",
+      "full_response": "You pry the cylinder free, and it falls into your hand with the weight of a thousand secrets. The brass is cold, not from the night air but from *age*\u2014thick with tarnish, pitted like a coin dusted with ash. The administrative seal at its center is cinder-smudged, but the etching is sharp"
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "aldric_named_or_implied": true,
+        "player_agency_preserved": true,
+        "mira_in_character": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "aldric_named_or_implied",
+        "player_agency_preserved",
+        "mira_in_character"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.6,
+          "npc_craft": 4.6,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 11.5,
+      "highlight": "Her lips curl around the smoke.",
+      "full_response": "Mira lights a thin cigarette from her sleeve, the match hissing in the soot-choked air. Her lips curl around the smoke. *\u201cWhat *you* think it is,\u201d* she says, *\u201cdepends on how clean your hands got after that ledger job.\u201d* She leans in, cloves and charred paper thick between you. *\u201cThorn"
+    }
+  ]
+}

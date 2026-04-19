@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 """
-open-tabletop-gm narrative quality probe
------------------------------------------
-Tests how well a model applies the GM applied standards from SKILL.md across
-6 targeted scenarios. Each scenario maps to specific, measurable dimensions:
-
-  scene_entry      → sensory detail density, response length, forward momentum
-  npc_meeting      → NPC voice distinctiveness, visible motivation, voice vs. narrator
-  yes_and          → honors unexpected action, builds on it rather than redirecting
-  consequence      → references prior player choice, world visibly changed
-  pacing           → skips routine travel, cuts to the interesting moment
-  closing_beat     → ends on revelation/question/open thread, not a flat stop
+open-tabletop-gm narrative quality probe — v2
+----------------------------------------------
+Tests how well a model applies GM craft standards across 12 targeted scenarios.
 
 Scoring is two-layer:
-  1. Automated: pattern matching for measurable signals (word lists, length, sentence endings)
-  2. Judge: optional LLM judge pass (--judge-model) scoring 1-5 on atmospheric quality,
-     NPC distinctiveness, and overall GM craft
+  1. Automated: pattern matching on measurable signals (sensory density, momentum,
+     NPC voice markers, response length, structural discipline)
+  2. Judge ensemble: 1–5 scores from N judge models on atmosphere, npc_craft, gm_craft.
+     Inter-rater agreement (mean pairwise Pearson r) is reported as a methodological
+     validity measure — directly addressing the single-judge circularity criticism.
 
 Usage:
-  python3 probe/narrative_probe.py --model openai/gpt-oss-120b --url https://openrouter.ai/api --api-key KEY
-  python3 probe/narrative_probe.py --model openai/gpt-oss-120b --url https://openrouter.ai/api --api-key KEY --judge-model openai/gpt-oss-20b
-  bash probe/run-narrative.sh $OPENROUTER_API_KEY          # run all models, judge with gpt-oss-20b
+  # Single judge (v1 compatible):
+  python3 probe/narrative_probe.py --model google/gemma-3-27b-it \
+    --url https://openrouter.ai/api --api-key KEY
+
+  # 5-judge ensemble (recommended):
+  python3 probe/narrative_probe.py --model google/gemma-3-27b-it \
+    --url https://openrouter.ai/api --api-key KEY \
+    --judge-models "openai/gpt-oss-120b,google/gemma-3-27b-it,meta-llama/llama-3.3-70b-instruct,qwen/qwen3-235b-a22b,nvidia/nemotron-3-super-120b-a12b"
+
+  # Full sweep:
+  bash probe/run-narrative.sh $OPENROUTER_API_KEY
 """
 
 from __future__ import annotations
@@ -35,9 +37,16 @@ from pathlib import Path
 
 PROBE_DIR = Path(__file__).parent
 
+DEFAULT_JUDGES = [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b",
+]
+
 # ---------------------------------------------------------------------------
-# Mini campaign context — injected into every system prompt
-# Gives models something real to narrate against without loading files.
+# Campaign context — shared across all 12 scenarios
 # ---------------------------------------------------------------------------
 
 CAMPAIGN_CONTEXT = """
@@ -96,10 +105,10 @@ REFUSAL_PATTERNS = [
 ]
 
 CLOSING_BEAT_PATTERNS = [
-    r"\?$", r"\?\"$", r"\?\s*$",                    # ends with question
-    r"(what do you do|what will you do)\??",         # explicit action prompt
-    r"(waits?|watching|watching you|eyes? on you)",  # NPC hanging, waiting
-    r"(something|someone) (catches?|snags?) your",  # world pulls attention
+    r"\?$", r"\?\"$", r"\?\s*$",
+    r"(what do you do|what will you do)\??",
+    r"(waits?|watching|watching you|eyes? on you)",
+    r"(something|someone) (catches?|snags?) your",
 ]
 
 FLAT_STOP_PATTERNS = [
@@ -109,7 +118,8 @@ FLAT_STOP_PATTERNS = [
 
 
 def sensory_density(text: str) -> float:
-    """Unique sensory words per 100 words."""
+    if not text:
+        return 0.0
     words = re.findall(r"\b\w+\b", text.lower())
     if not words:
         return 0.0
@@ -117,8 +127,7 @@ def sensory_density(text: str) -> float:
     return round(hits / len(words) * 100, 1)
 
 
-def length_score(tokens: int) -> str:
-    """IDEAL / TERSE / DUMP based on token count."""
+def length_score(tokens: int | None) -> str:
     if tokens is None:
         return "UNKNOWN"
     if tokens < 80:
@@ -129,7 +138,6 @@ def length_score(tokens: int) -> str:
 
 
 def has_forward_momentum(text: str) -> bool:
-    """Ends with a question, open beat, or invitation to act."""
     last = text.strip().split("\n")[-1].strip()
     for pat in CLOSING_BEAT_PATTERNS:
         if re.search(pat, last, re.IGNORECASE):
@@ -153,7 +161,6 @@ def has_flat_stop(text: str) -> bool:
 
 
 def npc_voice_markers(text: str) -> list[str]:
-    """Check for NPC distinctiveness signals."""
     found = []
     if re.search(r'["""].+["""]', text):
         found.append("has_dialogue")
@@ -170,7 +177,6 @@ def npc_voice_markers(text: str) -> list[str]:
 
 
 def references_prior_choice(text: str) -> bool:
-    """Check if consequence scenario references the ledger/guard prior choice."""
     markers = ["guard", "aldric", "ledger", "warehouse", "let", "freed", "witness", "loose end",
                "choice", "decision", "that night", "job", "clean exit"]
     tl = text.lower()
@@ -178,33 +184,11 @@ def references_prior_choice(text: str) -> bool:
 
 
 def builds_on_action(text: str, action_keywords: list[str]) -> bool:
-    """Check if yes-and scenario actually incorporates the player's action."""
     tl = text.lower()
     return sum(1 for kw in action_keywords if kw in tl) >= 1
 
 
-def highlight_sentence(text: str) -> str:
-    """Return the single most sensory-rich sentence — best illustrates the model's voice."""
-    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
-    if not sentences:
-        return text[:200]
-    scored = []
-    for s in sentences:
-        words = re.findall(r"\b\w+\b", s.lower())
-        if not words:
-            continue
-        density = sum(1 for w in words if w in ALL_SENSORY) / len(words)
-        # Slight bonus for dialogue lines — they often show NPC voice best
-        dialogue_bonus = 0.05 if re.search(r'["""]', s) else 0
-        scored.append((density + dialogue_bonus, s))
-    scored.sort(reverse=True)
-    best = scored[0][1] if scored else sentences[0]
-    # Cap at 220 chars so it stays readable in reports
-    return best[:220] + ("…" if len(best) > 220 else "")
-
-
 def skips_travel(text: str) -> bool:
-    """Check if pacing scenario skips to the interesting moment rather than narrating every step."""
     step_by_step = ["first you", "then you", "you walk", "you move", "you make your way",
                     "step by step", "eventually you", "after a while", "you continue"]
     skip_markers = ["some time later", "by the time", "an hour", "when you arrive", "as you reach",
@@ -212,15 +196,114 @@ def skips_travel(text: str) -> bool:
     tl = text.lower()
     has_steps = sum(1 for p in step_by_step if p in tl)
     has_skip = sum(1 for p in skip_markers if p in tl)
-    # skip_markers present and few step-by-step = good pacing
     return has_skip > 0 or has_steps <= 1
 
 
+# --- New helpers for v2 test cases ---
+
+def has_mechanical_language(text: str) -> bool:
+    """Raw game mechanics leak into narration — fails the immersion test."""
+    patterns = [
+        r"\b\d+\s*(hit points|hp)\b",
+        r"\broll\b.{0,20}\b\d+\b",
+        r"\bmodifier\b",
+        r"\barmou?r class\b",
+        r"\b(d4|d6|d8|d10|d12|d20)\b",
+        r"\bsaving throw\b",
+        r"\battack roll\b",
+    ]
+    for p in patterns:
+        if re.search(p, text, re.IGNORECASE):
+            return True
+    return False
+
+
+def fail_forward(text: str) -> bool:
+    """Failure moves the world — world reacts, story continues, not a dead stop."""
+    dead_stops = [
+        r"\byou fail\b(?! to notice| to see| forward)",
+        r"\bnothing happens\b",
+        r"\byou don'?t succeed\b",
+        r"\bthe attempt fails\b",
+        r"\byou are unable\b",
+        r"\bunsuccessful\b",
+    ]
+    forward_markers = ["but", "however", "instead", "as you stumble", "the guard",
+                       "catches", "notices", "hears you", "sees you", "turns",
+                       "snaps", "commotion", "sound of", "your cover"]
+    tl = text.lower()
+    has_dead_stop = any(re.search(p, tl) for p in dead_stops)
+    has_forward = sum(1 for m in forward_markers if m in tl) >= 1
+    return has_forward and not has_dead_stop
+
+
+def has_subtle_deception_tell(text: str) -> bool:
+    """Behavioral tells without explicitly saying 'he's lying'."""
+    subtle = ["pause", "almost", "smooth", "carefully", "precise", "exactly",
+              "adjusted", "settle", "inhale", "exhale", "finger", "still",
+              "composed", "measured", "deliberate", "practiced", "too"]
+    explicit_tells = ["lying", "you can tell", "you sense he", "clearly false",
+                      "obviously", "detect a lie", "deception check"]
+    tl = text.lower()
+    has_subtle = sum(1 for w in subtle if w in tl) >= 2
+    has_explicit = any(w in tl for w in explicit_tells)
+    return has_subtle and not has_explicit
+
+
+def immediate_pivot(text: str) -> bool:
+    """Tone shift lands immediately — no slow 'you notice' framing."""
+    slow_framing = ["you notice", "you realize", "you become aware", "suddenly you",
+                    "all of a sudden", "you hear that ", "you see that "]
+    tl = text.lower()
+    first_sentence = tl[:120]
+    return not any(p in first_sentence for p in slow_framing)
+
+
+def preserves_mystery(text: str) -> bool:
+    """World reveal leaves questions open — doesn't dump all lore."""
+    dump_markers = ["this means that", "you understand now", "it all makes sense",
+                    "the truth is", "you realize that this is", "clearly this is",
+                    "this explains everything", "now you know"]
+    hook_markers = ["why", "who sealed", "when", "how long", "?", "wonder",
+                    "perhaps", "might have", "could be", "suggests", "hints at"]
+    tl = text.lower()
+    has_dump = sum(1 for m in dump_markers if m in tl) >= 2
+    has_hook = sum(1 for h in hook_markers if h in tl) >= 2
+    return has_hook and not has_dump
+
+
+def player_agency_preserved(text: str) -> bool:
+    """Moral dilemma doesn't tell the player what to do or feel."""
+    railroading = ["you must", "you have to", "you need to decide", "the only choice",
+                   "you should", "you decide to", "you realize you have no choice",
+                   "what do you choose", "what is your decision", "choose wisely"]
+    tl = text.lower()
+    return not any(r in tl for r in railroading)
+
+
+def highlight_sentence(text: str) -> str:
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    if not sentences:
+        return text[:220]
+    scored = []
+    for s in sentences:
+        words = re.findall(r"\b\w+\b", s.lower())
+        if not words:
+            continue
+        density = sum(1 for w in words if w in ALL_SENSORY) / len(words)
+        dialogue_bonus = 0.05 if re.search(r'["""]', s) else 0
+        scored.append((density + dialogue_bonus, s))
+    scored.sort(reverse=True)
+    best = scored[0][1] if scored else sentences[0]
+    return best[:220] + ("…" if len(best) > 220 else "")
+
+
 # ---------------------------------------------------------------------------
-# Test cases
+# Test cases — 12 scenarios
 # ---------------------------------------------------------------------------
 
 TEST_CASES = [
+    # --- Original 6 ---
     {
         "id": "scene_entry",
         "label": "Scene entry — sensory economy",
@@ -360,6 +443,153 @@ TEST_CASES = [
             "length": lambda v: v == "IDEAL",
         },
     },
+
+    # --- New v2 test cases ---
+    {
+        "id": "combat_hit",
+        "label": "Combat — critical hit without mechanics leak",
+        "standard": "S4: Describe vividly but efficiently",
+        "messages": [
+            {"role": "assistant",
+             "content": "The Thornwarden enforcer steps into the alley, blocking your exit. He's big — not someone who got where he is by being slow."},
+            {"role": "user", "content": "Natural 20. I drive my blade up under his guard."},
+        ],
+        "score_fn": lambda text, tokens, _: {
+            "no_mechanics_leak": not has_mechanical_language(text),
+            "sensory_density": sensory_density(text),
+            "forward_momentum": has_forward_momentum(text),
+            "no_refusal": not has_refusal(text),
+            "length": length_score(tokens),
+        },
+        "pass_thresholds": {
+            "no_mechanics_leak": lambda v: v,
+            "sensory_density": lambda v: v >= 1.5,
+            "forward_momentum": lambda v: v,
+            "no_refusal": lambda v: v,
+            "length": lambda v: v == "IDEAL",
+        },
+    },
+    {
+        "id": "player_failure",
+        "label": "Player failure — fail forward narration",
+        "standard": "S1: Improvise, don't script",
+        "messages": [
+            {"role": "assistant",
+             "content": "A Council patrol has set up a checkpoint at the Ashmarket's north gate. Four guards, two with crossbows on the roof. You need to get through unseen."},
+            {"role": "user", "content": "I try to slip through with the crowd. I rolled a 3 on stealth."},
+        ],
+        "score_fn": lambda text, tokens, _: {
+            "fail_forward": fail_forward(text),
+            "no_refusal": not has_refusal(text),
+            "forward_momentum": has_forward_momentum(text),
+            "no_flat_stop": not has_flat_stop(text),
+            "length": length_score(tokens),
+        },
+        "pass_thresholds": {
+            "fail_forward": lambda v: v,
+            "no_refusal": lambda v: v,
+            "forward_momentum": lambda v: v,
+            "no_flat_stop": lambda v: v,
+            "length": lambda v: v in ("TERSE", "IDEAL"),
+        },
+    },
+    {
+        "id": "npc_deception",
+        "label": "NPC deception — Vael lying, subtle tells only",
+        "standard": "S5: Make every NPC memorable",
+        "messages": [
+            {"role": "user",
+             "content": "I look Councillor Vael directly in the eye. \"The merchant who died in the Ashmarket last winter — Harlen Doss. Was that your order?\""},
+        ],
+        "injected_context": "Vael ordered the killing. He is lying. He is very good at it — calm, plausible, a little truth mixed with the lie. He does not panic, he does not overexplain. He has done this before.",
+        "score_fn": lambda text, tokens, _: {
+            "vael_speaks": any(w in text.lower() for w in ["vael", "councillor", "he says", "he replies", "his voice", '"']),
+            "subtle_tell": has_subtle_deception_tell(text),
+            "no_refusal": not has_refusal(text),
+            "length": length_score(tokens),
+        },
+        "pass_thresholds": {
+            "vael_speaks": lambda v: v,
+            "subtle_tell": lambda v: v,
+            "no_refusal": lambda v: v,
+            "length": lambda v: v in ("TERSE", "IDEAL"),
+        },
+    },
+    {
+        "id": "tone_shift",
+        "label": "Tone shift — banter to sudden threat",
+        "standard": "S6: Control the pace deliberately",
+        "messages": [
+            {"role": "assistant",
+             "content": "Mira's laughing at something you said — genuinely, which is rare. The market is loud and warm around you."},
+            {"role": "user", "content": "A crossbow bolt cracks into the stall post six inches from my head."},
+        ],
+        "score_fn": lambda text, tokens, _: {
+            "immediate_pivot": immediate_pivot(text),
+            "sensory_density": sensory_density(text),
+            "mira_reacts": any(w in text.lower() for w in
+                               ["mira", "she", "her", "drops", "grabs", "pulls", "moves", "low"]),
+            "forward_momentum": has_forward_momentum(text),
+            "length": length_score(tokens),
+        },
+        "pass_thresholds": {
+            "immediate_pivot": lambda v: v,
+            "sensory_density": lambda v: v >= 2.0,
+            "mira_reacts": lambda v: v,
+            "forward_momentum": lambda v: v,
+            "length": lambda v: v in ("TERSE", "IDEAL"),
+        },
+    },
+    {
+        "id": "world_reveal",
+        "label": "World reveal — artifact, mystery preserved",
+        "standard": "S4: Describe vividly but efficiently",
+        "messages": [
+            {"role": "user",
+             "content": "I pull the object from behind the ash-brick panel — it's been sealed in there a long time. What is it?"},
+        ],
+        "injected_context": "The object is a sealed brass cylinder, etched with the administrative seal of the old empire — the one destroyed a century ago when the ash first fell. Inside are census records. Someone sealed this deliberately, expecting to return. They never did.",
+        "score_fn": lambda text, tokens, _: {
+            "mystery_preserved": preserves_mystery(text),
+            "sensory_grounding": sensory_density(text) >= 1.5,
+            "hooks_curiosity": has_forward_momentum(text) or "?" in text,
+            "length": length_score(tokens),
+            "no_refusal": not has_refusal(text),
+        },
+        "pass_thresholds": {
+            "mystery_preserved": lambda v: v,
+            "sensory_grounding": lambda v: v,
+            "hooks_curiosity": lambda v: v,
+            "length": lambda v: v in ("TERSE", "IDEAL"),
+            "no_refusal": lambda v: v,
+        },
+    },
+    {
+        "id": "moral_weight",
+        "label": "Moral weight — genuine dilemma, agency preserved",
+        "standard": "S3: Make the player feel consequential",
+        "messages": [
+            {"role": "assistant",
+             "content": "Mira slides a piece of paper across the table. A name. An address. \"Loose end from the warehouse job. Thornwarden policy.\""},
+            {"role": "user", "content": "I look at the paper. \"Is this what I think it is?\""},
+        ],
+        "injected_context": "The name on the paper is Aldric — the guard Sable freed. Mira is not ordering Sable to do anything directly. She's presenting it as information. But everyone in this room knows what Thornwarden policy means.",
+        "score_fn": lambda text, tokens, _: {
+            "aldric_named_or_implied": any(w in text.lower() for w in
+                                           ["aldric", "guard", "warehouse", "name", "paper", "the man"]),
+            "player_agency_preserved": player_agency_preserved(text),
+            "mira_in_character": not re.search(r"(mira (says|tells|explains) (you|that) (you must|you have to|the only))", text, re.IGNORECASE),
+            "forward_momentum": has_forward_momentum(text),
+            "length": length_score(tokens),
+        },
+        "pass_thresholds": {
+            "aldric_named_or_implied": lambda v: v,
+            "player_agency_preserved": lambda v: v,
+            "mira_in_character": lambda v: v,
+            "forward_momentum": lambda v: v,
+            "length": lambda v: v == "IDEAL",
+        },
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -381,7 +611,6 @@ Response to evaluate:
 ---
 
 Reply with only: {{"atmosphere": N, "npc_craft": N, "gm_craft": N}}"""
-
 
 # ---------------------------------------------------------------------------
 # Inference
@@ -421,22 +650,17 @@ def chat(model: str, messages: list, url: str, timeout: int, api_key: str,
     return {"error": "rate-limited after 3 retries"}
 
 
-def judge_response(response_text: str, judge_model: str, url: str, api_key: str,
-                   timeout: int) -> dict | None:
-    """Ask the judge model to score the response. Returns dict or None on failure."""
+def judge_single(response_text: str, judge_model: str, url: str, api_key: str,
+                 timeout: int):
     prompt = JUDGE_RUBRIC.format(response=response_text[:1500])
-    result = chat(
-        judge_model,
-        [{"role": "user", "content": prompt}],
-        url, timeout, api_key,
-        max_tokens=300,
-        temperature=0.0,
-    )
+    result = chat(judge_model,
+                  [{"role": "user", "content": prompt}],
+                  url, timeout, api_key,
+                  max_tokens=300, temperature=0.0)
     if "error" in result:
         return None
     content = (result.get("choices", [{}])[0].get("message") or {}).get("content", "")
     try:
-        # Extract JSON even if there's surrounding text
         match = re.search(r"\{[^}]+\}", content)
         if match:
             return json.loads(match.group())
@@ -445,19 +669,101 @@ def judge_response(response_text: str, judge_model: str, url: str, api_key: str,
     return None
 
 
+def judge_ensemble(response_text: str, judge_models: list[str], url: str, api_key: str,
+                   timeout: int) -> dict:
+    """Run all judge models, return per-judge scores and aggregate."""
+    per_judge: dict[str, dict] = {}
+    for judge in judge_models:
+        scores = judge_single(response_text, judge, url, api_key, timeout)
+        if scores:
+            per_judge[judge] = scores
+
+    if not per_judge:
+        return {"per_judge": {}, "aggregate": None}
+
+    # Average across judges
+    dims = ["atmosphere", "npc_craft", "gm_craft"]
+    agg = {}
+    for dim in dims:
+        vals = [s[dim] for s in per_judge.values() if dim in s]
+        agg[dim] = round(sum(vals) / len(vals), 2) if vals else None
+
+    return {"per_judge": per_judge, "aggregate": agg}
+
+# ---------------------------------------------------------------------------
+# Inter-rater agreement
+# ---------------------------------------------------------------------------
+
+def pearson(x: list[float], y: list[float]) -> float | None:
+    n = len(x)
+    if n < 2:
+        return None
+    mx, my = sum(x) / n, sum(y) / n
+    cov = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
+    sx = sum((xi - mx) ** 2 for xi in x) ** 0.5
+    sy = sum((yi - my) ** 2 for yi in y) ** 0.5
+    if sx == 0 or sy == 0:
+        return None
+    return round(cov / (sx * sy), 3)
+
+
+def compute_inter_rater_agreement(all_results: list) -> dict:
+    """
+    Compute mean pairwise Pearson r between judges across all test responses.
+    High r (>0.7) across diverse model families = methodological validity.
+    """
+    from itertools import combinations
+
+    # Collect scores per judge across all responses
+    judge_scores: dict[str, list[dict]] = {}
+    for result in all_results:
+        pj = result.get("multi_judge", {}).get("per_judge", {})
+        for judge, scores in pj.items():
+            if judge not in judge_scores:
+                judge_scores[judge] = []
+            judge_scores[judge].append(scores)
+
+    if len(judge_scores) < 2:
+        return {}
+
+    dims = ["atmosphere", "npc_craft", "gm_craft"]
+    pairwise: dict[str, list] = {d: [] for d in dims}
+
+    judges = list(judge_scores.keys())
+    for j1, j2 in combinations(judges, 2):
+        s1, s2 = judge_scores[j1], judge_scores[j2]
+        n = min(len(s1), len(s2))
+        if n < 2:
+            continue
+        for dim in dims:
+            x = [s.get(dim, 3) for s in s1[:n]]
+            y = [s.get(dim, 3) for s in s2[:n]]
+            r = pearson(x, y)
+            if r is not None:
+                pairwise[dim].append(r)
+
+    out = {}
+    for dim in dims:
+        if pairwise[dim]:
+            out[dim] = round(sum(pairwise[dim]) / len(pairwise[dim]), 3)
+    if out:
+        out["mean"] = round(sum(out.values()) / len(out), 3)
+    return out
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
 def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
-                        judge_model: str = "", output_file: str = "") -> list:
-    print(f"\nnarrative probe — {model}\n{'-'*60}")
+                        judge_models: list[str], output_file: str = "") -> list:
+    print(f"\nnarrative probe v2 — {model}")
+    print(f"judges ({len(judge_models)}): {', '.join(j.split('/')[-1] for j in judge_models)}")
+    print("-" * 70)
     results = []
 
     for test in TEST_CASES:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-        # Inject additional context if present
         if test.get("injected_context"):
             sys_with_ctx = SYSTEM_PROMPT + f"\n\n**Scene note (GM only):** {test['injected_context']}"
             messages = [{"role": "system", "content": sys_with_ctx}]
@@ -474,39 +780,50 @@ def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
             results.append({
                 "id": test["id"], "label": test["label"], "standard": test["standard"],
                 "status": "ERROR", "error": response["error"], "elapsed_s": round(elapsed, 1),
+                "multi_judge": {"per_judge": {}, "aggregate": None},
             })
             continue
 
-        content = (response.get("choices", [{}])[0].get("message") or {}).get("content", "")
+        content = (response.get("choices", [{}])[0].get("message") or {}).get("content") or ""
         usage = response.get("usage", {})
         comp_tokens = usage.get("completion_tokens")
+
+        if not content:
+            print(f" ERROR (empty content)")
+            results.append({
+                "id": test["id"], "label": test["label"], "standard": test["standard"],
+                "status": "ERROR", "error": "empty_content", "elapsed_s": round(elapsed, 1),
+                "multi_judge": {"per_judge": {}, "aggregate": None},
+            })
+            continue
 
         # Auto-score
         scores = test["score_fn"](content, comp_tokens, test.get("injected_context", ""))
         thresholds = test["pass_thresholds"]
         passed = [k for k, v in scores.items() if k in thresholds and thresholds[k](v)]
         failed = [k for k, v in scores.items() if k in thresholds and not thresholds[k](v)]
-
         auto_status = "PASS" if not failed else ("WARN" if len(failed) <= 1 else "FAIL")
         print(f" {auto_status} ({elapsed:.1f}s)")
         if failed:
-            print(f"    ✗ failed: {failed}")
+            print(f"    ✗ {failed}")
         if passed:
-            print(f"    ✓ passed: {passed}")
+            print(f"    ✓ {passed}")
 
-        # Judge score
-        judge_scores = None
-        if judge_model and content:
-            print(f"    judging...", end="", flush=True)
-            judge_scores = judge_response(content, judge_model, url, api_key, timeout)
-            if judge_scores:
-                atm = judge_scores.get("atmosphere", "?")
-                npc = judge_scores.get("npc_craft", "?")
-                gmc = judge_scores.get("gm_craft", "?")
-                avg = round(sum(judge_scores.values()) / 3, 1) if judge_scores else "?"
-                print(f" atm={atm} npc={npc} gm={gmc} avg={avg}")
+        # Judge ensemble
+        multi_judge = {"per_judge": {}, "aggregate": None}
+        if judge_models and content:
+            print(f"    judging [{len(judge_models)} models]...", end="", flush=True)
+            multi_judge = judge_ensemble(content, judge_models, url, api_key, timeout)
+            agg = multi_judge.get("aggregate") or {}
+            if agg:
+                atm = agg.get("atmosphere", "?")
+                npc = agg.get("npc_craft", "?")
+                gmc = agg.get("gm_craft", "?")
+                avg = round(sum(v for v in agg.values() if v) / 3, 2) if agg else "?"
+                n_judges = len(multi_judge.get("per_judge", {}))
+                print(f" atm={atm} npc={npc} gm={gmc} avg={avg} (n={n_judges})")
             else:
-                print(" (judge failed)")
+                print(" (all judges failed)")
 
         hl = highlight_sentence(content)
         print(f"    ❝ {hl}")
@@ -519,39 +836,57 @@ def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
             "auto_scores": scores,
             "passed_dimensions": passed,
             "failed_dimensions": failed,
-            "judge_scores": judge_scores,
+            "multi_judge": multi_judge,
             "completion_tokens": comp_tokens,
             "elapsed_s": round(elapsed, 1),
             "highlight": hl,
             "full_response": content,
         })
 
-    # Summary
+    # --- Summary ---
     auto_counts = {s: sum(1 for r in results if r.get("status") == s)
                    for s in ["PASS", "WARN", "FAIL", "ERROR"]}
 
+    # Aggregate judge averages across all test cases
+    all_agg = [r["multi_judge"].get("aggregate") or {} for r in results
+               if r.get("multi_judge", {}).get("aggregate")]
     judge_avgs = {}
-    judge_results = [r["judge_scores"] for r in results if r.get("judge_scores")]
-    if judge_results:
+    if all_agg:
         for dim in ["atmosphere", "npc_craft", "gm_craft"]:
-            vals = [j[dim] for j in judge_results if dim in j]
+            vals = [j[dim] for j in all_agg if j.get(dim) is not None]
             judge_avgs[dim] = round(sum(vals) / len(vals), 2) if vals else None
 
-    print(f"\n{'='*60}")
+    # Inter-rater agreement
+    ira = compute_inter_rater_agreement(results)
+
+    overall_judge = round(sum(v for v in judge_avgs.values() if v) / 3, 2) if judge_avgs else None
+
+    print(f"\n{'=' * 70}")
     print(f"Model: {model}")
     print(f"Auto: {auto_counts}")
     if judge_avgs:
-        print(f"Judge avg: atmosphere={judge_avgs.get('atmosphere')}  "
+        print(f"Judge avg ({len(judge_models)} models): "
+              f"atmosphere={judge_avgs.get('atmosphere')}  "
               f"npc_craft={judge_avgs.get('npc_craft')}  "
-              f"gm_craft={judge_avgs.get('gm_craft')}")
-    print(f"{'='*60}\n")
+              f"gm_craft={judge_avgs.get('gm_craft')}  "
+              f"overall={overall_judge}")
+    if ira:
+        print(f"Inter-rater agreement (mean Pearson r): "
+              f"atmosphere={ira.get('atmosphere')}  "
+              f"npc_craft={ira.get('npc_craft')}  "
+              f"gm_craft={ira.get('gm_craft')}  "
+              f"mean={ira.get('mean')}")
+    print(f"{'=' * 70}\n")
 
     if output_file:
         out = {
             "model": model,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "judge_models": judge_models,
             "auto_summary": auto_counts,
             "judge_averages": judge_avgs,
+            "overall_judge_score": overall_judge,
+            "inter_rater_agreement": ira,
             "cases": results,
         }
         Path(output_file).write_text(json.dumps(out, indent=2))
@@ -559,24 +894,25 @@ def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
 
     return results
 
-
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="open-tabletop-gm narrative quality probe")
+    parser = argparse.ArgumentParser(description="open-tabletop-gm narrative quality probe v2")
     parser.add_argument("--model", required=True)
     parser.add_argument("--url", default="http://localhost:1234")
     parser.add_argument("--api-key", default="")
-    parser.add_argument("--judge-model", default="",
-                        help="Model to use as LLM judge (e.g. openai/gpt-oss-20b). "
-                             "Omit to skip judge scoring.")
+    parser.add_argument("--judge-models", default=",".join(DEFAULT_JUDGES),
+                        help="Comma-separated judge model IDs (default: 5-model ensemble)")
+    parser.add_argument("--no-judge", action="store_true", help="Skip judge scoring entirely")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--output-file", default="")
     args = parser.parse_args()
 
+    judges = [] if args.no_judge else [j.strip() for j in args.judge_models.split(",") if j.strip()]
+
     run_narrative_probe(
         args.model, args.url, args.api_key, args.timeout,
-        args.judge_model, args.output_file,
+        judges, args.output_file,
     )

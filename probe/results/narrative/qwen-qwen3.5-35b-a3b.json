@@ -1,0 +1,355 @@
+{
+  "model": "qwen/qwen3.5-35b-a3b",
+  "timestamp": "2026-04-19T08:02:32",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 1,
+    "FAIL": 3,
+    "ERROR": 8
+  },
+  "judge_averages": {
+    "atmosphere": 4.61,
+    "npc_craft": 3.89,
+    "gm_craft": 4.71
+  },
+  "overall_judge_score": 4.4,
+  "inter_rater_agreement": {
+    "atmosphere": 0.5,
+    "npc_craft": 0.879,
+    "mean": 0.69
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "sensory_density": 10.8,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.4,
+          "npc_craft": 3.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 3055,
+      "elapsed_s": 19.2,
+      "highlight": "Ash clings to your eyelashes, gritty and cold.",
+      "full_response": "Ash clings to your eyelashes, gritty and cold.\nA vendor coughs, spitting black phlegm into a rag, eyes locking onto your belt pouch.\nBehind you, the cobblestones glisten wet; the scent of spiced eel mixes with the smell of blood and ozone.\n\nA man in Council livery steps out of the smoke, hand hovering over his sword hilt. He doesn't speak. He just watches."
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture"
+      ],
+      "failed_dimensions": [
+        "visible_motivation",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 4.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 1387,
+      "elapsed_s": 8.8,
+      "highlight": "\"You took your time,\" she says, not unkindly, but her voice is rough like gravel.",
+      "full_response": "Ash sifts down from the soot-stained canvas roof, coating Mira\u2019s collar in gray. She leans against a spice stall, picking at a loose thread on her glove while she counts copper coins. The air smells of burnt cloves and wet wool.\n\nShe looks up as you approach. Her eyes lock onto the ledger bulging from your tunic.\n\n\"You took your time,\" she says, not unkindly, but her voice is rough like gravel. She taps the missing tip of her index finger against the table. \"The Council patrols doubled. They\u2019re smelling blood on the streets.\"\n\nShe glances toward the warehouse district, then back to you. \"And the guard?\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 4.3,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": false,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.0,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 4258,
+      "elapsed_s": 26.4,
+      "highlight": "A shadow shifts three paces back.",
+      "full_response": "You lean against the stall. Cardamom dust hangs in the air, mixing with the gray ash falling from the ceiling. The vendor, a woman with a silver tongue ring, doesn\u2019t look up as you approach. She\u2019s humming, but her eyes keep tracking the crowd behind you.\n\nA shadow shifts three paces back. You catch the glint of a Council uniform button, too small to be a soldier.\n\nThe air tastes like cinnamon and fear."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 5.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 8.1,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 9.4,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "fail_forward": true,
+        "no_refusal": true,
+        "forward_momentum": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "fail_forward",
+        "no_refusal",
+        "forward_momentum",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 2,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.5,
+          "npc_craft": 3.0,
+          "gm_craft": 4.5
+        }
+      },
+      "completion_tokens": 2600,
+      "elapsed_s": 18.3,
+      "highlight": "Ash tastes like copper on the tongue.",
+      "full_response": "Ash tastes like copper on the tongue.\nA basket of spiced eels splinters under your boot.\nThe captain snaps his fingers. He never blinks. \"Halt. Identify.\"\nHis eyes drop to the ledger's edge peeking from your belt.\nWhat do you do?"
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 9.3,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 7.6,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 3.6,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 4.9,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    }
+  ]
+}

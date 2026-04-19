@@ -1,0 +1,439 @@
+{
+  "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+  "timestamp": "2026-04-19T07:04:26",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 6,
+    "ERROR": 6
+  },
+  "judge_averages": {
+    "atmosphere": 4.4,
+    "npc_craft": 3.12,
+    "gm_craft": 4.45
+  },
+  "overall_judge_score": 3.99,
+  "inter_rater_agreement": {
+    "atmosphere": -0.043,
+    "npc_craft": 0.253,
+    "gm_craft": 0.0,
+    "mean": 0.07
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 8.9,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "FAIL",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_trait_marker",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": false,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_physical_gesture"
+      ],
+      "failed_dimensions": [
+        "has_dialogue",
+        "visible_motivation",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.25,
+          "npc_craft": 2.75,
+          "gm_craft": 4.25
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 9.4,
+      "highlight": "A vendor\u2019s shrill voice cuts through the din: *\u201cFried rat, still warm!\u201d* Someone laughs,",
+      "full_response": "The scent of burnt cinnamon and unwashed bodies clings to the air as you push through the crowd. A vendor\u2019s shrill voice cuts through the din: *\u201cFried rat, still warm!\u201d* Someone laughs,"
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 8.6,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "references_prior_choice": false,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "references_prior_choice",
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.33,
+          "npc_craft": 3.67,
+          "gm_craft": 4.67
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 8.8,
+      "highlight": "The scent of cumin and charred meat clings to the air.",
+      "full_response": "The scent of cumin and charred meat clings to the air. A vendor\u2019s voice cracks as he hawks \u201cgenuine\u201d dwarven iron cookware \u2014 the kind that rusts after one use. Your fingers brush the hilt of a hidden dagger.  \n\nA boot scrapes the cobbles behind you. Too deliberate. Too close.  \n\nAldric lingers at the edge of the stall, shoulders hunched, eyes darting between you and the exit. His Council tabard is half-"
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 9.0,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 11.0,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_mechanics_leak": true,
+        "sensory_density": 11.1,
+        "forward_momentum": false,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_mechanics_leak",
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 3
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 3,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.0,
+          "npc_craft": 2.8,
+          "gm_craft": 4.2
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 9.5,
+      "highlight": "A wet, metallic *hiss* escapes his lips \u2014 the sound swallowed by the",
+      "full_response": "The enforcer\u2019s eyes go wide as your blade slips past his ribs, the hilt jerking in your grip as it bites deep into the gap between his armor\u2019s flank and chest. A wet, metallic *hiss* escapes his lips \u2014 the sound swallowed by the"
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 9.5,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "ERROR",
+      "error": "empty_content",
+      "elapsed_s": 12.2,
+      "multi_judge": {
+        "per_judge": {},
+        "aggregate": null
+      }
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "FAIL",
+      "auto_scores": {
+        "immediate_pivot": true,
+        "sensory_density": 5.0,
+        "mira_reacts": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "immediate_pivot",
+        "sensory_density",
+        "mira_reacts"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.0,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 8.8,
+      "highlight": "A hooded figure weaves through the press of",
+      "full_response": "The crossbow bolt embeds with a *thunk*, splinters spraying like silver shards. The smell of burnt hair \u2014 yours \u2014 mingles with roasting garlic from a nearby cart. Mira\u2019s laugh dies mid-breath. Her gloved hand vanishes into her coat, reappearing with a dagger.  \n\n\u201cStill alive, then?\u201d she mutters, eyes scanning the crowd. A hooded figure weaves through the press of"
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "mystery_preserved": false,
+        "sensory_grounding": true,
+        "hooks_curiosity": false,
+        "length": "DUMP",
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_grounding",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "mystery_preserved",
+        "hooks_curiosity",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 1,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 1,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 2,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 1.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 9.2,
+      "highlight": "A faint scent of ozone clings to it, sharp beneath the market\u2019s usual reek of sweat and charred meat.",
+      "full_response": "The brass cylinder is cool and heavy in your palm, its surface tarnished to a murky gold. Faint etchings spiral around it \u2014 a phoenix swallowing its own tail, wings outstretched in a pattern of ash and stars. The seal at its core is intact, wax brittle as bone, stamped with the crest of the old empire: a crown split by a lightning bolt. When you tilt it, something inside shifts with a sound like dry sand falling. A faint scent of ozone clings to it, sharp beneath the market\u2019s usual reek of sweat and charred meat.  \n\nA vendor two stalls down \u2014"
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "aldric_named_or_implied": true,
+        "player_agency_preserved": true,
+        "mira_in_character": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "aldric_named_or_implied",
+        "player_agency_preserved",
+        "mira_in_character"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.25,
+          "npc_craft": 3.75,
+          "gm_craft": 4.25
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 8.8,
+      "highlight": "The market\u2019s din\u2014haggling merchants, clinking coins\u2014seems to press closer, the air thick with roasted meats and damp ash.",
+      "full_response": "Mira\u2019s eyes flick to the paper, then back to you, her lips pressing into a thin line. The market\u2019s din\u2014haggling merchants, clinking coins\u2014seems to press closer, the air thick with roasted meats and damp ash. \u201cThornwarden doesn\u2019t leave threads"
+    }
+  ]
+}

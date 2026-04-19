@@ -1,0 +1,718 @@
+{
+  "model": "meta-llama/llama-4-scout",
+  "timestamp": "2026-04-19T04:12:47",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 4,
+    "WARN": 7,
+    "FAIL": 1,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.48,
+    "npc_craft": 4.17,
+    "gm_craft": 4.69
+  },
+  "overall_judge_score": 4.45,
+  "inter_rater_agreement": {
+    "atmosphere": 0.261,
+    "npc_craft": 0.396,
+    "gm_craft": 0.047,
+    "mean": 0.235
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "sensory_density": 3.7,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_density",
+        "length",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 3.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 214,
+      "elapsed_s": 0.9,
+      "highlight": "A hawkers' chant rises above the din: \"Get yer ash-scarred glassware!",
+      "full_response": "The air thickens with the smell of charred fish and fresh bread as you weave through the crowded stalls. A hawkers' chant rises above the din: \"Get yer ash-scarred glassware! Unbreakable, they say!\" The vendor, a gruff-voiced man with a bushy eyebrow, catches your eye and raises a mug in a silent toast.\n\nYou notice a figure lingering near the edge of the market, dressed in worn leather armor and a face-obscuring hood. They seem out of place among the shoppers, eyes scanning the crowd with an air of practiced vigilance. Their gaze flicks over you, then away, but not before you catch a glimmer of interest.\n\nAs you continue to move through the market, the sounds and smells shifting around you, you notice a familiar scent \u2014 cloves \u2014 wafting from a nearby alleyway. A small, neatly written note on a piece of parchment is tucked into the alley's entrance, fluttering in the gentle breeze. The handwriting looks like Mira's."
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "sensory_npc_detail",
+          "physical_gesture"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": false,
+        "has_physical_gesture": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "has_physical_gesture",
+        "length"
+      ],
+      "failed_dimensions": [
+        "visible_motivation"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 198,
+      "elapsed_s": 2.8,
+      "highlight": "I was starting to think you'd abandoned me for the life of a spice merchant.\"\n\nMira's eyes flick to a nearby ash-stained awning, where a figure in a hooded cloak stands, eyeing the crowd with an air of quiet menace.",
+      "full_response": "The smell of charred meat and fresh bread envelops you as you weave through the crowded Ashmarket. The cacophony of hawkers' calls and clanging pots swirls around you, with the distant rumble of carts on cobblestones. You spot Mira standing by a stall selling second-hand daggers, her eyes scanning the crowd as she talks to the vendor.\n\nShe notices you and raises an eyebrow, a hint of a smile playing on her lips. Her voice, like a rusty gate, carries across the market: \"Sable, darling. About time you showed up. I was starting to think you'd abandoned me for the life of a spice merchant.\"\n\nMira's eyes flick to a nearby ash-stained awning, where a figure in a hooded cloak stands, eyeing the crowd with an air of quiet menace. She leans in, voice taking on a conspiratorial tone: \"We should talk. Follow me.\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "PASS",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action",
+        "forward_momentum",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 4.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 333,
+      "elapsed_s": 1.2,
+      "highlight": "The guard's eyes widen as ash stings his face, and he bellows, \"Halt!",
+      "full_response": "The guard's eyes widen as ash stings his face, and he bellows, \"Halt! Ashmarket riffraff!\" He stumbles forward, hand on the hilt of his sword, but the crowd is a living, breathing entity that swallows you whole. The smell of charred fish and sweat envelops you as shoppers surge around the guard, blocking his path.\n\nA nearby vendor, selling what looks like second-hand clockwork parts, lets out a disinterested mutter: \"Tourists.\" The vendor's voice is a low, gravelly drone, and their gnarled hands move with a practiced ease as they rearrange their wares.\n\nThe guard, still rubbing his eyes, shouts for his partner. A second guard, a towering man with a thick beard, pushes through the crowd, eyeing the throng with a mixture of annoyance and suspicion. His gaze flicks over the vendor's stall, lingers on the clockwork parts, before moving on.\n\nMira's voice, tinged with cloves and amusement, whispers in your ear: \"Sable, darling. Always making an entrance. What's the plan, now that you've got the guard's attention?\" Her breath tickles your ear, and the scent of cloves wafts up, momentarily overpowering the smells of the market.\n\nThe ash still clings to the guard's face, a bitter reminder of your quick move. The sound of haggling vendors, clanging pots, and muffled curses provides a constant background hum, a cacophony that's both overwhelming and familiar. What do you do next?"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": true,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 3,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 3,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 3.5,
+          "npc_craft": 4.25,
+          "gm_craft": 4.5
+        }
+      },
+      "completion_tokens": 101,
+      "elapsed_s": 3.6,
+      "highlight": "\"What can I do for you, love?\" He eyes you with a mix of curiosity and wariness.",
+      "full_response": "The spice vendor, a gruff-voiced old man with a thick grey beard, looks up at you as you approach. \"What can I do for you, love?\" He eyes you with a mix of curiosity and wariness.\n\nAldric, the young guard, slips into view from behind a nearby stack of crates, his eyes fixed on you with a mix of nervousness and determination. He fidgets with the hem of his tunic, clearly trying to decide whether to approach."
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "IDEAL",
+        "forward_momentum": false,
+        "no_step_by_step": true
+      },
+      "passed_dimensions": [
+        "skips_travel",
+        "length",
+        "no_step_by_step"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.67,
+          "npc_craft": 3.67,
+          "gm_craft": 4.67
+        }
+      },
+      "completion_tokens": 346,
+      "elapsed_s": 8.2,
+      "highlight": "Mira's voice echoes in your mind: \"If you're heading to the safehouse, take the third left, then a sharp right.",
+      "full_response": "As you weave through the Ashmarket's crowded stalls, the scent of smoked fish and burning tallow fills your nostrils. A trio of half-gnomish urchins, their faces smeared with soot, dart past you, chasing a stray chicken. The vendor, a gruff-voiced man with a thick beard, yells after them, \"Gods rot your mischief, brats!\"\n\nYou slip into a narrow alleyway between two crumbling tenements, the air thick with the smell of mold and ash. The sound of hammering echoes from a nearby workshop, punctuated by an occasional curse. The alleyway's walls are adorned with flickering torches, casting eerie shadows on the ground.\n\nAs you walk, you notice a pair of cloaked figures huddled in the shadows ahead, their voices low and urgent. One of them catches your eye \u2013 a hooded figure with a silver pin on their cloak, the symbol of the Merchant Council. They glance at you briefly, then quickly look away.\n\nThe alleyway begins to slope upward, and the buildings around you become increasingly run-down. You hear the distant clang of hammering on metal and the murmur of hushed conversations.\n\nYou see the Oldwall district's characteristic rough-stone fa\u00e7ade looming ahead, with its tangle of narrow streets and makeshift repairs. A pair of burly men, clearly local enforcers, eye you from across the street, their hands resting on the hilts of their swords.\n\nMira's voice echoes in your mind: \"If you're heading to the safehouse, take the third left, then a sharp right. Be careful; the streets can be... lively.\""
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "PASS",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.4,
+          "npc_craft": 4.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 116,
+      "elapsed_s": 2.5,
+      "highlight": "Her voice is low, even.",
+      "full_response": "Mira's gaze flicks down to your hand on her arm, then back to your face. Her voice is low, even. \"Aldric Thorne. Harmless. For now. But...considerations have changed. The Council's not looking for you, yet. But if they connect you to the ledger, Thorne might become...insurance for them.\" She pauses, studying you. \"You want to make it right with him? I can help with that.\" Her clove scent wafts up, mingling with the smells of the market."
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "WARN",
+      "auto_scores": {
+        "no_mechanics_leak": true,
+        "sensory_density": 6.6,
+        "forward_momentum": false,
+        "no_refusal": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "no_mechanics_leak",
+        "sensory_density",
+        "no_refusal",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 3.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 245,
+      "elapsed_s": 1.3,
+      "highlight": "The sound echoes off the alley walls, and the smell of ash and smoke from the Cinderpeak volcano mingles with the scent of spiced eel and sweat.",
+      "full_response": "The blade bites deep, and he grunts, eyes widening. For a moment, he's stunned. Your gaze flicks to the surrounding alleys, and you catch a glimpse of two more enforcers emerging from the shadows, hands on the hilts of their swords. A nearby vendor's cart, laden with steaming baskets of spiced eel, teeters on the edge of the alley, its owner distracted by the commotion. Mira's voice cuts through the din, \"Sable, don't make a mess! We can talk\u2014\"\n\nThe enforcer you stabbed gurgles, tries to speak, and crashes to the ground, his heavy boots scraping against the cobblestones. The sound echoes off the alley walls, and the smell of ash and smoke from the Cinderpeak volcano mingles with the scent of spiced eel and sweat. The other enforcers' eyes flick to their fallen companion, and one takes a step back, clearly hesitant. The vendor's cart rolls closer, now a precarious barrier between you and the enforcers. Mira's eyes dart to the ledger, still clutched in your hand, a hint of concern etched on her face."
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "WARN",
+      "auto_scores": {
+        "fail_forward": true,
+        "no_refusal": true,
+        "forward_momentum": false,
+        "no_flat_stop": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "fail_forward",
+        "no_refusal",
+        "no_flat_stop",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.2,
+          "npc_craft": 3.4,
+          "gm_craft": 4.4
+        }
+      },
+      "completion_tokens": 108,
+      "elapsed_s": 2.9,
+      "highlight": "The vendor, a stout dwarf with a bushy beard, shouts as he chases after you, \"Hey, watch where you're goin', ya clumsy oaf!\" \n\nThe guards' heads turn in unison, eyes scanning the crowd, one of them taking a step forward,\u2026",
+      "full_response": "A stray elbow catches your ribcage as the crowd surges forward, and you stumble into a vendor's cart, sending jars of pickled vegetables clattering to the ground. The vendor, a stout dwarf with a bushy beard, shouts as he chases after you, \"Hey, watch where you're goin', ya clumsy oaf!\" \n\nThe guards' heads turn in unison, eyes scanning the crowd, one of them taking a step forward, hand on the hilt of his sword."
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "PASS",
+      "auto_scores": {
+        "vael_speaks": true,
+        "subtle_tell": true,
+        "no_refusal": true,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "vael_speaks",
+        "subtle_tell",
+        "no_refusal",
+        "length"
+      ],
+      "failed_dimensions": [],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.4,
+          "npc_craft": 4.8,
+          "gm_craft": 5.0
+        }
+      },
+      "completion_tokens": 246,
+      "elapsed_s": 1.0,
+      "highlight": "\"Harlen Doss,\" he says, his voice low and smooth as polished stone.",
+      "full_response": "Vael's gaze doesn't waver, his eyes a pale, icy blue. He blinks once, a slow, measured blink. A hint of a smile plays on his lips, a small, controlled curve. \"Harlen Doss,\" he says, his voice low and smooth as polished stone. \"A tragic accident. The poor man was caught in the wrong place at the wrong time. I'm afraid I don't know what you're insinuating, but I assure you, I had nothing to do with his... untimely demise.\"\n\nThe air around you carries the scent of roasting meats and freshly baked bread, but Vael's presence seems to draw the smells into himself, making his aura feel almost... sterile. A nearby vendor, a stout dwarf with a bushy beard, glances over, his eyes flicking between you and Vael before quickly looking away, muttering something about needing to attend to his customers.\n\nVael's smile grows, just a fraction. \"Tell me, Sable... what makes you think I'd be involved in such a thing?\" His voice is friendly, inquiring, but the tone is cautious, like a man testing the weight of a freshly fallen snowdrift."
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "WARN",
+      "auto_scores": {
+        "immediate_pivot": true,
+        "sensory_density": 8.1,
+        "mira_reacts": true,
+        "forward_momentum": false,
+        "length": "IDEAL"
+      },
+      "passed_dimensions": [
+        "immediate_pivot",
+        "sensory_density",
+        "mira_reacts",
+        "length"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.4,
+          "npc_craft": 4.2,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 121,
+      "elapsed_s": 3.6,
+      "highlight": "Aldric, the warehouse guard, pushes through the crowd, eyes locked on you, his face pale.",
+      "full_response": "The laughter dies on Mira's face, her eyes darting towards the bolt's source. A burly vendor, selling smoked meats, ducks behind his stall. \"By the Cinderpeak! Not again!\" he shouts. People scramble, seeking cover. Aldric, the warehouse guard, pushes through the crowd, eyes locked on you, his face pale. Mira's voice, low and urgent, \"Sable, we need to move, now.\" She grabs your arm, pulling you towards a narrow alley between stalls. The smell of cloves wafts from her as she moves close."
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "PASS",
+      "auto_scores": {
+        "mystery_preserved": true,
+        "sensory_grounding": true,
+        "hooks_curiosity": true,
+        "length": "IDEAL",
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "mystery_preserved",
+        "sensory_grounding",
+        "hooks_curiosity",
+        "length",
+        "no_refusal"
+      ],
+      "failed_dimensions": [],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 3.4,
+          "gm_craft": 4.4
+        }
+      },
+      "completion_tokens": 238,
+      "elapsed_s": 5.5,
+      "highlight": "The cylinder feels heavy, coated in a thin layer of grime and ash.",
+      "full_response": "The cylinder feels heavy, coated in a thin layer of grime and ash. As you pull it out, a faint whisper of dust escapes the seal. The etched emblem of the old empire seems almost...legible, despite the patina of age. The seal appears intact, no signs of tampering or recent disturbance.\n\nThe cylinder itself is about the length of your forearm, and as you turn it over in your hands, you notice a small, almost imperceptible seam where the brass was joined. The surface is cool to the touch, and the metal seems to absorb the light around it, giving it a slightly somber hue.\n\nAs you examine the seal more closely, you wonder what could be inside that's worth hiding for so long. The old empire's census records, perhaps? Or something more...valuable?\n\nA nearby vendor, a gruff-looking man selling bundles of dried herbs, glances over at you with a mixture of curiosity and suspicion. His eyes linger on the cylinder before he quickly looks away, muttering under his breath. The Ashmarket's usual din and chatter seems to swell around you, as if the very air is charged with anticipation."
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "aldric_named_or_implied": true,
+        "player_agency_preserved": true,
+        "mira_in_character": true,
+        "forward_momentum": false,
+        "length": "TERSE"
+      },
+      "passed_dimensions": [
+        "aldric_named_or_implied",
+        "player_agency_preserved",
+        "mira_in_character"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 3,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.2,
+          "npc_craft": 4.4,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 74,
+      "elapsed_s": 0.6,
+      "highlight": "Might be trouble.\" The clove scent wafts closer as she moves.",
+      "full_response": "Mira's eyes flicker to the paper, then back to Sable, a hint of a smile playing on her lips. She leans in, voice low. \"You freed a guard. He might be grateful. Might be trouble.\" The clove scent wafts closer as she moves. Her gaze lingers on Sable's face, expectant."
+    }
+  ]
+}

@@ -25,3 +25,16 @@ campaigns/
 # Local-only helper files
 no_think.md
 paths.md
+
+# OS
+.DS_Store
+**/.DS_Store
+display/.scheme
+
+# Probe run logs (verbose stdout — results are in .json)
+probe/results/**/*.log
+probe/results/*.log
+
+# Draft docs (not ready to publish)
+docs/DISCUSSION-DRAFT.md
+docs/PR-DRAFT.md

@@ -1,0 +1,699 @@
+{
+  "model": "mancer/weaver",
+  "timestamp": "2026-04-19T03:55:54",
+  "judge_models": [
+    "openai/gpt-oss-120b",
+    "google/gemma-3-27b-it",
+    "meta-llama/llama-3.3-70b-instruct",
+    "qwen/qwen3-235b-a22b",
+    "nvidia/nemotron-3-super-120b-a12b"
+  ],
+  "auto_summary": {
+    "PASS": 0,
+    "WARN": 4,
+    "FAIL": 8,
+    "ERROR": 0
+  },
+  "judge_averages": {
+    "atmosphere": 4.7,
+    "npc_craft": 3.95,
+    "gm_craft": 4.65
+  },
+  "overall_judge_score": 4.43,
+  "inter_rater_agreement": {
+    "atmosphere": 0.03,
+    "npc_craft": 0.29,
+    "gm_craft": 0.447,
+    "mean": 0.256
+  },
+  "cases": [
+    {
+      "id": "scene_entry",
+      "label": "Scene entry \u2014 sensory economy",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "sensory_density": 3.5,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_refusal": false
+      },
+      "passed_dimensions": [
+        "sensory_density"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum",
+        "no_refusal"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 3.25,
+          "gm_craft": 4.5
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 13.2,
+      "highlight": "You wonder how long it takes for something that sweet to rot in this ash-filled air.",
+      "full_response": "\nThe Ashmarket is a bustling hive of activity, the air thick with the smells of roasting meat, exotic spices, and incense. A cacophony of voices fills your ears as vendors hawk their wares, merchants haggle over prices, and thieves pick pockets in the crowd. You navigate through the throng with practiced ease, darting between stalls and ducking under low-hanging awnings. Your senses are on high alert as you look for any sign of pursuit.\n\nThe ash from the Cinderpeak volcano overhead occasionally drifts down, coating everything in a fine grey dust. You can feel it gritty on your skin and taste it on your tongue. The smoke from the cooking fires mingles with the ash, creating a constant haze that makes it difficult to see more than a few feet ahead. The low stone buildings that make up the marketplace are adorned with colorful banners and awnings, but most of the decorations are faded or torn, a testament to the harshness of life in Valdremor.\n\nAs you move deeper into the market, you notice a group of young urchins playing a fast-paced game of chance with three small dice on a dirty piece of cloth. Their laughter is infectious, but you can't help but feel sad for them; they'll either grow up to be thieves or be caught and sold into servitude. You spot a stall selling rare fruits from the southern islands, exotic and colorful, but also incredibly expensive. You wonder how long it takes for something that sweet to rot in this ash-filled air.\n\nSable, you spot a tail. A figure in the shadows, watching you intently. His face is obscured by the smoke, but there's something familiar about his gait. You can't place it immediately. As you reach for a hidden dagger at your belt, you hear a familiar voice call out to you from across the market: \"Hold up, Sable! Need to talk business.\"\n\nIt's Mira, the Thornwarden fixer who hired you for the Council job. She's surrounded by a pair of thugs, both"
+    },
+    {
+      "id": "npc_meeting",
+      "label": "NPC encounter \u2014 memorable character",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "npc_voice_markers": [
+          "has_dialogue",
+          "has_trait_marker",
+          "sensory_npc_detail",
+          "physical_gesture",
+          "visible_motivation"
+        ],
+        "has_dialogue": true,
+        "visible_motivation": true,
+        "has_physical_gesture": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_dialogue",
+        "visible_motivation",
+        "has_physical_gesture"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 5.0,
+          "npc_craft": 4.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 460,
+      "elapsed_s": 12.2,
+      "highlight": "The scent of spices mingles with the acrid stench of ash, and the taste of freshly baked bread dough barely masks the lingering stench of the city's sewers.",
+      "full_response": "\n\nThe Ashmarket is a swirling kaleidoscope of sensory overload, an assault on the senses that can be overwhelming even for the seasoned traveler. Smoke from roasting spices, charcoal fires, and cooking pots fills the air, mixing with the cacophony of voices, clanging metal, and clanking carts. Vendors hawk their wares, each with a unique shout or song to draw in passersby. The scent of spices mingles with the acrid stench of ash, and the taste of freshly baked bread dough barely masks the lingering stench of the city's sewers.\n\nYou spot Mira in the crowd, her wiry frame moving with the flow of people like a snake through tall grass. She's easy to spot, even in the chaos, with her mismatched leather armor and ever-present clove scent. She negotiates with a stall vendor, pointing at a bundle of bandages before haggling over the price. The vendor grumbles but eventually gives in, and Mira walks away with a satisfied smirk on her face.\n\nAs you approach, you notice Aldric skulking around the edge of the market, eyes darting left and right as if looking for something. Or someone. He shifts uncomfortably under your gaze before bolting off into an alleyway. Your tracks are still fresh in his mind, it seems.\n\nMira catches sight of you and raises an eyebrow, her voice low as she asks what you want. \"I figured you'd come calling eventually,\" she says, the corner of her mouth turning up in a wry smile. \"You're not one to abandon a job, least of all one with my name on it.\"\n\nYou lean against a stall, taking a deep breath of the smoky air as you consider your next move. \"I didn't abandon it,\" you reply, letting your dry humor show. \"I just had to improvise a bit.\""
+    },
+    {
+      "id": "yes_and",
+      "label": "Off-rails action \u2014 yes, and...",
+      "standard": "S1: Improvise, don't script",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_refusal": true,
+        "builds_on_action": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_refusal",
+        "builds_on_action"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 3.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 12.9,
+      "highlight": "The scent of smoke and sweat fills the air as people push and shove, trying to avoid the commotion.",
+      "full_response": "\n\nThe crowd around you shifts as you approach the Council patrol guard, your hands hidden in your cloak. The wares stalls are filled with people haggling and bartering, the scent of spices and smoke mixing with the ash falling from the sky. You smell the aroma of freshly baked bread nearby, a welcome contrast to the dusty air. The vendor's brazier hisses and pops as you grab a fistful of glowing embers, burning your fingers. Your heart is thudding in your chest as you slip closer to the patrol.\n\nThe guard, dressed in shiny steel armor and holding a shield emblazoned with the Council's seal, snorts dismissively at another vendor before turning to continue his patrol. His helmet obscures his face, leaving only the tip of his nose visible. He walks just a bit too close to a spice stall, recoiling when he tastes the air, coughing out a cloud of ash mixed with the scent of exotic spices. The crowd around you shifts nervously, giving you room to act.\n\nYou pull your hand out of your cloak, revealing sharp, gleaming knuckles as you launch your fistful of ash into the guard's face. He recoils, his visor fogging up as he tries to clear his eyes. His scream is cut short by a rough cough, drawing the attention of his fellow guards. You duck into the crowd, disappearing into the flow of people.\n\nAldric, the bound warehouse guard you freed, is in the crowd too. He sees you and nods gratefully, his eyes darting around nervously. You slip away from him, not wanting to draw attention to yourself. The scent of smoke and sweat fills the air as people push and shove, trying to avoid the commotion. The sound of metal clashing against metal rings out as the Council guards draw their weapons, their breath fogging the air around them in the chill morning. The vendor whose stall you used for cover hisses at you, spitting out ash from his teeth.\n\nYou slip into an alleyway, disappearing from view"
+    },
+    {
+      "id": "consequence",
+      "label": "Consequence delivery \u2014 player feels consequential",
+      "standard": "S3: Make the player feel consequential",
+      "status": "WARN",
+      "auto_scores": {
+        "references_prior_choice": true,
+        "world_reacts": true,
+        "forward_momentum": false,
+        "no_flat_stop": true
+      },
+      "passed_dimensions": [
+        "references_prior_choice",
+        "world_reacts",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "forward_momentum"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.6,
+          "npc_craft": 4.4,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 384,
+      "elapsed_s": 11.3,
+      "highlight": "The air is thick with the smell of spices and sweat, and the smoke from cooking fires makes the eyes water.",
+      "full_response": "\n\nSable slips into the Ashmarket, the sounds of haggling and clanging pots filling their ears. The air is thick with the smell of spices and sweat, and the smoke from cooking fires makes the eyes water. The half-elf weaves through the crowd effortlessly, their movements fluid and practiced despite the press of bodies. They pause at a stall selling dried herbs, picking up a handful of oregano before moving on.\n\nAldric, the guard you freed, is also in the Ashmarket today. He spotted you two minutes ago and has been following at a distance, working up the nerve to approach. He's younger than you, barely into his twenties, and looks even more nervous than usual today. His hands shake slightly as he fingered a sprig of thyme, and his eyes dart around like a trapped animal.\n\nAs you wait at the spice stall, you feel something off. It's like a prickle on the back of your neck, an itch you can't scratch. A quick glance around shows no obvious signs of danger, but the feeling persists. The merchant behind the stall notices your hesitation, giving you a knowing look as they cough\u2014ash still gets everywhere despite the smoke. They wave a hand, clearing the air. \"Good day for it, isn't it?\"\n\nAldric finally summons the courage to approach. He stops a few feet behind you, clearing his throat awkwardly. His voice is hoarse when he speaks. \"Um, miss Sable?\" He leans in, lowering his voice to a whisper. \"I, uh... I wanted to thank you.\"\n"
+    },
+    {
+      "id": "pacing",
+      "label": "Pacing \u2014 skip uneventful travel",
+      "standard": "S6: Control the pace deliberately",
+      "status": "FAIL",
+      "auto_scores": {
+        "skips_travel": true,
+        "length": "DUMP",
+        "forward_momentum": false,
+        "no_step_by_step": false
+      },
+      "passed_dimensions": [
+        "skips_travel"
+      ],
+      "failed_dimensions": [
+        "length",
+        "forward_momentum",
+        "no_step_by_step"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.67,
+          "npc_craft": 3.33,
+          "gm_craft": 4.67
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 12.5,
+      "highlight": "Further down the street, an acrid scent fills the air as you pass a tanner's shop, the pungent smell of tanning leather mixing with the smoke and spices.",
+      "full_response": "\n\nAs you make your way through the Ashmarket, you can't help but feel the energy of the place. Vendors shout, haggle, and sell their wares to the bustling crowd. The air is thick with the smoke from cooking fires and the scent of spices. Your boots clack on the wet cobblestones as you weave your way between stalls, dodging people and livestock alike.\n\nYou pause to taste a sample of smoked eel from a vendor, the salty flavor exploding on your tongue. He grins, baring a toothless gap, and bargains with you playfully before taking your coin. Further down the street, an acrid scent fills the air as you pass a tanner's shop, the pungent smell of tanning leather mixing with the smoke and spices.\n\nThe noise of the crowd begins to fade as you turn onto a narrower alley lined with crumbling buildings. The ashfall is thicker here, coating everything in a fine gray dust. You hear the distant rumble of wagons on the main road, muffled by the walls around you. Shadows dance in the dim light cast by sputtering lanterns, revealing narrow doorways and half-hidden entrances.\n\nA figure darts out of one such entrance, disappearing into the darkness. You catch a glimpse of a cloak fluttering in the breeze before it's gone. Your eyes scan the area, but there's no sign of pursuit. You quicken your pace, heart racing, when suddenly you're pushed roughly into an alleyway by an overloaded cart. Its driver shouts an apology as he struggles to control his team of draft animals.\n\nContinuing on, you reach the edge of the Ashmarket and enter a more residential area. The sound of children playing echoes between the tall, narrow houses. An old woman sweeps the steps outside her front door, muttering under her breath at the mess left by the market crowds. You nod politely and she returns the greeting with a glare before going back to her sweeping.\n\nAs you approach the Oldwall district, the narrow streets open up into wider a"
+    },
+    {
+      "id": "closing_beat",
+      "label": "Closing beat \u2014 session shape",
+      "standard": "S6: Every session has a shape",
+      "status": "WARN",
+      "auto_scores": {
+        "has_closing_beat": true,
+        "mira_has_reaction": true,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "has_closing_beat",
+        "mira_has_reaction",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.6,
+          "npc_craft": 4.6,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 499,
+      "elapsed_s": 14.2,
+      "highlight": "The air is heavy with soot and ash, making your eyes water.",
+      "full_response": "\n\nMira blinks, her eyes narrowing. She looks around, then leans in close, her voice low and grim. \"It'd better not be. Aldric is a loose end we can't afford. He's weak-minded, but he knows too much. If he talks...\" Her gaze darts around the Ashmarket, taking in the hustle and bustle of traders and buyers. \"Eat something, drink something. Make sure he remembers. The Ashmarket is a dangerous place, even for a weak link like him.\"\n\nWith that, she's gone, disappearing into the crowd with the smoothness of a snake slithering into tall grass.\n\nAldric stands there, looking lost in the noise and chaos of the Ashmarket. He's peering at you from behind a stall, his face pale and eyes wide. He swallows hard and tries to act casual as he approaches. \"T-thanks,\" he murmurs, his voice barely audible over the din. \"I don't know how to repay you.\"\n\nYou can taste the fear on his breath as he talks, mixed with the smoky scent of spiced eel from a nearby vendor's stall. You can hear the rustle of fabric as people barter and bargain, and the clatter of metal as a blacksmith hammers out a new weapon. The air is heavy with soot and ash, making your eyes water.\n\nOne of the stalls nearby is selling forged travel papers, their owner hurriedly packing them away as a group of guards approach. Their captain glares at you, his face set like stone. You remember that name. Councillor Vael. The man who ordered the assassination.\n\nAldric follows your gaze, then turns back to you, his mouth opening and closing like a fish out of water. You sigh inwardly and gestured vaguely at the Ashmarket. \"Go. Live your life. Just stay away from the Council,\" you mutter under your breath.\n\nAs he walks away, looking over his shoulder every few seconds, you can't help but wonder if he'll be able to make it on his own."
+    },
+    {
+      "id": "combat_hit",
+      "label": "Combat \u2014 critical hit without mechanics leak",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "no_mechanics_leak": true,
+        "sensory_density": 2.2,
+        "forward_momentum": false,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "no_mechanics_leak",
+        "sensory_density",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.33,
+          "npc_craft": 3.67,
+          "gm_craft": 4.67
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 12.5,
+      "highlight": "The air is thick with the smell of sweat, spices, and smoke.",
+      "full_response": "\n\nThere's a snap of steel as your blade slides up under his guard. You feel his body tense, eyes widening as he gasps, then falls back against the wall behind him, blood dripping from his chin. His breath comes in ragged gasps as he reaches for his own weapon. A crowd gathers around you, watching with wide eyes and parted lips. The air is thick with the smell of sweat, spices, and smoke. The vendor closest to you, an old woman with leathery skin and toothless grin, keeps selling her dried fish even as she glances at the fight warily.\n\nYou roll your shoulders, feeling the tension drain from your muscles. This was easier than you thought it would be. You take a step towards the enforcer, who's just barely staying on his feet. \"You've got one chance to walk away,\" you warn him. He spits out a mouthful of blood and tries to speak, but all that comes out is a wet cough.\n\nYou reach into his pocket and pull out his keys, then tie him up with some rope you find in a nearby stall. As you walk away from the alley, you hear murmurs of shock and awe from the onlookers. They might not have seen you kill someone before, but they'll definitely remember it now.\n\nYou find Mira in a small tavern, sipping at a mug of mulled wine and watching the door. When she sees you walk in, she smiles, but there's a touch of worry in her eyes. \"Well, well. I didn't expect you'd be so efficient.\" She waves over the barkeep and orders another drink for you both.\n\n\"I had to send a message,\" you say, taking a seat across from her. \"What's next?\"\n\nShe takes another sip of her wine, savoring it before answering. \"We need to get the ledger to the right hands,\" she says quietly. \"The ones who can use it to bring down the Council.\"\n\nYou lean back in your chair, considering. \"And how do we do that?\"\n\n\"We find a way to get it out of the city,\" she says, her voice low. \"There"
+    },
+    {
+      "id": "player_failure",
+      "label": "Player failure \u2014 fail forward narration",
+      "standard": "S1: Improvise, don't script",
+      "status": "FAIL",
+      "auto_scores": {
+        "fail_forward": true,
+        "no_refusal": false,
+        "forward_momentum": false,
+        "no_flat_stop": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "fail_forward",
+        "no_flat_stop"
+      ],
+      "failed_dimensions": [
+        "no_refusal",
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 2,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 3,
+            "gm_craft": 4
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 3.4,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 14.9,
+      "highlight": "You follow him, your steps muffled by the soft ash that coats the ground.",
+      "full_response": "\n\nThe crowd shifts and moves around you, a human river of shifting colors and patterns. You match their rhythm, flowing with the current of bodies. A young mother with a crying baby turns towards you and you instinctively duck your head, feeling the brush of her skirt against your cheek. A vendor shouts out the virtues of his spiced eels, wafting the scent towards you, making your mouth water.\n\nSuddenly, the crowd surges forward as a cart full of fresh produce blocks the path. You feel a hand on your shoulder, pressing you towards the cart, and instinctively slip between two stalls, ducking under a low-hanging fishnet. The crowd parts around you, momentarily revealing the guards on the rooftop above. One of them shouts down at the crowd, demanding to see papers.\n\nYour heart races as you hear the clatter of boots on the wooden walkway above you. You can't move any further back, the fishnet barring your retreat. The guard leans over the edge, peering down at the crowd below. You hold your breath, hoping he doesn't spot you. His eyes sweep past you, and he mutters something under his breath, before moving on to the next group of people.\n\nThe crowd surges forward again, washing you out into the open. You exhale slowly, tasting the ash on the air as you continue towards the market. The sounds of haggling and the smell of roasting nuts fill your senses, and you feel the weight of the ledger in your pack, a reminder of the danger you just avoided.\n\nAs you weave through the stalls, you see a familiar face: Aldric, the guard you freed. He looks nervous, glancing over his shoulder again and again. When he sees you, he quickly ducks into an alleyway, beckoning you over. You follow him, your steps muffled by the soft ash that coats the ground.\n\nIn the alley, he pulls a small pouch from his coat and presses it into your hand. \"There's some coin for the job,\" he whispers, \"I don't know how to repay you"
+    },
+    {
+      "id": "npc_deception",
+      "label": "NPC deception \u2014 Vael lying, subtle tells only",
+      "standard": "S5: Make every NPC memorable",
+      "status": "WARN",
+      "auto_scores": {
+        "vael_speaks": true,
+        "subtle_tell": true,
+        "no_refusal": true,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "vael_speaks",
+        "subtle_tell",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.8,
+          "npc_craft": 4.8,
+          "gm_craft": 4.8
+        }
+      },
+      "completion_tokens": 413,
+      "elapsed_s": 10.4,
+      "highlight": "Councillor Vael looks back at you with cold eyes.",
+      "full_response": "\nCouncillor Vael looks back at you with cold eyes. He takes a sip of his mulled wine, savoring the taste, and twirls the drinking horn between his fingers. \"Harlen Doss... I couldn't say. I'm sure there are many merchants whose deaths would be a boon to the city. The Ashmarket is a dangerous place, and accidents happen.\" His voice is smooth, almost soothing, but there's an edge to it that reminds you of a knife's blade.\n\nThe sounds of bargaining and haggling drift around you as you stand face to face with him, the smell of spiced meats and roasting nuts mixing with the heavy scent of smoke from the stalls nearby. The clop-clop of hooves on cobblestone echoes in the distance as a cart full of produce rolls past. A snake charmer begins his song, enticing his pets with a flute tune that sends shivers down your spine.\n\nAs you hold his gaze, you notice Aldric lingering a few stalls away, watching you both intently. His eyes are wide, his hands clenching and unclenching nervously at his sides. You can almost taste the fear emanating from him.\n\nThe market bustles around you, people moving in and out of stalls, bartering over wares, arguing prices. But for now, it all fades into the background as you and the Councillor stand locked in this silent confrontation.\n\nSlowly, you nod your head, unblinking. \"I see. Well, I'll be taking my leave now.\" With that, you turn and make your way through the crowd, feeling Vael's eyes on your back until you disappear into the throng.\n"
+    },
+    {
+      "id": "tone_shift",
+      "label": "Tone shift \u2014 banter to sudden threat",
+      "standard": "S6: Control the pace deliberately",
+      "status": "FAIL",
+      "auto_scores": {
+        "immediate_pivot": true,
+        "sensory_density": 4.2,
+        "mira_reacts": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "immediate_pivot",
+        "sensory_density",
+        "mira_reacts"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 3.75,
+          "gm_craft": 4.5
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 13.0,
+      "highlight": "His voice drops even lower.",
+      "full_response": "\n\nAldric jumps back with a startled yelp as you do, almost dropping his tray of spiced eels. The crossbow bolt pierces the stall post right next to his face, sending splinters flying. He looks at you with wide eyes, and for a moment you can see the fear in them. Then they harden into determination. He shakes his head, opens his mouth as if to say something, closes it again, and hurries off, disappearing into the crowd.\n\nThe scent of cinnamon and smoke mixes with the heat of the market. The air is thick with it, making your mouth water for something sweet. Voices babble all around you, vendors hawking their wares and thieves haggling over prices. The ground beneath your feet is uneven, muddy in spots from the ash that falls from the sky like snow. Your cloak flutters in the slight breeze that slips through the market stalls, carrying with it the smell of roasting meat and fresh bread.\n\nYou feel eyes on you, watching your every move. You're sure some of them belong to the Council's enforcers, but most likely they're from rival gangs or even just curious onlookers. The Ashmarket is dangerous even on a normal day; today, with tensions high after the failed assassination attempt on Councillor Vael, it's like walking through a powderkeg.\n\nA tall, gaunt man in a hooded black cloak approaches your table, hunching over to avoid hitting his head on the low roof beams. He smells of ash and death, and his eyes are shadowed beneath the depths of his hood. \"Word on the street is that the rogue-turned-hero is here,\" he rumbles, his voice like gravel. \"Got a job for you, if you're interested.\"\n\nYou raise an eyebrow, taking a slow sip of your spiced tea. \"Depends on the job.\"\n\nThe man leans in closer, his breath hot on your neck. \"I hear you like to save lives,\" he says. His voice drops even lower. \"Someone needs yours saved.\"\n"
+    },
+    {
+      "id": "world_reveal",
+      "label": "World reveal \u2014 artifact, mystery preserved",
+      "standard": "S4: Describe vividly but efficiently",
+      "status": "FAIL",
+      "auto_scores": {
+        "mystery_preserved": false,
+        "sensory_grounding": true,
+        "hooks_curiosity": false,
+        "length": "DUMP",
+        "no_refusal": true
+      },
+      "passed_dimensions": [
+        "sensory_grounding",
+        "no_refusal"
+      ],
+      "failed_dimensions": [
+        "mystery_preserved",
+        "hooks_curiosity",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.75,
+          "npc_craft": 3.75,
+          "gm_craft": 4.75
+        }
+      },
+      "completion_tokens": 500,
+      "elapsed_s": 12.7,
+      "highlight": "The scent of spiced eel mingles with sweat and smoke, the taste of ash lingers on your tongue.",
+      "full_response": "\n\nThe object is a sealed brass cylinder, etched with the administrative seal of the old empire\u2014the one destroyed a century ago when the ash first fell. It's heavy in your hands, cold to the touch despite the heat of the Ashmarket around you. You pull it free from its hiding place with a sharp metallic scrape that echoes through the stalls and a puff of dust that seems to dissipate slowly, hanging in the air like mist.\n\nThe market around you is alive with motion. Vendors shout out their wares, hawking wares both legal and illicit, as patrons haggle and barter and try to outmaneuver one another. Ash coats everything: your skin, your clothes, the food you've tasted. A thick haze hangs in the air, making it hard to see more than a few feet ahead. The scent of spiced eel mingles with sweat and smoke, the taste of ash lingers on your tongue.\n\nAs you grip the cylinder tightly, you hear the soft metallic clink of coins being exchanged nearby, the rustle of silk skirts brushing against each other, the distant cry of gulls from the harbor. A pair of Thornwarden thieves\u2014twin brothers named Rush and Rake\u2014nod in your direction, their eyes following the cylinder. Their fingers are stained with ink, and they grin wider than their surroundings allow.\n\nYour own movements are almost choreographed, practiced from a lifetime of thievery. You slip the cylinder into your pack, adjusting straps and hiding it within layers of fabric before anyone can notice. Your heart races, but you keep your face impassive, your steps steady. You turn to leave, avoiding eye contact as you weave through the stalls.\n\nBut then, there's a whisper in your ear. \"Well done, Sable.\" It's Mira, her voice a dry rasp that echoes through your memories of stolen goods and bargained deals. She's close, close enough to smell the cloves that cling to her. Her eyes flicker to the pack, then back to you."
+    },
+    {
+      "id": "moral_weight",
+      "label": "Moral weight \u2014 genuine dilemma, agency preserved",
+      "standard": "S3: Make the player feel consequential",
+      "status": "FAIL",
+      "auto_scores": {
+        "aldric_named_or_implied": true,
+        "player_agency_preserved": true,
+        "mira_in_character": true,
+        "forward_momentum": false,
+        "length": "DUMP"
+      },
+      "passed_dimensions": [
+        "aldric_named_or_implied",
+        "player_agency_preserved",
+        "mira_in_character"
+      ],
+      "failed_dimensions": [
+        "forward_momentum",
+        "length"
+      ],
+      "multi_judge": {
+        "per_judge": {
+          "openai/gpt-oss-120b": {
+            "atmosphere": 4,
+            "npc_craft": 4,
+            "gm_craft": 4
+          },
+          "google/gemma-3-27b-it": {
+            "atmosphere": 4,
+            "npc_craft": 3,
+            "gm_craft": 4
+          },
+          "meta-llama/llama-3.3-70b-instruct": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "qwen/qwen3-235b-a22b": {
+            "atmosphere": 5,
+            "npc_craft": 4,
+            "gm_craft": 5
+          },
+          "nvidia/nemotron-3-super-120b-a12b": {
+            "atmosphere": 5,
+            "npc_craft": 5,
+            "gm_craft": 5
+          }
+        },
+        "aggregate": {
+          "atmosphere": 4.6,
+          "npc_craft": 4.0,
+          "gm_craft": 4.6
+        }
+      },
+      "completion_tokens": 429,
+      "elapsed_s": 11.2,
+      "highlight": "The smoke from a nearby stall selling roasted nuts makes your eyes water, but you don't let it deter you.",
+      "full_response": "\n\nAs you look down at the paper, your eyes widen in surprise. You can't help but notice the faint smell of cloves that seems to linger around Mira even here in the crowded Ashmarket. The name written on the paper is Aldric - the guard you freed from the Council warehouse.\n\nThe sounds of the market fill your ears as you consider your next move: the clanking of weapons being sold by a blacksmith, the clacking of dice being thrown by gamblers, and the cries of vendors hawking their wares. The smoke from a nearby stall selling roasted nuts makes your eyes water, but you don't let it deter you.\n\nYou taste the hint of cinnamon on your tongue as you ask Mira, \"What do you want me to do about him?\"\n\nMira takes a sip of her spiced tea and shrugs nonchalantly, \"Just a loose end, that's all. Thornwarden policy.\" She gives you a knowing look, her missing finger twitching slightly as she gestures towards the address on the paper.\n\nYou feel the weight of the ledger you stole from the warehouse in your pack, knowing that revealing its contents could bring down the Council's wrath on both you and Aldric. But you also remember the feeling of his gratitude when you set him free \u2013 he owes you his life now.\n\nLooking around the Ashmarket, you spot Aldric across the way, haggling with a spice vendor. He seems to be doing well enough for himself since you helped him escape, but you know the Council won't let such betrayal go unpunished. As you watch him walk away with a small sack of spices, the sound of his footsteps echoing against the stone floor, you can't help but wonder how much longer you can keep dodging the consequences of your actions.\n"
+    }
+  ]
+}
