@@ -122,18 +122,42 @@ The skill walks you through world creation, tone selection, and character setup.
 
 ---
 
+## Quick Start
+
+**Improvised campaign** — GM generates world and narrative arc:
+
+```
+/gm new my-campaign          # generates world, factions, NPCs, optional story arc
+/gm character new            # create a character
+/gm load my-campaign         # start a session
+```
+
+**Structured campaign** — import a pre-written module:
+
+```
+/gm import module.pdf my-campaign   # extract structure and build campaign files
+/gm load my-campaign                # start a session — GM enforces the arc beats
+```
+
+Once loaded, type naturally — no `/gm` prefix needed. The GM interprets all input as in-game action.
+
+---
+
 ## Commands
 
 | Command | What it does |
 |---------|-------------|
-| `/gm new <name>` | Create a new campaign with world generation |
+| `/gm new <name> [system]` | Create a new campaign with world generation |
 | `/gm load <name>` | Load an existing campaign and resume |
 | `/gm save` | Write session events to log, update state |
 | `/gm end` | Save and close session |
+| `/gm abandon` | Exit without saving — discards all unsaved changes from this session |
 | `/gm list` | List all campaigns |
+| `/gm import <filepath> [name]` | Import a pre-written campaign from PDF, markdown, DOCX, or plain text |
 | `/gm character new` | Create a new character (uses system module for rules) |
 | `/gm character sheet [name]` | Display character sheet |
 | `/gm character import <name>` | Import a character from another campaign |
+| `/gm characters` | List all characters in the global roster |
 | `/gm level up [name]` | Level up a character (D&D / level-based systems) |
 | `/gm npc [name]` | Generate or portray an NPC |
 | `/gm roll <notation>` | Roll dice: `d20`, `2d6+3`, `d20 adv` |
@@ -143,8 +167,36 @@ The skill walks you through world creation, tone selection, and character setup.
 | `/gm world` | Display world notes |
 | `/gm quests` | Display active quests and open threads |
 | `/gm tutor on\|off` | Toggle learning mode hints |
+| `/gm arc [status\|advance\|revise\|view]` | Manage the campaign narrative arc |
 | `/gm display on [--lan]` | Start the cinematic display companion (optionally in LAN mode) |
 | `/gm display off` | Stop the display companion |
+
+---
+
+## Narrative arc system
+
+Both campaign modes use the same six-beat three-act structure tracked in `state.md`. Arc type determines how it's populated.
+
+### Improvised (type: dynamic)
+
+Generated at `/gm new` from the world's threat, factions, and setting. Beats are defined by `what_changes` — the narrative consequence that must land — not by a specific scene or event. The GM stays flexible on *how* each beat arrives while committing to *that* it must.
+
+| Act | Beat | What it marks |
+|-----|------|---------------|
+| 1 | Inciting Incident | The threat becomes personal |
+| 1 | Complication | The problem is bigger than it first appeared |
+| 2 | Midpoint Shift | What the party thought they were doing changes |
+| 2 | All Is Lost | A genuine setback — something fails or collapses |
+| 3 | Final Confrontation | The decisive moment the campaign turns on |
+| 3 | Resolution | What's different about the world and characters after |
+
+Arc beats are tracked at `/gm end` and marked complete via `/gm arc advance`. When a player choice redirects the story, `/gm arc revise` updates outstanding beats to fit the new direction. When all six beats resolve, a new arc can be generated from the consequences of the first — same world, new story question.
+
+### Structured (type: structured)
+
+Populated by `/gm import` from the source material. Acts contain chapter-level key beats, telegraph scenes that set up each beat naturally, and branching notes. The GM telegraphs before delivering any required beat and steers with world pressure rather than hard walls when players drift.
+
+Both arc types are fully compatible with all system modules and the display companion.
 
 ---
 
@@ -170,6 +222,114 @@ Runs entirely independently of the LLM. If the display isn't running, all script
 | Stat sidebar | Character sheet |
 |---|---|
 | ![Stat sidebar](docs/screenshots/sidebar-card.png) | ![Character sheet modal](docs/screenshots/character-sheet-modal.png) |
+
+### Viewing options
+
+| Option | How |
+|--------|-----|
+| **TV — Cast tab** | Chrome → three-dot menu → Cast → Cast tab; select your Chromecast or smart TV |
+| **TV — Screen mirror** | macOS: Control Centre → Screen Mirroring → Apple TV / AirPlay receiver |
+| **iPad / tablet** | Start with `--lan`, open `http://<your-ip>:5001` in Safari or Chrome; works in landscape |
+| **Second monitor** | Open `http://localhost:5001` in a browser window and drag it to the second display |
+
+### TLS / HTTPS (optional)
+
+HTTP is the default. Use `--tls` only on public or untrusted networks. When passed:
+- A self-signed cert is auto-generated if `cert.pem` is not present
+- A plain HTTP server starts on `:8080` to serve `cert.pem` for download
+- Per-platform install instructions are printed to the terminal (iOS, Android, Mac)
+
+For iOS: open `http://<your-ip>:8080/cert.pem` in Safari → tap Allow → Settings → General → VPN & Device Management → install profile → Certificate Trust Settings → enable full trust.
+
+### Player input from the companion UI
+
+Players open the companion on their phone browser. The **Party Input** panel lets each player:
+
+1. **Stage** an action — type it and hit Stage. It appears in the panel visible to everyone.
+2. **Mark Ready** — confirms the action is final.
+3. **Skip** — passes the turn without typing.
+
+When a submission is picked up, three pulsing dots confirm the GM received it. If the player's device has not been seen before, the GM's screen shows a one-time approval card — approved devices are remembered across restarts.
+
+Staged input text is cached in the browser — if the page reloads before the GM picks it up, the text is restored automatically.
+
+### Scene detection
+
+The server scans narration text for keywords and crossfades the background gradient to match the current environment. Scenes change automatically as the story moves.
+
+| Scene | Trigger keywords | Particles |
+|-------|-----------------|-----------|
+| Tavern | inn, hearth, ale, tallow, barkeep | embers |
+| Dungeon | corridor, torch, portcullis, dank | dust |
+| Ocean / Docks | dock, harbour, wave, tide, ship | ripples |
+| Forest | tree, canopy, moss, thicket, grove | leaves |
+| Crypt | tomb, undead, skeleton, burial | smoke |
+| Arcane | ritual, rune, sigil, incantation | sparks |
+| Mountain | glacier, frost, blizzard, ridge | snow |
+| Cave | stalactite, grotto, echo, drip | mist |
+| Night | midnight, moon, constellation | stars |
+| City / Town | market, cobble, district, crowd | rain |
+| + 7 more | mine, castle, ruins, desert, fire, temple, swamp | — |
+
+Scene transitions crossfade over ~2.5 seconds. The server maintains a 20-chunk rolling window so scenes don't flicker on single matches.
+
+### Dynamic sky canvas
+
+A canvas layer above the scene background renders a live sky driven by `world_time` data:
+
+- **Time of day** — sun arcs from dawn through midday to dusk; crescent moon and stars at night; orange horizon at twilight
+- **Weather** — calm: light clouds; overcast: heavy dark clouds; rainy: dense cover, muted palette; stormy: near-black sky
+- **Clouds** — five objects each built from overlapping circles; drift slowly and wrap
+
+Push world time after session load and after any rest or time advance:
+
+```bash
+python3 display/push_stats.py --world-time \
+  '{"date":"Day 7","day_name":"Starday","time":"morning","season":"Winter","weather":"overcast"}'
+```
+
+Valid `time` values: `dawn`, `morning`, `midday`, `afternoon`, `evening`, `dusk`, `night`  
+Valid `weather` values: `calm`, `clear`, `overcast`, `rainy`, `stormy`
+
+### Sound effects
+
+Narration text is scanned server-side for 11 SFX categories. Matches trigger a synthesized WAV played via Web Audio API on any device with the tab open — no server audio output.
+
+```
+impact · sword · arrow · shout · thud · magic · coins · door · low_hum · fire · breath
+```
+
+SFX synthesis requires numpy. If numpy is not installed the feature degrades silently. Toggle via the **Sound Effects** switch in the top-right of the display.
+
+### Character sheet modal
+
+Click or tap any character card in the sidebar to open a full character sheet — attacks, features, and inventory. Works on desktop and on phones/tablets connected via LAN.
+
+Include a `sheet` field when pushing stats to populate the modal:
+
+```bash
+python3 display/push_stats.py --replace-players --json '{
+  "players": [{
+    "name": "Aldric",
+    "hp": {"current": 14, "max": 18},
+    "sheet": {
+      "attacks": [{"name": "Longsword", "bonus": "+5", "damage": "1d8+3", "type": "Slashing"}],
+      "features": [{"name": "Second Wind", "text": "Bonus action: regain HP. Short rest recharge."}],
+      "inventory": ["Longsword", "Chain Mail", "Shield", "15 gp"]
+    }
+  }]
+}'
+```
+
+Close with **Esc**, clicking outside the panel, or the ✕ button.
+
+### Session replay buffer
+
+The server buffers the last 60 narration chunks to disk (`text_log.json`). Reconnecting browsers — Chromecast drops, tab refreshes — replay the full session history automatically. No narration is lost on reconnect.
+
+### GM Help button
+
+A **◈ GM Help** button sits in the bottom-right corner of the display. Click it and within a few seconds a contextual hint is generated from the current scene state and pushed to the display — no CLI command needed. Hint blocks are collapsed by default; click to expand. Warnings use an amber border to flag irreversible choices.
 
 See [display/README.md](display/README.md) for full documentation.
 
