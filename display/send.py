@@ -271,15 +271,36 @@ def main() -> None:
         help="Start a timed effect: NAME:SPELL:DURATION (10r/60m/8h/indef) optionally :conc")
     parser.add_argument("--effect-end", action="append", metavar="NAME:SPELL",
         help="End a timed effect: NAME:SPELL (narrative end — broken, dispelled, player drops)")
+    parser.add_argument("--set-campaign", metavar="NAME",
+        help="Register the active campaign with the display server (call at /gm load)")
 
     args = parser.parse_args()
 
     text = sys.stdin.read()
     token = _read_token()
 
+    # ── Campaign registration ─────────────────────────────────────────────────
+    # Sent with or without narration text. The server writes .campaign and reloads
+    # the per-campaign text log so late-connecting browsers see the right session tail.
+    if args.set_campaign:
+        payload: dict = {"campaign": args.set_campaign}
+        if text.strip():
+            payload["text"] = text
+            # Attach any message-type flags
+            if args.action:
+                payload["action"] = args.action
+            elif args.player:
+                payload["player"] = args.player
+            elif args.npc:
+                payload["npc"] = args.npc
+            elif args.dice:
+                payload["dice"] = True
+            elif args.tutor:
+                payload["tutor"] = True
+        _post(FLASK_URL, json.dumps(payload).encode("utf-8"), token)
     # ── Text send ─────────────────────────────────────────────────────────────
-    if text.strip():
-        payload: dict = {"text": text}
+    elif text.strip():
+        payload = {"text": text}
         if args.action:
             payload["action"] = args.action
         elif args.player:
