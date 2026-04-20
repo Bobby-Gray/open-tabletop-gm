@@ -1,2 +1,7 @@
-# SRD dataset
-Run: python3 systems/dnd5e/build_srd.py to generate dnd5e_srd.json
+# Generated data files (gitignored — run scripts to populate)
+#
+#   dnd5e_srd.json         — run: python3 systems/dnd5e/build_srd.py
+#   dnd5e_supplemental.json — run: python3 systems/dnd5e/build_supplemental.py
+#
+# Both files are excluded from version control. They may be large and contain
+# content under separate licensing terms. Generate them locally before use.

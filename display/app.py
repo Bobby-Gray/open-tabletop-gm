@@ -34,8 +34,11 @@ from typing import Optional
 from flask import Flask, Response, request, render_template, jsonify
 from flask_cors import CORS
 
-LOG_FILE      = os.path.expanduser("~/.claude/skills/dnd/display/text_log.json")
-SCRIPTS_DIR   = os.path.expanduser("~/.claude/skills/dnd/scripts")
+_DISPLAY_DIR  = os.path.dirname(os.path.abspath(__file__))
+_SKILL_DIR    = os.path.dirname(_DISPLAY_DIR)
+SCRIPTS_DIR   = os.path.join(_SKILL_DIR, "scripts")
+LOG_FILE      = os.path.join(_DISPLAY_DIR, "text_log.json")
+_LOG_FALLBACK = LOG_FILE
 
 # SRD lookup module — degrades silently if dataset not built
 if SCRIPTS_DIR not in sys.path:
@@ -48,22 +51,21 @@ except Exception:
     _SRD_AVAILABLE = False
 
 # Audio module — degrades silently if numpy not installed
-_AUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 import sys as _sys
-if _AUDIO_DIR not in _sys.path:
-    _sys.path.insert(0, _AUDIO_DIR)
+if _DISPLAY_DIR not in _sys.path:
+    _sys.path.insert(0, _DISPLAY_DIR)
 try:
     import audio as _audio
     _audio.init()
 except Exception:
     _audio = None   # type: ignore
-HELP_LOCK     = os.path.expanduser("~/.claude/skills/dnd/display/.help-lock")
-CAMP_FILE     = os.path.expanduser("~/.claude/skills/dnd/display/.campaign")
-STATS_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/stats.json")
-TOKEN_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/.token")
-INPUT_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/player_input.json")
-TRIGGER_FILE  = os.path.expanduser("~/.claude/skills/dnd/display/.input_trigger")
-QUEUE_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/.input_queue")
+HELP_LOCK     = os.path.join(_DISPLAY_DIR, ".help-lock")
+CAMP_FILE     = os.path.join(_DISPLAY_DIR, ".campaign")
+STATS_FILE    = os.path.join(_DISPLAY_DIR, "stats.json")
+TOKEN_FILE    = os.path.join(_DISPLAY_DIR, ".token")
+INPUT_FILE    = os.path.join(_DISPLAY_DIR, "player_input.json")
+TRIGGER_FILE  = os.path.join(_DISPLAY_DIR, ".input_trigger")
+QUEUE_FILE    = os.path.join(_DISPLAY_DIR, ".input_queue")
 
 # ─── LAN / TLS mode ───────────────────────────────────────────────────────────
 # Pass --lan to bind on 0.0.0.0 and protect write endpoints with a token.
@@ -717,9 +719,23 @@ _clients_lock = threading.Lock()
 
 # ─── Text replay log ──────────────────────────────────────────────────────────
 # Stores the last N cleaned text chunks so late-connecting browsers can catch up.
-# Persisted to LOG_FILE so it survives Flask restarts (Chromecast reconnects, new sessions).
+# Persisted per-campaign so switching campaigns loads the correct session tail.
+# Falls back to the display directory when no campaign is active.
 _text_log: deque = deque(maxlen=60)
 _text_log_lock = threading.Lock()
+
+
+def _get_log_file() -> str:
+    """Return the campaign-specific log path, or the fallback display-dir path."""
+    try:
+        camp = open(CAMP_FILE).read().strip()
+        if camp:
+            return os.path.expanduser(
+                f"~/open-tabletop-gm/campaigns/{camp}/text_log.json"
+            )
+    except Exception:
+        pass
+    return _LOG_FALLBACK
 
 
 def _persist_log() -> None:
@@ -727,17 +743,17 @@ def _persist_log() -> None:
     try:
         with _text_log_lock:
             data = list(_text_log)
-        with open(LOG_FILE, "w") as f:
+        with open(_get_log_file(), "w") as f:
             json.dump(data, f)
     except Exception:
         pass
 
 
 def _load_log() -> None:
-    """Load a previously persisted text log on startup.
+    """Load a previously persisted text log. Called at startup and on campaign switch.
     Handles both old string format and new dict format."""
     try:
-        with open(LOG_FILE) as f:
+        with open(_get_log_file()) as f:
             data = json.load(f)
         with _text_log_lock:
             _text_log.clear()
@@ -872,6 +888,17 @@ def chunk():
     if not _token_ok():
         return "Forbidden", 403
     data = request.get_json(silent=True) or {}
+
+    # Campaign registration — write .campaign file and reload log for correct per-campaign
+    # replay. Sent by send.py --set-campaign at /gm load. May arrive with or without text.
+    if "campaign" in data:
+        try:
+            with open(CAMP_FILE, "w") as f:
+                f.write(str(data["campaign"]).strip())
+            _load_log()
+        except Exception:
+            pass
+
     raw = data.get("text", "")
     if not raw:
         return "", 204

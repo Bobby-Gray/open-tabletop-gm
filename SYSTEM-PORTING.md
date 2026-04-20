@@ -129,7 +129,7 @@ These scripts are D&D specific and live in `systems/dnd5e/`. You don't need to r
 | `ability-scores.py` | Generates D&D ability scores (roll arrays, point buy) | Build your own if character creation needs scripting |
 | `character.py` | D&D stat block calculation and level-up | Build your own for systems with different math |
 | `lookup.py` + `build_srd.py` + `sync_srd.py` | D&D 5e SRD dataset lookup | Build your own data layer if your system has open licensing; skip if proprietary |
-| `build_supplemental.py` | Fetches non-SRD D&D spells/features from wikidot | D&D specific — skip |
+| `build_supplemental.py` | Fetches non-SRD D&D spells/features from wikidot and caches to `systems/dnd5e/data/dnd5e_supplemental.json` | Already ported — run after `build_srd.py` to populate the supplemental dataset |
 
 For most systems, you can start without any system-specific scripts and rely entirely on `system.md` for rules context. Add scripts later when you identify specific calculations the GM gets wrong repeatedly.
 
