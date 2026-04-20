@@ -30,8 +30,123 @@
 ## Active Combat
 *(none)*
 
+## Live State Flags
+*Structured facts designed to survive context compaction. Re-read this section before any recap, status summary, or claim about cover, NPC stance, or faction standing. Update at every /gm save.*
+
+**Cover / party position:**
+*(none established)*
+
+**Faction stances** *(only list factions with non-neutral standing toward the party)*:
+*(none established)*
+
+**NPC dispositions** *(only list NPCs with changed or notable standing)*:
+*(none established)*
+
+## Campaign Arc
+*(sandbox campaigns: set `type: sandbox` — no arc tracking)*
+*(structured campaigns: populated by /gm import — use structured format)*
+*(improvised campaigns: auto-generated at /gm new — use dynamic format)*
+```yaml
+# --- DYNAMIC ARC (improvised campaigns, auto-generated at /gm new) ---
+type: dynamic
+arc_number: 1          # increments each time /gm arc new generates a successor arc
+generated: "<date>"
+revised: null
+
+theme: "<one sentence — what this story is ultimately about, not what happens but what it means>"
+resolution: "<committed endpoint shape — not specific events, but the emotional/thematic truth if the party succeeds>"
+
+acts:
+  - act: 1
+    title: "Setup"
+    drive: "<what the party wants or needs at the start>"
+    beats:
+      - id: "1a"
+        label: "<Inciting Incident>"
+        what_changes: "<before vs. after — what's fundamentally different once this lands>"
+        world_pressure: "<specific faction/NPC move that makes this beat feel inevitable>"
+        status: current     # current | complete | skipped
+      - id: "1b"
+        label: "<Complication>"
+        what_changes: "<what the party learns that makes the problem bigger or stranger than it first appeared>"
+        world_pressure: "<what creates this pressure>"
+        status: pending
+
+  - act: 2
+    title: "Confrontation"
+    drive: "<what the party is now pursuing — may differ from act 1>"
+    beats:
+      - id: "2a"
+        label: "<Midpoint Shift>"
+        what_changes: "<the thing they thought was true / the goal they thought they had changes>"
+        world_pressure: "<what forces this realization>"
+        status: pending
+      - id: "2b"
+        label: "<All Is Lost>"
+        what_changes: "<a genuine setback — something fails, is lost, or collapses>"
+        world_pressure: "<what drives this failure>"
+        status: pending
+
+  - act: 3
+    title: "Resolution"
+    drive: "<what the party now understands and is fighting for>"
+    beats:
+      - id: "3a"
+        label: "<Final Confrontation>"
+        what_changes: "<the decisive moment the campaign turns on>"
+        world_pressure: "<the escalated form of the original threat>"
+        status: pending
+      - id: "3b"
+        label: "<Resolution>"
+        what_changes: "<what's different about the world and the characters after>"
+        world_pressure: "<what factions/NPCs do with the outcome>"
+        status: pending
+
+current_act: 1
+current_beat: "1a"
+
+outstanding_beats:
+  - "1a"
+  - "1b"
+  - "2a"
+  - "2b"
+  - "3a"
+  - "3b"
+
+steering_notes: >
+  <Active guidance — what world pressure to apply to reach the current beat without forcing it.
+  Update at each /gm end when a beat advances or needs active steering.>
+
+revision_log: []
+
+# --- STRUCTURED ARC (imported campaigns, populated by /gm import) ---
+# type: structured
+# source: "<title>"
+# structure: linear   # linear | hub-and-spoke | faction-web
+# current_act: 1
+# current_chapter: "<chapter name>"
+# acts:
+#   - act: 1
+#     title: "<act title>"
+#     chapters:
+#       - id: "1.1"
+#         title: "<chapter name>"
+#         location: "<primary location>"
+#         key_beats: ["<beat>", "<beat>"]
+#         telegraph_scene: "<setup scene>"
+#         branching_notes: "<how player choices can vary>"
+#         status: current
+# outstanding_beats: ["<beat>"]
+# steering_notes: >
+#   <How to guide players toward outstanding beats without forcing.>
+```
+
+## Arc History
+*(populated by /gm arc new when a completed arc is succeeded by a new one — one entry per completed arc)*
+*(leave empty until the first arc completes)*
+
 ## Session Flags
-*(tutor_mode, etc. — session-scoped flags set via /dnd commands)*
+*(tutor_mode, etc. — session-scoped flags set via /gm commands)*
 
 ## GM Style Notes
 *Distilled calibration for this specific player — read at every /gm load, updated at /gm end only when a genuinely new pattern emerges.*

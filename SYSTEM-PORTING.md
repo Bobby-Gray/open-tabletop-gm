@@ -29,6 +29,9 @@ These parts of the skill work identically for any tabletop RPG:
 - **The display companion** — the cinematic display, stat sidebar, and effect pills work for any game. Health bars, resource pips, conditions, turn order — all generic.
 - **Scene detection** — the display companion's scene keyword system works for any setting. It reads the narration and adjusts the background accordingly.
 - **The 12 GM principles** — these apply to every TTRPG. Improvisation, consequence, NPC craft, pacing — universal.
+- **Narrative arc system** — both campaign modes work with any game system. *Improvised campaigns* get an auto-generated three-act dynamic arc at `/gm new` (six beats defined by consequence, not event; tracked and revised across sessions). *Structured campaigns* use `/gm import` to ingest a pre-written source document (PDF, markdown, DOCX, or plain text) and extract acts, chapters, key beats, and steering notes automatically. The arc operates above the system layer — it cares about story shape, not game mechanics.
+- **Campaign import** — `scripts/import_campaign.py` is fully system-agnostic. It extracts text from any source document and hands it to the GM model for structural analysis. The resulting campaign files use the same format regardless of what game system the source describes.
+- **Live State Flags** — the compaction-resilience block in `state.md`; keeps faction stances, NPC dispositions, and cover status anchored in compact key-value form; re-read at any recap to avoid stale impressions from context compression. Universal — works for any campaign.
 
 ---
 

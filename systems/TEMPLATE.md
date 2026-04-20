@@ -204,6 +204,35 @@ This tells the GM what to award and how to track it.
 
 ---
 
+## Campaign Arc Preferences
+
+<!--
+Optional. If your system has strong conventions around campaign structure, note them here.
+The GM will use this to calibrate how it generates or enforces narrative arcs.
+
+Examples:
+  D&D 5e (published adventure): use /gm import to create a structured campaign from the
+    source PDF — arc beats and chapters are extracted automatically.
+  D&D 5e (homebrew): use /gm new for an improvised dynamic arc — auto-generated from
+    the world's threat, factions, and Three Truths at campaign creation.
+  VtM V5 (chronicle): improvised dynamic arc; faction-web structure suits the political
+    focus of most chronicles; hub-and-spoke if running a published module.
+  Cyberpunk RED: improvised arcs with a strong act-2 pressure point recommended;
+    "All Is Lost" beat often lands as a corpo betrayal or mission failure.
+  Narrative / diceless: dynamic arc; beats are thematic rather than mechanical.
+
+If you always import pre-written sources for this system, note the typical structure type:
+  linear         — A→B→C scene chain (dungeon crawl, heist)
+  hub-and-spoke  — central hub + spoke locations in player-driven order (hexcrawl, published modules)
+  faction-web    — multi-faction city/complex with overlapping arcs (political, intrigue)
+-->
+
+**Preferred campaign mode:** [improvised / imported / either]
+**Typical arc structure:** [dynamic / structured — and if structured: linear / hub-and-spoke / faction-web]
+**Genre conventions:** [any pacing or arc notes specific to this system's genre]
+
+---
+
 ## Additional System Notes
 
 <!--
