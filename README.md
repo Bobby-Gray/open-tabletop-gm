@@ -1,12 +1,16 @@
 # open-tabletop-gm
 
+<div align="center">
+  <img src="docs/icons/logo_primary_fullcolor.png" width="280" alt="open-tabletop-gm">
+</div>
+
 An LLM-agnostic Game Master framework for persistent tabletop RPG campaigns. Built to run on any model available through [OpenCode](https://opencode.ai), locally hosted models via [LM Studio](https://lmstudio.ai), or any other LLM service.
 
 D&D 5e is included as the reference system. Any other tabletop RPG can be added by writing a system module — see [SYSTEM-PORTING.md](SYSTEM-PORTING.md).
 
 > **Using Claude?** This framework was extracted from [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill), a Claude Code-specific version with deeper integration. If you're running Claude Code, that repo will give you a more optimised experience.
 
-![open-tabletop-gm demo](docs/screenshots/demo-v2.gif)
+![open-tabletop-gm demo](docs/screenshots/demo-v3.gif)
 
 ---
 
@@ -14,10 +18,10 @@ D&D 5e is included as the reference system. Any other tabletop RPG can be added 
 
 A GM framework that offloads everything mechanical to Python so the LLM can focus on narration and judgment:
 
-- **Persistent campaigns** — state, world, NPCs, and character sheets survive across sessions in plain Markdown files
-- **Python toolchain** — dice, combat initiative, HP tracking, timed effects, conditions, calendar, campaign search; all run locally with zero LLM involvement
-- **Cinematic display companion** — optional Flask web app that renders your session as a live display on any browser or TV, with a real-time stat sidebar, effect pills, and player input panel
-- **System plugin architecture** — D&D 5e ships as the reference implementation; swap in any TTRPG by writing a system module
+- <img src="docs/icons/scroll.png" height="18"> **Persistent campaigns** — state, world, NPCs, and character sheets survive across sessions in plain Markdown files
+- <img src="docs/icons/dagger.png" height="18"> **Python toolchain** — dice, combat initiative, HP tracking, timed effects, conditions, calendar, campaign search; all run locally with zero LLM involvement
+- <img src="docs/icons/crystal_ball.png" height="18"> **Cinematic display companion** — optional Flask web app that renders your session as a live display on any browser or TV, with a real-time stat sidebar, effect pills, and player input panel
+- <img src="docs/icons/dragon.png" height="18"> **System plugin architecture** — D&D 5e ships as the reference implementation; swap in any TTRPG by writing a system module
 
 ---
 
@@ -222,6 +226,15 @@ Runs entirely independently of the LLM. If the display isn't running, all script
 | Stat sidebar | Character sheet |
 |---|---|
 | ![Stat sidebar](docs/screenshots/sidebar-card.png) | ![Character sheet modal](docs/screenshots/character-sheet-modal.png) |
+
+### Features at a glance
+
+- <img src="docs/icons/scroll.png" height="18"> Typewriter narration with animated scene-reactive backgrounds
+- <img src="docs/icons/crystal_ball.png" height="18"> Live party stat sidebar — HP bars, spell slots, conditions, turn order
+- <img src="docs/icons/spellbook.png" height="18"> Clickable character sheet modal — attacks, features, inventory
+- <img src="docs/icons/attack.png" height="18"> Inline dice math with auto-detected roll types and visual icons
+- <img src="docs/icons/shield.png" height="18"> LAN party support — every device in the room sees the same display; TLS optional
+- <img src="docs/icons/dragon.png" height="18"> Dynamic sky canvas — live sun arc, moon, stars, and weather-reactive clouds
 
 ### Viewing options
 
