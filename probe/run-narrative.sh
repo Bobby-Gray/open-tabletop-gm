@@ -35,7 +35,8 @@ MODELS_FILE=""
 SINGLE_MODEL=""
 FINETUNES_ONLY=0
 NO_JUDGE=0
-GAP=15  # seconds between models (paid tier — no rate limits, but be polite)
+RUNS=5   # runs per scenario — set to 1 for a quick pass, 5 for publishable results
+GAP=15   # seconds between models (paid tier — no rate limits, but be polite)
 
 shift
 while [[ $# -gt 0 ]]; do
@@ -44,6 +45,7 @@ while [[ $# -gt 0 ]]; do
     --model)       SINGLE_MODEL="$2"; shift 2 ;;
     --finetunes-only) FINETUNES_ONLY=1; shift ;;
     --no-judge)    NO_JUDGE=1; shift ;;
+    --runs)        RUNS="$2"; shift 2 ;;
     --gap)         GAP="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
@@ -85,6 +87,7 @@ TOTAL=$(grep -c . "$TMPFILE" 2>/dev/null || echo 0)
 echo "" >&2
 echo "━━━ Starting narrative probe v2 ━━━" >&2
 echo "Models: $TOTAL" >&2
+echo "Runs/scenario: $RUNS" >&2
 echo "Judges: $(echo "$JUDGES" | tr ',' '\n' | wc -l | tr -d ' ')" >&2
 echo "Results dir: $RESULTS" >&2
 echo "" >&2
@@ -109,10 +112,14 @@ while IFS= read -r MODEL; do
 import json, sys
 d = json.load(open('$OUTFILE'))
 cases = d.get('cases', [])
-errors = sum(1 for c in cases if c.get('status') == 'ERROR')
-sys.exit(0 if len(cases) >= 12 and errors == 0 else 1)
+# Accept if: 12 cases, all have runs_valid >= 1, none are pure ERROR status
+errors = sum(1 for c in cases if c.get('status') == 'ERROR' and c.get('runs_valid', 0) == 0)
+expected_runs = $RUNS
+actual_runs = d.get('runs_per_scenario', 1)
+runs_ok = actual_runs >= expected_runs
+sys.exit(0 if len(cases) >= 12 and errors == 0 and runs_ok else 1)
 " 2>/dev/null; then
-    echo "  [SKIP] Already have clean 12-case result — use --force to re-run"
+    echo "  [SKIP] Already have clean $RUNS-run result — use --force to re-run"
     continue
   fi
 
@@ -121,6 +128,7 @@ sys.exit(0 if len(cases) >= 12 and errors == 0 else 1)
     --url "$OR_URL" \
     --api-key "$API_KEY" \
     $JUDGE_ARG \
+    --runs "$RUNS" \
     --timeout 120 \
     --output-file "$OUTFILE" \
     2>&1 | tee "${RESULTS}/${SAFE}.log"
@@ -131,8 +139,8 @@ done < "$TMPFILE"
 
 echo ""
 echo "━━━ NARRATIVE SUMMARY v2 ━━━"
-printf "%-55s  %-14s  atm   npc   gm    overall  IRA\n" "Model" "Auto(P/W/F)"
-printf "%-55s  %-14s  ----  ----  ----  -------  ---\n" "-----" "----------"
+printf "%-55s  %-14s  atm   npc   gm    overall  std   IRA\n" "Model" "Auto(P/W/F)"
+printf "%-55s  %-14s  ----  ----  ----  -------  ---   ---\n" "-----" "----------"
 for f in "$RESULTS"/*.json; do
   [ -f "$f" ] || continue
   python3 -c "
@@ -142,12 +150,15 @@ a = d.get('auto_summary', {})
 j = d.get('judge_averages', {})
 ira = d.get('inter_rater_agreement', {})
 overall = d.get('overall_judge_score', '')
+mstd = d.get('mean_judge_score_std', '')
+runs = d.get('runs_per_scenario', 1)
 auto = f\"P:{a.get('PASS',0)} W:{a.get('WARN',0)} F:{a.get('FAIL',0)}\"
 atm = f\"{j.get('atmosphere','?')}\" if j else '-'
 npc = f\"{j.get('npc_craft','?')}\" if j else '-'
 gmc = f\"{j.get('gm_craft','?')}\" if j else '-'
 ira_mean = f\"{ira.get('mean','?')}\" if ira else '-'
-print(f\"{d['model']:<55}  {auto:<14}  {atm:<5} {npc:<5} {gmc:<5} {str(overall):<8} {ira_mean}\")
+std_str = f\"{mstd}\" if mstd != '' else '-'
+print(f\"{d['model']:<55}  {auto:<14}  {atm:<5} {npc:<5} {gmc:<5} {str(overall):<8} {std_str:<5} {ira_mean}  (n={runs})\")
 " 2>/dev/null
 done | sort -t'=' -k4 -rn
 

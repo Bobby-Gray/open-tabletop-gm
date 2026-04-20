@@ -11,15 +11,20 @@ Scoring is two-layer:
      Inter-rater agreement (mean pairwise Pearson r) is reported as a methodological
      validity measure — directly addressing the single-judge circularity criticism.
 
+Multi-run mode (--runs N, default 5):
+  Each scenario is run N times. Auto-scores are reported as pass-rates (fraction of
+  runs that passed each dimension). Judge scores are averaged across runs. Std dev of
+  the overall judge score across runs is reported as a generation stability metric —
+  high std dev means the model's output quality is inconsistent across draws.
+
 Usage:
-  # Single judge (v1 compatible):
+  # Single run (fast, less reliable):
+  python3 probe/narrative_probe.py --model google/gemma-3-27b-it \
+    --url https://openrouter.ai/api --api-key KEY --runs 1
+
+  # 5-run average, 5-judge ensemble (recommended):
   python3 probe/narrative_probe.py --model google/gemma-3-27b-it \
     --url https://openrouter.ai/api --api-key KEY
-
-  # 5-judge ensemble (recommended):
-  python3 probe/narrative_probe.py --model google/gemma-3-27b-it \
-    --url https://openrouter.ai/api --api-key KEY \
-    --judge-models "openai/gpt-oss-120b,google/gemma-3-27b-it,meta-llama/llama-3.3-70b-instruct,qwen/qwen3-235b-a22b,nvidia/nemotron-3-super-120b-a12b"
 
   # Full sweep:
   bash probe/run-narrative.sh $OPENROUTER_API_KEY
@@ -694,6 +699,14 @@ def judge_ensemble(response_text: str, judge_models: list[str], url: str, api_ke
 # Inter-rater agreement
 # ---------------------------------------------------------------------------
 
+def std_dev(values: list) -> float:
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    return round((sum((v - mean) ** 2 for v in values) / (n - 1)) ** 0.5, 3)
+
+
 def pearson(x: list[float], y: list[float]) -> float | None:
     n = len(x)
     if n < 2:
@@ -755,137 +768,220 @@ def compute_inter_rater_agreement(all_results: list) -> dict:
 # ---------------------------------------------------------------------------
 
 def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
-                        judge_models: list[str], output_file: str = "") -> list:
+                        judge_models: list[str], output_file: str = "",
+                        runs: int = 5) -> list:
     print(f"\nnarrative probe v2 — {model}")
     print(f"judges ({len(judge_models)}): {', '.join(j.split('/')[-1] for j in judge_models)}")
+    print(f"runs per scenario: {runs}")
     print("-" * 70)
     results = []
+    dims = ["atmosphere", "npc_craft", "gm_craft"]
 
     for test in TEST_CASES:
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
         if test.get("injected_context"):
             sys_with_ctx = SYSTEM_PROMPT + f"\n\n**Scene note (GM only):** {test['injected_context']}"
-            messages = [{"role": "system", "content": sys_with_ctx}]
+            messages_base = [{"role": "system", "content": sys_with_ctx}]
+        else:
+            messages_base = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages_base = messages_base + test["messages"]
 
-        messages += test["messages"]
+        print(f"  [{test['standard']}] {test['label']}")
+        run_data = []
 
-        print(f"  [{test['standard']}] {test['label']} ...", end="", flush=True)
-        t0 = time.time()
-        response = chat(model, messages, url, timeout, api_key)
-        elapsed = time.time() - t0
+        for run_idx in range(runs):
+            print(f"    run {run_idx + 1}/{runs} ...", end="", flush=True)
+            t0 = time.time()
+            response = chat(model, messages_base, url, timeout, api_key)
+            elapsed = time.time() - t0
 
-        if "error" in response:
-            print(f" ERROR ({elapsed:.1f}s)\n    → {response['error']}")
-            results.append({
-                "id": test["id"], "label": test["label"], "standard": test["standard"],
-                "status": "ERROR", "error": response["error"], "elapsed_s": round(elapsed, 1),
-                "multi_judge": {"per_judge": {}, "aggregate": None},
-            })
-            continue
+            if "error" in response:
+                print(f" ERROR ({elapsed:.1f}s)")
+                run_data.append({"error": response["error"], "elapsed_s": round(elapsed, 1)})
+                continue
 
-        content = (response.get("choices", [{}])[0].get("message") or {}).get("content") or ""
-        usage = response.get("usage", {})
-        comp_tokens = usage.get("completion_tokens")
+            content = (response.get("choices", [{}])[0].get("message") or {}).get("content") or ""
+            comp_tokens = (response.get("usage") or {}).get("completion_tokens")
 
-        if not content:
-            print(f" ERROR (empty content)")
-            results.append({
-                "id": test["id"], "label": test["label"], "standard": test["standard"],
-                "status": "ERROR", "error": "empty_content", "elapsed_s": round(elapsed, 1),
-                "multi_judge": {"per_judge": {}, "aggregate": None},
-            })
-            continue
+            if not content:
+                print(f" ERROR (empty content)")
+                run_data.append({"error": "empty_content", "elapsed_s": round(elapsed, 1)})
+                continue
 
-        # Auto-score
-        scores = test["score_fn"](content, comp_tokens, test.get("injected_context", ""))
-        thresholds = test["pass_thresholds"]
-        passed = [k for k, v in scores.items() if k in thresholds and thresholds[k](v)]
-        failed = [k for k, v in scores.items() if k in thresholds and not thresholds[k](v)]
-        auto_status = "PASS" if not failed else ("WARN" if len(failed) <= 1 else "FAIL")
-        print(f" {auto_status} ({elapsed:.1f}s)")
-        if failed:
-            print(f"    ✗ {failed}")
-        if passed:
-            print(f"    ✓ {passed}")
+            scores = test["score_fn"](content, comp_tokens, test.get("injected_context", ""))
+            thresholds = test["pass_thresholds"]
+            passed = [k for k, v in scores.items() if k in thresholds and thresholds[k](v)]
+            failed = [k for k, v in scores.items() if k in thresholds and not thresholds[k](v)]
+            auto_status = "PASS" if not failed else ("WARN" if len(failed) <= 1 else "FAIL")
+            print(f" {auto_status} ({elapsed:.1f}s)", end="")
 
-        # Judge ensemble
-        multi_judge = {"per_judge": {}, "aggregate": None}
-        if judge_models and content:
-            print(f"    judging [{len(judge_models)} models]...", end="", flush=True)
-            multi_judge = judge_ensemble(content, judge_models, url, api_key, timeout)
-            agg = multi_judge.get("aggregate") or {}
-            if agg:
-                atm = agg.get("atmosphere", "?")
-                npc = agg.get("npc_craft", "?")
-                gmc = agg.get("gm_craft", "?")
-                avg = round(sum(v for v in agg.values() if v) / 3, 2) if agg else "?"
-                n_judges = len(multi_judge.get("per_judge", {}))
-                print(f" atm={atm} npc={npc} gm={gmc} avg={avg} (n={n_judges})")
+            multi_judge = {"per_judge": {}, "aggregate": None}
+            if judge_models:
+                print(f"  judging...", end="", flush=True)
+                multi_judge = judge_ensemble(content, judge_models, url, api_key, timeout)
+                agg = multi_judge.get("aggregate") or {}
+                if agg:
+                    avg = round(sum(v for v in agg.values() if v is not None) / 3, 2)
+                    print(f" avg={avg}")
+                else:
+                    print(" (judges failed)")
             else:
-                print(" (all judges failed)")
+                print()
 
-        hl = highlight_sentence(content)
-        print(f"    ❝ {hl}")
+            run_data.append({
+                "content": content,
+                "auto_scores": scores,
+                "auto_status": auto_status,
+                "passed": passed,
+                "failed": failed,
+                "multi_judge": multi_judge,
+                "completion_tokens": comp_tokens,
+                "elapsed_s": round(elapsed, 1),
+                "highlight": highlight_sentence(content),
+            })
+
+        # --- Aggregate across runs ---
+        valid = [r for r in run_data if "error" not in r]
+        n_errors = len(run_data) - len(valid)
+
+        if not valid:
+            results.append({
+                "id": test["id"], "label": test["label"], "standard": test["standard"],
+                "runs": runs, "runs_valid": 0, "runs_errors": n_errors,
+                "status": "ERROR",
+                "multi_judge": {"per_judge": {}, "aggregate": None},
+            })
+            continue
+
+        # Auto-scores: per-dimension pass rate, threshold at majority (>= 0.5)
+        all_dims = set()
+        for r in valid:
+            all_dims.update(r.get("passed", []) + r.get("failed", []))
+
+        pass_rates = {
+            d: round(sum(1 for r in valid if d in r.get("passed", [])) / len(valid), 3)
+            for d in all_dims
+        }
+        passed_dims = [d for d, rate in pass_rates.items() if rate >= 0.5]
+        failed_dims = [d for d, rate in pass_rates.items() if rate < 0.5]
+        n_failed = len(failed_dims)
+        auto_status = "PASS" if n_failed == 0 else ("WARN" if n_failed <= 1 else "FAIL")
+
+        # Judge scores: average per-judge per-dim across runs, then aggregate across judges
+        judge_run_scores: dict = {}
+        for r in valid:
+            for judge, scores in (r.get("multi_judge", {}).get("per_judge") or {}).items():
+                if judge not in judge_run_scores:
+                    judge_run_scores[judge] = []
+                judge_run_scores[judge].append(scores)
+
+        avg_per_judge: dict = {}
+        for judge, score_list in judge_run_scores.items():
+            avg_per_judge[judge] = {}
+            for dim in dims:
+                vals = [s[dim] for s in score_list if isinstance(s.get(dim), (int, float))]
+                avg_per_judge[judge][dim] = round(sum(vals) / len(vals), 3) if vals else None
+
+        agg: dict = {}
+        for dim in dims:
+            vals = [s[dim] for s in avg_per_judge.values() if s.get(dim) is not None]
+            agg[dim] = round(sum(vals) / len(vals), 3) if vals else None
+
+        multi_judge_agg = {
+            "per_judge": avg_per_judge,
+            "aggregate": agg if any(v is not None for v in agg.values()) else None,
+        }
+
+        # Std dev of overall judge score across runs (generation stability)
+        per_run_overall = []
+        for r in valid:
+            run_agg = (r.get("multi_judge") or {}).get("aggregate") or {}
+            vals = [run_agg[d] for d in dims if isinstance(run_agg.get(d), (int, float))]
+            if vals:
+                per_run_overall.append(sum(vals) / len(vals))
+        judge_score_std = std_dev(per_run_overall) if len(per_run_overall) > 1 else None
+
+        # Token stats
+        tok_vals = [r["completion_tokens"] for r in valid if isinstance(r.get("completion_tokens"), int)]
+        tokens_mean = round(sum(tok_vals) / len(tok_vals)) if tok_vals else None
+        tokens_std = round(std_dev(tok_vals), 1) if len(tok_vals) > 1 else None
+
+        # Best highlight by sensory density
+        best_hl = max(
+            (r["highlight"] for r in valid if r.get("highlight")),
+            key=lambda h: sensory_density(h),
+            default=""
+        )
+
+        overall_this = (round(sum(v for v in agg.values() if v is not None) / 3, 2)
+                        if agg else None)
+        print(f"    → status={auto_status}  judge_avg={overall_this}  std={judge_score_std}")
+        print(f"    → pass_rates: {pass_rates}")
+        if best_hl:
+            print(f"    ❝ {best_hl}")
 
         results.append({
             "id": test["id"],
             "label": test["label"],
             "standard": test["standard"],
+            "runs": runs,
+            "runs_valid": len(valid),
+            "runs_errors": n_errors,
             "status": auto_status,
-            "auto_scores": scores,
-            "passed_dimensions": passed,
-            "failed_dimensions": failed,
-            "multi_judge": multi_judge,
-            "completion_tokens": comp_tokens,
-            "elapsed_s": round(elapsed, 1),
-            "highlight": hl,
-            "full_response": content,
+            "pass_rates": pass_rates,
+            "passed_dimensions": passed_dims,
+            "failed_dimensions": failed_dims,
+            "multi_judge": multi_judge_agg,
+            "judge_score_std": judge_score_std,
+            "completion_tokens_mean": tokens_mean,
+            "completion_tokens_std": tokens_std,
+            "highlight": best_hl,
+            "run_highlights": [r["highlight"] for r in valid if r.get("highlight")],
         })
 
-    # --- Summary ---
+    # --- Final summary ---
     auto_counts = {s: sum(1 for r in results if r.get("status") == s)
                    for s in ["PASS", "WARN", "FAIL", "ERROR"]}
 
-    # Aggregate judge averages across all test cases
     all_agg = [r["multi_judge"].get("aggregate") or {} for r in results
-               if r.get("multi_judge", {}).get("aggregate")]
-    judge_avgs = {}
+               if (r.get("multi_judge") or {}).get("aggregate")]
+    judge_avgs: dict = {}
     if all_agg:
-        for dim in ["atmosphere", "npc_craft", "gm_craft"]:
+        for dim in dims:
             vals = [j[dim] for j in all_agg if j.get(dim) is not None]
             judge_avgs[dim] = round(sum(vals) / len(vals), 2) if vals else None
 
-    # Inter-rater agreement
     ira = compute_inter_rater_agreement(results)
+    overall_judge = (round(sum(v for v in judge_avgs.values() if v is not None) / 3, 2)
+                     if judge_avgs else None)
 
-    overall_judge = round(sum(v for v in judge_avgs.values() if v) / 3, 2) if judge_avgs else None
+    all_stds = [r["judge_score_std"] for r in results if r.get("judge_score_std") is not None]
+    mean_judge_std = round(sum(all_stds) / len(all_stds), 3) if all_stds else None
 
     print(f"\n{'=' * 70}")
-    print(f"Model: {model}")
+    print(f"Model: {model}  (runs/scenario: {runs})")
     print(f"Auto: {auto_counts}")
     if judge_avgs:
-        print(f"Judge avg ({len(judge_models)} models): "
-              f"atmosphere={judge_avgs.get('atmosphere')}  "
-              f"npc_craft={judge_avgs.get('npc_craft')}  "
-              f"gm_craft={judge_avgs.get('gm_craft')}  "
+        print(f"Judge avg: atm={judge_avgs.get('atmosphere')}  "
+              f"npc={judge_avgs.get('npc_craft')}  "
+              f"gm={judge_avgs.get('gm_craft')}  "
               f"overall={overall_judge}")
+    if mean_judge_std is not None:
+        print(f"Mean judge score std: {mean_judge_std}  (lower = more stable outputs)")
     if ira:
-        print(f"Inter-rater agreement (mean Pearson r): "
-              f"atmosphere={ira.get('atmosphere')}  "
-              f"npc_craft={ira.get('npc_craft')}  "
-              f"gm_craft={ira.get('gm_craft')}  "
-              f"mean={ira.get('mean')}")
+        print(f"IRA (mean Pearson r): {ira.get('mean')}  "
+              f"[atm={ira.get('atmosphere')} npc={ira.get('npc_craft')} gm={ira.get('gm_craft')}]")
     print(f"{'=' * 70}\n")
 
     if output_file:
         out = {
             "model": model,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "runs_per_scenario": runs,
             "judge_models": judge_models,
             "auto_summary": auto_counts,
             "judge_averages": judge_avgs,
             "overall_judge_score": overall_judge,
+            "mean_judge_score_std": mean_judge_std,
             "inter_rater_agreement": ira,
             "cases": results,
         }
@@ -906,6 +1002,8 @@ if __name__ == "__main__":
     parser.add_argument("--judge-models", default=",".join(DEFAULT_JUDGES),
                         help="Comma-separated judge model IDs (default: 5-model ensemble)")
     parser.add_argument("--no-judge", action="store_true", help="Skip judge scoring entirely")
+    parser.add_argument("--runs", type=int, default=5,
+                        help="Number of times to run each scenario (default: 5)")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--output-file", default="")
     args = parser.parse_args()
@@ -914,5 +1012,5 @@ if __name__ == "__main__":
 
     run_narrative_probe(
         args.model, args.url, args.api_key, args.timeout,
-        judges, args.output_file,
+        judges, args.output_file, runs=args.runs,
     )
