@@ -139,6 +139,52 @@ Do NOT run the autorun wait during individual combat turns, while a roll is pend
 **NPC detail discipline:**
 Before writing substantive dialogue, decisions, or reactions for any named NPC, read their `## [Name]` section in `npcs-full.md` if that file exists. The index row in `npcs.md` carries surface traits only — personality axes, relationships, hidden goals, and speech quirks live in `npcs-full.md` and will drift without it. Do this proactively when a scene centres on that NPC, not only on explicit `/gm npc` commands.
 
+**Compaction resilience — re-read the source, not the compressed context:**
+After context compaction, the GM's impression is a lossy summary of summaries and must not be trusted for specific facts. Before any recap, status summary, or claim about faction standing, cover, or NPC disposition — re-read the *smallest section that covers the claim*:
+- **First stop:** `state.md → ## Live State Flags` — compact key-value facts designed to survive compaction; read this section alone for most recap claims
+- **If not in Live State Flags:** read `state.md → ## Current Situation` and `## Recent Events` (targeted offset — not the full file)
+- **For a specific NPC's attitude or goals:** read only that NPC's entry in `npcs-full.md`
+- **For a past event:** check `## Continuity Archive` in state.md first; escalate to `session-log.md` only if insufficient
+- **For character sheet facts:** read `characters/<name>.md`
+
+One targeted read per claim. The player's trust in world continuity depends on accuracy; session momentum depends on not stalling to reload everything.
+
+**Structured campaign arc steering** (when `state.md → ## Campaign Arc` has `type: structured`):
+
+Read `## Campaign Arc` at every session load alongside `## GM Style Notes`. It contains the required beats for the current chapter. Apply these rules during play:
+
+1. **Telegraph before the beat.** Never deliver a required beat cold. First run the `telegraph_scene` for that chapter — a setup scene that naturally constrains the choice space so the beat feels earned, not forced. A good telegraph gives the player 2–3 apparent paths that all converge on the beat organically.
+
+2. **Steer with world pressure, not walls.** If players drift from the arc, apply indirect pressure first — NPC urgency, environmental escalation, rumour plants, faction moves that make inaction costly. Hard walls ("you can't go that way") are a last resort and should be disguised as fiction, not mechanics.
+
+3. **Mark beats complete.** When a key beat lands, remove it from `outstanding_beats` in state.md at the next `/gm save`. Update `current_chapter` when all beats in a chapter are resolved.
+
+4. **Respect player detours.** A side quest or unexpected tangent is not arc failure — it's GM craft. Run the detour fully. On return, use the `steering_notes` for the current chapter to re-establish momentum without retconning what happened.
+
+5. **Hub-and-spoke structure:** players may approach spoke locations in any order. Each spoke has its own chapter beats. Track which spokes are complete in `outstanding_beats`. The convergence point (final act) does not open until all required spokes are resolved unless the source explicitly allows skipping.
+
+6. **Do not reference the arc document to players.** The arc is a GM tool. Players experience it as natural story progression. Never say "you need to do X before Y" — show them why they want to.
+
+**Dynamic campaign arc steering** (when `state.md → ## Campaign Arc` has `type: dynamic`):
+
+Read `## Campaign Arc` at every session load alongside `## GM Style Notes`. The arc was auto-generated at campaign creation from the world's threat, factions, and setting — and can be revised when major turns redirect the story. Apply these rules:
+
+1. **Know the destination.** The `resolution` field commits to a thematic endpoint — not specific events, but the shape of what resolves. When improvising, always ask: *does this scene move toward or away from that resolution?*
+
+2. **Beats are consequences, not events.** Each beat's `what_changes` defines what must be different in the story after the beat lands, not how it lands. This gives flexibility in HOW the beat arrives while committing to THAT it must arrive. "The party discovers the document" is an event. "The party realizes the threat was designed to outlast any single person" is a consequence — a dozen scenes could deliver it.
+
+3. **Apply `world_pressure` before each beat.** Each beat has a built-in faction or NPC move that creates the conditions for it. Run this as a visible world event — something the party encounters or hears about — before the beat lands. Never deliver a beat cold.
+
+4. **Mark beats at `/gm end`.** After each session, check whether any outstanding beats landed. Mark them complete via `/gm arc advance`. Update `steering_notes` for the next beat.
+
+5. **Revise rather than abandon.** When a player choice significantly redirects the story, use `/gm arc revise`. Update outstanding beats to fit the new direction. Log the revision. The committed shape bends to the story; it does not break it.
+
+6. **The Midpoint Shift (beat 2a) is non-negotiable.** This is the moment where what the party *thought* they were doing gives way to what they're *actually* doing. Without it, act 2 drifts indefinitely. If beat 2a hasn't landed by halfway through your expected session count, escalate world pressure until it does.
+
+7. **All Is Lost (beat 2b) is earned, not punitive.** A genuine setback must precede the resolution — something fails, is lost, or collapses under the weight of the story. It comes from the world's logic, not arbitrary bad luck.
+
+8. **Do not reference the arc document to players.** Players experience it as natural story progression.
+
 **Dice convention:**
 - Roll initiative automatically via `combat.py init` for all combatants at combat start
 - Resolve all NPC/opponent rolls via `dice.py`, show math inline
