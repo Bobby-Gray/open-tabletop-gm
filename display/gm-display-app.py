@@ -1,5 +1,5 @@
 """
-app.py — DnD DM display server
+gm-display-app.py — GM display server
 
 Receives text chunks from wrapper.py, detects scene context from keywords,
 and pushes both to the browser via Server-Sent Events.
@@ -1673,13 +1673,13 @@ if __name__ == "__main__":
         pass
 
     if _LAN_MODE:
-        print(f"DnD DM Display — LAN mode (0.0.0.0:5001) [{scheme.upper()}]")
+        print(f"GM Display — LAN mode (0.0.0.0:5001) [{scheme.upper()}]")
         print(f"  Local:  {scheme}://localhost:5001")
         print("  Token stored at:", TOKEN_FILE)
         print("  POST endpoints require X-DND-Token header (send.py/push_stats.py handle this automatically)")
         print()
     else:
-        print(f"DnD DM Display — Flask server starting on {scheme}://localhost:5001")
+        print(f"GM Display — Flask server starting on {scheme}://localhost:5001")
         print(f"Open {scheme}://localhost:5001 in your browser, then Chromecast the tab.")
         print()
     app.run(host=host, port=5001, threaded=True, debug=False, ssl_context=ssl_ctx)

@@ -74,14 +74,14 @@ if [[ -f "$PID_FILE" ]]; then
   kill -9 "$(cat "$PID_FILE")" 2>/dev/null || true
   rm -f "$PID_FILE"
 fi
-pkill -9 -f "python3.*${DISPLAY_DIR}/app\.py" 2>/dev/null || true
+pkill -9 -f "gm-display-app\.py" 2>/dev/null || true
 sleep 0.3
 
 # ── Start Flask ───────────────────────────────────────────────────────────────
 APP_ARGS="$LAN_FLAG"
 $TLS_MODE && APP_ARGS="$APP_ARGS --tls"
 
-nohup python3 "$DISPLAY_DIR/app.py" $APP_ARGS > "$LOG" 2>&1 &
+nohup python3 "$DISPLAY_DIR/gm-display-app.py" $APP_ARGS > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 LOCAL_URL="${SCHEME}://localhost:5001"

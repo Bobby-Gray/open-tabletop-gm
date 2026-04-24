@@ -39,7 +39,7 @@ def init() -> bool:
     return _HAS_NUMPY
 
 
-# ── Broadcast wiring (called by app.py on startup) ────────────────────────────
+# ── Broadcast wiring (called by gm-display-app.py on startup) ─────────────────
 
 def set_broadcast(fn: Callable) -> None:
     """Wire the SSE broadcast function so SFX events reach all browsers."""

@@ -169,7 +169,7 @@ def main() -> None:
     _print_urls(lan_ip)
     print()
     print("Restart the display to apply:")
-    print(f"  pkill -9 -f app.py ; bash {DISPLAY_DIR}/start-display.sh")
+    print(f"  pkill -9 -f gm-display-app.py ; bash {DISPLAY_DIR}/start-display.sh")
 
 
 def _print_urls(lan_ip: Optional[str]) -> None:
