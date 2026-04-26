@@ -6,7 +6,7 @@ This file is always in context. When any command or state transition occurs, loo
 
 ## `/gm load <name>`
 
-**No questions. Four steps. Do them in order and stop.**
+**No questions. Five steps. Do them in order and stop.**
 
 **Step 1 — Check display state:**
 ```
@@ -14,14 +14,33 @@ bash -c 'f=<skill-base>/display/app.pid; test -f "$f" && kill -0 $(cat "$f") 2>/
 ```
 Store result as `display=ON` or `display=OFF`. Do not run `start-display.sh`.
 
-**Step 2 — Read these three files:**
+**Step 2 — If `display=ON`, sync campaign and replay previous session tail:**
+
+Skip this step entirely if `display=OFF`.
+
+1. Register the active campaign (writes `.campaign` and reloads the per-campaign tail buffer):
+   ```
+   python3 <skill-base>/display/send.py --set-campaign <name> < /dev/null
+   ```
+2. Read `~/open-tabletop-gm/campaigns/<name>/session_tail.json`. **The campaign-side path is the authoritative one — do NOT read** the legacy/fallback at `<skill-base>/display/session_tail.json`; that file may exist from older sessions or other campaigns and will mislead the replay. If the campaign-side file does not exist, skip the rest of this step (display starts blank).
+3. For each entry in the tail array, send it via `send.py` using the entry's keys:
+   - `player` key present → `send.py --player <name>` with text via stdin
+   - `npc` key present → `send.py --npc <name>` with text via stdin
+   - `dice` key present → `send.py --dice` with text via stdin
+   - `tutor` key present → `send.py --tutor` with text via stdin
+   - `action` key present → `send.py --action <name>` with text via stdin
+   - none of the above → `send.py` with text via stdin (plain narration)
+
+   Send entries in array order. The display will render them as the previous session's last exchanges, restoring continuity for any reconnecting browser.
+
+**Step 3 — Read these three files:**
 1. `~/open-tabletop-gm/campaigns/<name>/state.md`
 2. `~/open-tabletop-gm/campaigns/<name>/world.md`
 3. `~/open-tabletop-gm/campaigns/<name>/npcs.md`
 
-**Step 3 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
+**Step 4 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
 
-**Step 4 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
+**Step 5 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
 
 ---
 

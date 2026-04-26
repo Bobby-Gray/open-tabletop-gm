@@ -2,6 +2,7 @@
 display/.token
 display/stats.json
 display/text_log.json
+display/session_tail.json
 display/app.log
 display/app.pid
 display/cert.pem

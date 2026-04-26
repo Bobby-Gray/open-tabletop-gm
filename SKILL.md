@@ -207,6 +207,8 @@ ROLL=$(python3 scripts/dice.py d20+5 --silent)
 echo "Aldric — Insight: d20+5 = $ROLL → [brief outcome]" | python3 display/send.py --dice
 ```
 
+⚠ **Heredoc gotcha:** The `<< 'GMEND'` form (single-quoted terminator) **blocks variable expansion** — `${ROLL}` will be sent literally, not expanded. Use it for static narration, but for dice/anything with shell variables, **always use `echo`/`printf` piping** (as in the example above) or an unquoted `<< GMEND` heredoc. Mixing the two is the most common send-formatting bug.
+
 *NPC dialogue* — when an NPC speaks more than a line:
 ```bash
 python3 display/send.py --npc "NPC Name" << 'GMEND'

@@ -769,6 +769,72 @@ def _load_log() -> None:
 _load_log()
 
 
+# ─── Session tail buffer ──────────────────────────────────────────────────────
+# Rolling buffer of the last 30 text events — written to session_tail.json after
+# every /chunk POST so it survives crashes. Read at /gm load for display replay
+# of the previous session's last exchanges.
+#
+# The text_log buffer above (maxlen=60) drives in-session browser-reconnect
+# replay. The tail buffer (maxlen=30) is a parallel, leaner record stamped with
+# the campaign name so cross-campaign replay does not bleed.
+#
+# Path is campaign-specific so tails from different campaigns do not overwrite
+# each other. The fallback at the display dir is used only when no campaign is
+# registered (first-run state).
+_TAIL_FALLBACK = os.path.join(_DISPLAY_DIR, "session_tail.json")
+_tail_buffer: deque = deque(maxlen=30)
+_tail_lock = threading.Lock()
+
+
+def _get_tail_file() -> str:
+    """Return the campaign-specific tail path, or the fallback display-dir path."""
+    try:
+        camp = open(CAMP_FILE).read().strip()
+        if camp:
+            return os.path.expanduser(
+                f"~/open-tabletop-gm/campaigns/{camp}/session_tail.json"
+            )
+    except Exception:
+        pass
+    return _TAIL_FALLBACK
+
+
+def _persist_tail() -> None:
+    """Write the current tail buffer to disk. Called after every chunk."""
+    try:
+        with _tail_lock:
+            data = list(_tail_buffer)
+        with open(_get_tail_file(), "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+
+def _load_tail() -> None:
+    """Load the previously persisted tail. Called at startup and on campaign switch.
+    Filters by campaign stamp so a stale shared file cannot bleed entries from
+    another campaign into the active one."""
+    try:
+        with open(_get_tail_file()) as f:
+            data = json.load(f)
+        try:
+            current_camp = open(CAMP_FILE).read().strip()
+        except Exception:
+            current_camp = ""
+        with _tail_lock:
+            _tail_buffer.clear()
+            for item in data[-30:]:
+                item_camp = item.get("_camp", "")
+                if current_camp and item_camp and item_camp != current_camp:
+                    continue
+                _tail_buffer.append(item)
+    except Exception:
+        pass
+
+
+_load_tail()
+
+
 # ─── Character / combat stats ─────────────────────────────────────────────────
 # Stored as {"players": [...], "turn_order": {...}|null}
 # Players are merged by name so partial updates (just HP, just XP) work.
@@ -889,13 +955,15 @@ def chunk():
         return "Forbidden", 403
     data = request.get_json(silent=True) or {}
 
-    # Campaign registration — write .campaign file and reload log for correct per-campaign
-    # replay. Sent by send.py --set-campaign at /gm load. May arrive with or without text.
+    # Campaign registration — write .campaign file and reload log + tail for correct
+    # per-campaign replay. Sent by send.py --set-campaign at /gm load. May arrive with
+    # or without text.
     if "campaign" in data:
         try:
             with open(CAMP_FILE, "w") as f:
                 f.write(str(data["campaign"]).strip())
             _load_log()
+            _load_tail()
         except Exception:
             pass
 
@@ -951,10 +1019,22 @@ def chunk():
     elif is_tutor:
         log_entry["tutor"] = True
 
+    # Stamp campaign onto the tail entry so cross-campaign replay can filter
+    # and a stale shared file does not bleed into the active session.
+    try:
+        _camp_stamp = open(CAMP_FILE).read().strip()
+        if _camp_stamp:
+            log_entry["_camp"] = _camp_stamp
+    except Exception:
+        pass
+
     with _text_log_lock:
         _text_log.append(log_entry)
+    with _tail_lock:
+        _tail_buffer.append(log_entry)
 
     _persist_log()
+    _persist_tail()
     _broadcast(payload)
     return "", 204
 
