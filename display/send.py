@@ -70,7 +70,9 @@ _SCHEME = _SCHEME_FILE.read_text().strip() if _SCHEME_FILE.exists() else "http"
 FLASK_URL   = f"{_SCHEME}://localhost:5001/chunk"
 STATS_URL   = f"{_SCHEME}://localhost:5001/stats"
 TOKEN_FILE  = str(_DIR / ".token")
-TIMEOUT     = 2.0
+TIMEOUT     = 8.0
+RETRIES     = 1                # one retry on timeout/connection error
+CHUNK_LIMIT = 3500             # paragraph-split text bodies above this many chars
 
 # SSL context — only used when running HTTPS (self-signed cert)
 if _SCHEME == "https":
@@ -88,15 +90,70 @@ def _read_token() -> str:
         return ""
 
 
-def _post(url: str, data: bytes, token: str) -> None:
+def _post(url: str, data: bytes, token: str) -> bool:
+    """POST data with retries. Logs failures to stderr (visible in shell output).
+
+    Returns True on success, False after all retries exhausted. Display being
+    offline is the only "expected" failure mode; everything else is logged so
+    transient timeouts / dropped sends do not silently lose narration.
+    """
     headers = {"Content-Type": "application/json"}
     if token:
         headers["X-DND-Token"] = token
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    try:
-        urllib.request.urlopen(req, timeout=TIMEOUT, context=_SSL_CTX)
-    except Exception:
-        pass  # Display not running — fail silently
+    attempts = RETRIES + 1
+    last_err: "Exception | None" = None
+    for i in range(attempts):
+        try:
+            urllib.request.urlopen(req, timeout=TIMEOUT, context=_SSL_CTX)
+            return True
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            # Connection refused = display not running. First-attempt fail-fast.
+            inner = getattr(e, "reason", e)
+            if isinstance(inner, ConnectionRefusedError) or "Connection refused" in str(inner):
+                return False
+            last_err = e
+            if i < attempts - 1:
+                time.sleep(0.5 * (i + 1))
+        except Exception as e:
+            last_err = e
+            if i < attempts - 1:
+                time.sleep(0.5 * (i + 1))
+    print(f"send.py: POST {url} failed after {attempts} attempts: {last_err}",
+          file=sys.stderr)
+    return False
+
+
+def _split_paragraphs(text: str, limit: int = CHUNK_LIMIT) -> list:
+    """Split a long text body into chunks no larger than `limit` chars.
+
+    Splits on paragraph boundaries (`\\n\\n`) when possible. Each chunk
+    preserves the original whitespace. If a single paragraph exceeds the
+    limit, it is hard-split on character boundary as a last resort.
+    """
+    if len(text) <= limit:
+        return [text]
+    paragraphs = text.split("\n\n")
+    chunks: list = []
+    cur = ""
+    for p in paragraphs:
+        candidate = (cur + "\n\n" + p) if cur else p
+        if len(candidate) <= limit:
+            cur = candidate
+            continue
+        # Flush whatever we have, start a new chunk with this paragraph
+        if cur:
+            chunks.append(cur)
+            cur = ""
+        # If this single paragraph is itself too big, hard-split it
+        if len(p) > limit:
+            for i in range(0, len(p), limit):
+                chunks.append(p[i:i + limit])
+        else:
+            cur = p
+    if cur:
+        chunks.append(cur)
+    return chunks
 
 
 def _build_stats_payload(args) -> "dict | None":
@@ -300,19 +357,21 @@ def main() -> None:
         _post(FLASK_URL, json.dumps(payload).encode("utf-8"), token)
     # ── Text send ─────────────────────────────────────────────────────────────
     elif text.strip():
-        payload = {"text": text}
-        if args.action:
-            payload["action"] = args.action
-        elif args.player:
-            payload["player"] = args.player
-        elif args.npc:
-            payload["npc"] = args.npc
-        elif args.dice:
-            payload["dice"] = True
-        elif args.tutor:
-            payload["tutor"] = True
+        chunks = _split_paragraphs(text)
+        for chunk in chunks:
+            payload = {"text": chunk}
+            if args.action:
+                payload["action"] = args.action
+            elif args.player:
+                payload["player"] = args.player
+            elif args.npc:
+                payload["npc"] = args.npc
+            elif args.dice:
+                payload["dice"] = True
+            elif args.tutor:
+                payload["tutor"] = True
 
-        _post(FLASK_URL, json.dumps(payload).encode("utf-8"), token)
+            _post(FLASK_URL, json.dumps(payload).encode("utf-8"), token)
 
     # ── Stat send (bundled) ───────────────────────────────────────────────────
     stats_payload = _build_stats_payload(args)
