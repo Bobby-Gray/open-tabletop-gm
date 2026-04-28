@@ -50,6 +50,8 @@ except Exception:
     _lookup = None          # type: ignore
     _SRD_AVAILABLE = False
 
+from paths import campaign_dir as _campaign_dir
+
 # Audio module — degrades silently if numpy not installed
 import sys as _sys
 if _DISPLAY_DIR not in _sys.path:
@@ -730,9 +732,7 @@ def _get_log_file() -> str:
     try:
         camp = open(CAMP_FILE).read().strip()
         if camp:
-            return os.path.expanduser(
-                f"~/open-tabletop-gm/campaigns/{camp}/text_log.json"
-            )
+            return str(_campaign_dir(camp) / "text_log.json")
     except Exception:
         pass
     return _LOG_FALLBACK
@@ -791,9 +791,7 @@ def _get_tail_file() -> str:
     try:
         camp = open(CAMP_FILE).read().strip()
         if camp:
-            return os.path.expanduser(
-                f"~/open-tabletop-gm/campaigns/{camp}/session_tail.json"
-            )
+            return str(_campaign_dir(camp) / "session_tail.json")
     except Exception:
         pass
     return _TAIL_FALLBACK

@@ -22,12 +22,9 @@ import pathlib
 import argparse
 import re
 
-CAMPAIGNS_DIR = str(pathlib.Path(
-    os.environ.get(
-        "OPENTTG_CAMPAIGNS_DIR",
-        str(pathlib.Path.home() / ".local" / "share" / "open-tabletop-gm" / "campaigns")
-    )
-))
+from paths import campaigns_dir as _campaigns_dir
+
+CAMPAIGNS_DIR = str(_campaigns_dir())
 
 FILE_MAP = {
     "state":   "state.md",

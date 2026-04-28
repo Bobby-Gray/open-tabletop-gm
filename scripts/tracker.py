@@ -45,12 +45,9 @@ import argparse
 import time
 import pathlib
 
-_CAMPAIGNS_DIR = pathlib.Path(
-    __import__("os").environ.get(
-        "OPENTTG_CAMPAIGNS_DIR",
-        str(pathlib.Path.home() / ".local" / "share" / "open-tabletop-gm" / "campaigns")
-    )
-)
+from paths import campaigns_dir as _campaigns_dir
+
+_CAMPAIGNS_DIR = _campaigns_dir()
 
 from datetime import datetime, timezone
 

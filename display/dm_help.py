@@ -30,7 +30,12 @@ LOCK_FILE    = _DISPLAY_DIR / ".help-lock"
 LOG_FILE     = _DISPLAY_DIR / "text_log.json"
 SEND_PY      = _DISPLAY_DIR / "send.py"
 
-CAMPAIGNS_DIR = pathlib.Path("~/open-tabletop-gm/campaigns").expanduser()
+_SCRIPTS_DIR = _DISPLAY_DIR.parent / "scripts"
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from paths import campaigns_dir as _campaigns_dir
+
+CAMPAIGNS_DIR = _campaigns_dir()
 
 # Sections to extract from state.md.
 # Deliberately excludes "## Open Threads & Rumours" and "## Recent Events"
