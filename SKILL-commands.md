@@ -36,6 +36,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 | `/gm arc [status\|advance\|revise\|view]` | Manage the dynamic campaign arc. See `/gm arc` procedure below. |
 | `/gm path [<new-path>\|reset]` | View or configure where campaign data is stored (`GM_CAMPAIGN_ROOT`). Follow `/gm path` branch. |
 | `/gm update [--check]` | Pull the latest skill changes from origin/main. Follow `/gm update` branch. |
+| `/gm graph <subcommand>` | Campaign relationship graph: `init`, `add-node`, `add-edge`, `close-edge`, `list`, `show`, `subgraph`, `scene-context`. See `/gm graph` procedure below. |
 
 ---
 
@@ -157,3 +158,48 @@ Manage the dynamic campaign arc. Active only when `state.md → ## Campaign Arc`
   4. Write it to `state.md → ## Campaign Arc` with `arc_number` incremented.
   5. Move the completed arc to `## Arc History` (append, never delete).
   6. Deliver a one-paragraph brief on the new arc's theme and opening pressure.
+
+---
+
+## `/gm graph <subcommand>` — campaign relationship graph
+
+Local-only typed-edge relationship graph supplementing markdown. Stored at `~/open-tabletop-gm/campaigns/<name>/graph.json` (or wherever `GM_CAMPAIGN_ROOT` points). Supplements `npcs-full.md` / `session-log.md` — does not replace them. Edges are time-stamped (`since_session` / `until_session`), so historical state is recoverable.
+
+**Auto-pulled at `/gm load`** (scene-context, see SKILL-branches.md → `/gm load` → Step 4) and **swept at `/gm save`** (relationship-shift extraction, see SKILL-branches.md → `/gm save` → Step 4). The GM also uses `/gm graph scene-context` on demand mid-session, especially before heavy social or political scenes.
+
+This fork ships a **manual + query-only** graph. The Haiku-backed `extract` / `extract-apply` subcommands from the upstream claude-dnd-skill are intentionally not included — they require Claude API access. When the deterministic Phase 2 verb-table extractor is built it will land here as a fully local replacement.
+
+All subcommands invoke `python3 <skill-base>/scripts/gm_graph.py <subcommand> --campaign <name> [args]`.
+
+### `/gm graph init [campaign-name]`
+First-time bootstrap. Read existing `npcs.md` / `world.md` / `state.md` for the campaign. Propose a node list (NPCs as `npc_*`, factions as `faction_*`, key locations as `place_*`) and a starter edge list (faction membership from npcs.md tables, NPC location from "Lives in / Based at" fields, faction relationships from world.md). Display the proposed list to the GM and **ask for approval** before writing — do not silently extract. After approval, run `add-node` and `add-edge` for each. Use `--since` matching state.md's current session count.
+
+For existing campaigns being initialized for the first time, the `/gm load` flow offers to back the campaign directory up first; honour that flow rather than running init from a cold prompt.
+
+### `/gm graph add-node --type T --name N [--tags ...] [--summary ...]`
+Add a single node. Type is open vocab; suggested: `npc`, `faction`, `place`, `item`, `thread`. Default id is `<type>_<name-slug>`.
+
+### `/gm graph add-edge --from <id> --to <id> --type T [--since N] [--note ...]`
+Add a typed edge between two existing nodes. Edge type is open vocab; common: `loyal_to`, `opposes`, `allied_with`, `member_of`, `lives_in`, `controls`, `knows_about`, `friends_with`, `lover_of`, `owes`, `rules`, `related_by_blood`, `advances_thread`, `blocks_thread`. Always supply `--since` (the current session number from state.md) so historical replay works.
+
+### `/gm graph close-edge --id <edge-id> --at-session N`
+Mark an edge as ended at session N (e.g. when an alliance breaks). Original edge is preserved with `until_session` set; it remains visible in historical queries but is excluded from "active at session ≥ N" results.
+
+### `/gm graph list [--type T] [--at-session N]`
+Print a compact node table grouped by type. With `--at-session`, also reports active edge count at that session.
+
+### `/gm graph show --id <node-id>`
+Print one node with all incoming and outgoing edges.
+
+### `/gm graph scene-context --place <id> [--present id1,id2] [--threads id1,id2] [--hops H] [--at-session N]`
+**Primary query for in-session use.** Returns a focused subgraph from the current scene (place + present NPCs + active threads) bounded by hop count, optionally filtered to edges active at a given session. Output is grouped: nodes by type, then a relationships block. Default `--hops 2`. Use this when you need to recall who-relates-to-whom in the current scene without re-reading `npcs-full.md` or session-log archives.
+
+### `/gm graph subgraph --seed <id> [--seed <id>] [--hops H] [--at-session N]`
+Lower-level traversal — same as `scene-context` but with arbitrary seed nodes. Use when the scene framing doesn't fit (e.g. tracing faction politics independent of any specific place).
+
+### Suggested GM workflow
+
+1. **First session after install:** `/gm load` will offer to initialize the graph (with a backup-first prompt). Accept; review the proposed seed; approve.
+2. **During session:** when a relationship shifts in narration, run `/gm graph add-edge` (or `close-edge`) with `--since` set to the current session number. Don't batch this — record at the moment of the narrative change so you don't forget.
+3. **Before a heavy social/political scene:** run `/gm graph scene-context --place <current-place> --present <key-NPCs>` to refresh which relationships matter right now.
+4. **At `/gm save`:** review the session log and add any edges you missed during play (the save flow runs an automatic sweep and presents proposals for approval).

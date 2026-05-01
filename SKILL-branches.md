@@ -6,7 +6,7 @@ This file is always in context. When any command or state transition occurs, loo
 
 ## `/gm load <name>`
 
-**No questions. Five steps. Do them in order and stop.**
+**No questions. Six steps. Do them in order and stop.**
 
 **Step 1 — Check display state:**
 ```
@@ -38,9 +38,33 @@ Skip this step entirely if `display=OFF`.
 2. `~/open-tabletop-gm/campaigns/<name>/world.md`
 3. `~/open-tabletop-gm/campaigns/<name>/npcs.md`
 
-**Step 4 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
+**Step 4 — Pull scene-context from the campaign graph.** Always run, even if you suspect `graph.json` doesn't exist — the script exits cleanly with a notice when uninitialized.
+```
+python3 <skill-base>/scripts/gm_graph.py scene-context \
+  --campaign <name> \
+  --place "<current-location-name-or-id>" \
+  --present "<comma-separated-NPC-names-likely-present>" \
+  --hops 2 \
+  --at-session <current-session-N>
+```
+Identify `<current-location>` from `state.md → ## World State → location` (or the most recent location in `## Recent Events`). Identify `<present>` from the NPCs likely on-scene per `state.md` / `session-log.md`. `<current-session-N>` is `state.md → ## Session Count`.
 
-**Step 5 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
+Output is a focused subgraph (nodes by type + relationships block). **Internalize this subgraph before delivering the narration** — it is the authoritative source for who-relates-to-whom in the current scene. Do not re-read `npcs-full.md` for relationships you can answer from the subgraph.
+
+If output reads `# graph not initialized` — graph hasn't been seeded for this campaign yet. Offer the GM the auto-init flow before delivering the narration:
+
+> *"This campaign doesn't have a relationship graph yet. I can initialize one now — it improves long-session continuity recall when full NPC files fall out of context. As a safety precaution, I'll back up the campaign first to `~/open-tabletop-gm/campaigns/<name>.backup-YYYYMMDD-HHMMSS/`. Proceed? [y/n]"*
+
+- `y` → snapshot the campaign directory, then run `/gm graph init <name>` (which proposes seed nodes/edges and asks for GM approval before writing). After init completes, re-run scene-context.
+  ```
+  cp -R ~/open-tabletop-gm/campaigns/<name> \
+        ~/open-tabletop-gm/campaigns/<name>.backup-$(date +%Y%m%d-%H%M%S)
+  ```
+- `n` → continue without graph for this session; do not re-prompt this session. The GM can run `/gm graph init` later at their convenience.
+
+**Step 5 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
+
+**Step 6 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
 
 ---
 
@@ -150,6 +174,20 @@ No script reads needed.
 1. Write session events to `session-log.md`
 2. Update `state.md` (location, quests, HP/resources, recent events, faction moves)
 3. Update any `characters/*.md` that changed; mirror to `~/open-tabletop-gm/characters/`
+4. **Campaign-graph relationship-shift sweep.** Skip if `graph.json` doesn't exist for this campaign. Otherwise scan this session's narration for relationship shifts that weren't captured live via `/gm graph add-edge` / `close-edge`. Look for moments matching:
+   - New alliance, betrayal, or rivalry between named NPCs / factions
+   - An NPC moving into / out of a location
+   - A faction taking control of (or losing) a place
+   - A character learning a secret
+   - A quest / thread ending or being blocked
+
+   For each candidate, draft an `add-edge` or `close-edge` call. Then **present the batch to the GM as a numbered list** and ask: *"Apply all? [y / pick / skip]"*
+
+   - `y` → run all proposed calls via `python3 <skill-base>/scripts/gm_graph.py ...`
+   - `pick` → GM names the numbers to apply (e.g. `1, 3, 5`); skip the rest
+   - `skip` → don't apply any
+
+   Always supply `--since <current-session-N>` from state.md. Never write proposed edges silently.
 
 ---
 

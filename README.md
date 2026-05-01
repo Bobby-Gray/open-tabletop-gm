@@ -22,6 +22,7 @@ A GM framework that offloads everything mechanical to Python so the LLM can focu
 - <img src="docs/icons/dagger.png" height="18"> **Python toolchain** — dice, combat initiative, HP tracking, timed effects, conditions, calendar, campaign search; all run locally with zero LLM involvement
 - <img src="docs/icons/crystal_ball.png" height="18"> **Cinematic display companion** — optional Flask web app that renders your session as a live display on any browser or TV, with a real-time stat sidebar, effect pills, and player input panel
 - <img src="docs/icons/dragon.png" height="18"> **System plugin architecture** — D&D 5e ships as the reference implementation; swap in any TTRPG by writing a system module
+- <img src="docs/icons/spellbook.png" height="18"> **Campaign relationship graph** — typed-edge graph alongside the markdown campaign files, with verbatim source-anchors on every edge; `scene-context` query auto-pulled at `/gm load` to surface who-knows-whom in the current scene without re-reading full NPC files; designed to hold long-session continuity when context compaction strips files out of scope. Manual + query-only in this fork (no LLM dependency); see [`CHANGELOG.md`](CHANGELOG.md) for the why
 
 ---
 
@@ -126,6 +127,23 @@ The skill walks you through world creation, tone selection, and character setup.
 
 ---
 
+## Versioning & updates
+
+Releases are tracked in [`CHANGELOG.md`](CHANGELOG.md) and the current version is in [`VERSION`](VERSION). The skill follows [semantic versioning](https://semver.org/) — `MAJOR.MINOR.PATCH`. Breaking changes that require campaign-data migration bump MAJOR; new opt-in features bump MINOR; bug fixes bump PATCH.
+
+**To check for updates:**
+
+```
+/gm update --check    # shows local vs. remote version + commit diff, no pull
+/gm update            # pulls if you're behind (fast-forward only; refuses on dirty tree)
+```
+
+The `--check` output includes both sides' version strings so you can see at a glance whether you've fallen behind. After pulling, restart your GM session so new skill files load.
+
+This project tracks behind [claude-dnd-skill](https://github.com/Bobby-Gray/claude-dnd-skill) on Claude-specific features and runs ahead on LLM-agnostic concerns. Where the upstream version uses Haiku-backed extraction or Claude API tool calls, this fork either ports a deterministic equivalent or defers until one exists.
+
+---
+
 ## Quick Start
 
 **Improvised campaign** — GM generates world and narrative arc:
@@ -174,6 +192,12 @@ Once loaded, type naturally — no `/gm` prefix needed. The GM interprets all in
 | `/gm arc [status\|advance\|revise\|view]` | Manage the campaign narrative arc |
 | `/gm display on [--lan]` | Start the cinematic display companion (optionally in LAN mode) |
 | `/gm display off` | Stop the display companion |
+| `/gm path [<new>\|reset]` | View or relocate campaign storage via `GM_CAMPAIGN_ROOT` |
+| `/gm update [--check]` | Pull the latest skill changes from `origin/main` (refuses on dirty tree, fast-forward only) |
+| `/gm graph init` | Initialize the campaign relationship graph (proposes seed nodes + edges; asks for approval) |
+| `/gm graph scene-context --place <id> [--present id1,id2]` | Focused subgraph for the current scene; primary in-session query |
+| `/gm graph add-edge --from <id> --to <id> --type T --since N` | Record a relationship shift mid-session |
+| `/gm graph close-edge --id <id> --at-session N` | Mark an edge as ended (alliance broke, NPC moved away, etc.) |
 
 ---
 

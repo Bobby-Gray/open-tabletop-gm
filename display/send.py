@@ -333,7 +333,14 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    text = sys.stdin.read()
+    # Skip the stdin read entirely when the call is body-less. Without this,
+    # chained-bash invocations (e.g. `send.py --set-campaign foo` run from a
+    # script that keeps stdin open) hang waiting for an EOF that never arrives.
+    _has_content_flag = bool(
+        args.player or args.npc or args.dice or args.tutor or args.action
+    )
+    _has_bodyless_flag = bool(args.set_campaign or _build_stats_payload(args))
+    text = sys.stdin.read() if (_has_content_flag or not _has_bodyless_flag) else ""
     token = _read_token()
 
     # ── Campaign registration ─────────────────────────────────────────────────
