@@ -154,6 +154,13 @@ def _edge_by_id(data: dict, edge_id: str) -> Optional[dict]:
 
 
 def _edge_active_at(edge: dict, session: Optional[int]) -> bool:
+    """Is the edge active at the given session?
+
+    Returns False if the edge was superseded (hard retcon) — superseded edges
+    stay in the graph for audit trail but never surface as 'active' state.
+    """
+    if edge.get("superseded_by"):
+        return False
     if session is None:
         return edge.get("until_session") is None
     since = edge.get("since_session", 0) or 0
@@ -220,8 +227,45 @@ def cmd_close_edge(args) -> int:
         print(f"warning: edge {args.id} was already closed at session "
               f"{edge['until_session']}; overwriting.", file=sys.stderr)
     edge["until_session"] = args.at_session
+    if getattr(args, "anchor", None):
+        edge["closed_anchor"] = args.anchor
     _save(args.campaign, data)
-    print(f"closed edge {args.id} at session {args.at_session}")
+    msg = f"closed edge {args.id} at session {args.at_session}"
+    if getattr(args, "anchor", None):
+        msg += f' — "{args.anchor[:60]}"'
+    print(msg)
+    return 0
+
+
+def cmd_supersede_edge(args) -> int:
+    """Mark an edge as superseded by another (hard retcon).
+
+    Use when canon explicitly contradicts a prior extraction — e.g. a session
+    log was corrected, or a relationship was misinterpreted. The old edge
+    stays in the graph for audit trail; scene-context filters it out, but
+    historical / subgraph queries can still surface it.
+
+    Distinct from `close-edge`: close-edge ends a state cleanly (the relationship
+    was real, then ended). supersede-edge says the original edge was wrong.
+    """
+    data = _load(args.campaign)
+    wrong = _edge_by_id(data, args.id)
+    if not wrong:
+        print(f"error: edge '{args.id}' not found.", file=sys.stderr)
+        return 1
+    correct = _edge_by_id(data, args.by) if args.by else None
+    if args.by and not correct:
+        print(f"error: superseding edge '{args.by}' not found.", file=sys.stderr)
+        return 1
+    if args.by:
+        wrong["superseded_by"] = args.by
+    else:
+        wrong["superseded_by"] = True
+    if getattr(args, "reason", None):
+        wrong["supersede_reason"] = args.reason
+    _save(args.campaign, data)
+    target = f"by edge {args.by}" if args.by else "(no replacement)"
+    print(f"marked edge {args.id} as superseded {target}")
     return 0
 
 
@@ -237,11 +281,15 @@ def cmd_list(args) -> int:
         active = [e for e in data["edges"] if _edge_active_at(e, args.at_session)]
         print(f"# active edges at session {args.at_session}: {len(active)}")
     print()
+    def _plural(t: str) -> str:
+        if t and t.endswith("y"):
+            return t[:-1] + "ies"
+        return (t or "?") + "s"
     cur_type = None
     for n in nodes_sorted:
         if n.get("type") != cur_type:
             cur_type = n.get("type")
-            print(f"## {cur_type}s")
+            print(f"## {_plural(cur_type)}")
         tags = " [" + ",".join(n.get("tags", [])) + "]" if n.get("tags") else ""
         print(f"  {n['id']}  {n['name']}{tags}")
     return 0
@@ -355,28 +403,207 @@ def _emit_subgraph(sub: dict, at_session: Optional[int]) -> None:
     by_type: dict[str, list[dict]] = {}
     for n in sub["nodes"]:
         by_type.setdefault(n.get("type", "?"), []).append(n)
+
+    def _label(n: dict) -> str:
+        if n.get("category_node"):
+            return f"{n['name']} (unnamed)"
+        return n["name"]
+
+    def _plural(t: str) -> str:
+        if t and t.endswith("y"):
+            return t[:-1] + "ies"
+        return (t or "?") + "s"
+
     for t in sorted(by_type):
-        print(f"## {t}s ({len(by_type[t])})")
+        print(f"## {_plural(t)} ({len(by_type[t])})")
         for n in sorted(by_type[t], key=lambda x: x.get("name", "")):
             tags = " [" + ",".join(n.get("tags", [])) + "]" if n.get("tags") else ""
             summary = f" — {n['summary']}" if n.get("summary") else ""
-            print(f"  {n['id']}  {n['name']}{tags}{summary}")
+            print(f"  {n['id']}  {_label(n)}{tags}{summary}")
         print()
     if sub["edges"]:
         print(f"## relationships ({len(sub['edges'])})")
-        node_name = {n["id"]: n["name"] for n in sub["nodes"]}
+        node_label = {n["id"]: _label(n) for n in sub["nodes"]}
         for e in sub["edges"]:
-            f_name = node_name.get(e["from"], e["from"])
-            t_name = node_name.get(e["to"], e["to"])
+            f_name = node_label.get(e["from"], e["from"])
+            t_name = node_label.get(e["to"], e["to"])
             sess = []
             if e.get("since_session") is not None:
                 sess.append(f"s{e['since_session']}+")
             if e.get("until_session") is not None:
                 sess.append(f"closed s{e['until_session']}")
+            if e.get("superseded_by"):
+                sess.append(f"superseded by {e['superseded_by']}")
             sess_str = " (" + ", ".join(sess) + ")" if sess else ""
             note = f"  — {e['note']}" if e.get("note") else ""
             print(f"  {f_name} --[{e['type']}]--> {t_name}{sess_str}{note}")
 
+
+
+def _existing_edge_match(data: dict, frm_id: str, to_id: str, etype: str) -> bool:
+    """True if an active edge with same from/to/type already exists."""
+    for e in data.get("edges", []):
+        if (e["from"] == frm_id and e["to"] == to_id and e["type"] == etype
+                and e.get("until_session") is None
+                and not e.get("superseded_by")):
+            return True
+    return False
+
+
+def cmd_extract(args) -> int:
+    """Pattern-based extraction over the campaign's session logs.
+
+    LLM-free — uses the verb-table seed at data/graph/verb_table_seed.yaml.
+    Output format matches the upstream Haiku extractor exactly so that
+    extract-apply (here or in claude-dnd-skill) can consume either.
+    """
+    campaign_dir = find_campaign(args.campaign)
+    try:
+        from graph_extract_deterministic import extract_proposals as _det_extract
+    except ImportError as e:
+        print(f"error: deterministic extractor module not available: {e}", file=sys.stderr)
+        return 1
+    proposals = _det_extract(
+        campaign_dir,
+        last_session_only=getattr(args, "last_session_only", False),
+    )
+    out_json = json.dumps(proposals, indent=2, ensure_ascii=False)
+    print(f"# Deterministic extraction — {len(proposals)} proposals from "
+          f"{campaign_dir.name}", file=sys.stderr)
+    if getattr(args, "write", None):
+        pathlib.Path(args.write).write_text(out_json)
+        print(f"# wrote proposals to {args.write}", file=sys.stderr)
+    else:
+        print(out_json)
+    return 0
+
+
+def cmd_extract_apply(args) -> int:
+    """Apply edge proposals from a JSON file produced by extract --write."""
+    proposals_path = pathlib.Path(args.proposals).expanduser()
+    if not proposals_path.exists():
+        print(f"proposals file not found: {proposals_path}", file=sys.stderr)
+        return 1
+    proposals = json.loads(proposals_path.read_text())
+    pick = None
+    if args.pick:
+        pick = set(int(x.strip()) for x in args.pick.split(",") if x.strip())
+
+    review = bool(getattr(args, "review", False))
+    if review and pick is not None:
+        print("error: --review and --pick are mutually exclusive", file=sys.stderr)
+        return 2
+
+    data = _load(args.campaign)
+    applied_nodes = 0
+    applied_edges = 0
+    skipped = 0
+    review_skipped = 0
+
+    def _review_prompt(idx: int, total: int, p: dict) -> str:
+        src = p.get("source", {}) or {}
+        anchor = (src.get("anchor") or "")[:140]
+        conf = p.get("confidence", "?")
+        print(f"\n[{idx}/{total}] {p.get('from','?')} --[{p.get('type','?')}]--> {p.get('to','?')}"
+              f"  (s{p.get('since_session','?')}+, confidence={conf})")
+        if anchor:
+            print(f"    src: {src.get('file','?')} s{src.get('session','?')} — \"{anchor}\"")
+        if p.get("note"):
+            print(f"    note: {p['note']}")
+        while True:
+            try:
+                a = input("    apply? [y]es / [n]o / [q]uit: ").strip().lower()
+            except EOFError:
+                return "q"
+            if a in {"y", "yes", ""}:
+                return "y"
+            if a in {"n", "no", "s", "skip"}:
+                return "n"
+            if a in {"q", "quit", "exit"}:
+                return "q"
+            print("    please enter y / n / q")
+
+    quit_review = False
+    for i, p in enumerate(proposals, 1):
+        if quit_review:
+            review_skipped += 1
+            continue
+        if pick is not None and i not in pick:
+            continue
+        if review:
+            decision = _review_prompt(i, len(proposals), p)
+            if decision == "q":
+                quit_review = True
+                review_skipped += 1
+                continue
+            if decision == "n":
+                review_skipped += 1
+                continue
+        frm_name = p.get("from", "")
+        to_name = p.get("to", "")
+        etype = p.get("type", "")
+        since = p.get("since_session")
+        note = p.get("note") or ""
+        source = p.get("source") or {}
+
+        def resolve_or_create(name: str, is_category: bool = False) -> str:
+            existing_id = _resolve_node(data, name)
+            if existing_id:
+                return existing_id
+            if is_category:
+                new_id = f"cat_{_slug(name)}"
+                data.setdefault("nodes", []).append({
+                    "id": new_id, "type": "category", "name": name,
+                    "tags": [], "summary": "",
+                    "category_node": True,
+                    "_auto_created_from_extract": True,
+                })
+                nonlocal applied_nodes
+                applied_nodes += 1
+                return new_id
+            if args.no_auto_nodes:
+                raise ValueError(f"node not found and --no-auto-nodes set: {name!r}")
+            new_id = f"npc_{_slug(name)}"
+            data.setdefault("nodes", []).append({
+                "id": new_id, "type": "npc", "name": name, "tags": [], "summary": "",
+                "_auto_created_from_extract": True,
+            })
+            applied_nodes += 1
+            return new_id
+
+        try:
+            frm_id = resolve_or_create(frm_name, is_category=bool(p.get("category_from")))
+            to_id = resolve_or_create(to_name, is_category=bool(p.get("category_to")))
+        except ValueError as e:
+            print(f"  skip {i}: {e}", file=sys.stderr)
+            skipped += 1
+            continue
+
+        if _existing_edge_match(data, frm_id, to_id, etype):
+            skipped += 1
+            continue
+
+        edge = {
+            "id": _next_edge_id(data["edges"]),
+            "from": frm_id,
+            "to": to_id,
+            "type": etype,
+            "since_session": since,
+            "until_session": None,
+            "note": note,
+        }
+        if source:
+            edge["source"] = source
+        data["edges"].append(edge)
+        applied_edges += 1
+        print(f"  applied {edge['id']}  {frm_id} --[{etype}]--> {to_id} (s{since}+)")
+
+    _save(args.campaign, data)
+    msg = f"# done: +{applied_nodes} nodes, +{applied_edges} edges, {skipped} skipped"
+    if review_skipped:
+        msg += f", {review_skipped} declined in review"
+    print(msg)
+    return 0
 
 
 # -------- argparse --------
@@ -415,7 +642,18 @@ def main() -> int:
     add_camp(sp)
     sp.add_argument("--id", required=True, help="edge id to close")
     sp.add_argument("--at-session", dest="at_session", type=int, required=True)
+    sp.add_argument("--anchor",
+        help="verbatim phrase from canon that justifies the closure (recorded as closed_anchor)")
     sp.set_defaults(func=cmd_close_edge)
+
+    sp = sub.add_parser("supersede-edge",
+        help="mark an edge as superseded (hard retcon) — preserves audit trail "
+             "but excludes from active queries")
+    add_camp(sp)
+    sp.add_argument("--id", required=True, help="edge id to mark wrong")
+    sp.add_argument("--by", help="optional id of the corrected edge that replaces it")
+    sp.add_argument("--reason", help="one-line explanation of the retcon")
+    sp.set_defaults(func=cmd_supersede_edge)
 
     sp = sub.add_parser("list")
     add_camp(sp)
@@ -444,6 +682,29 @@ def main() -> int:
     sp.add_argument("--hops", type=int, default=2)
     sp.add_argument("--at-session", dest="at_session", type=int, default=None)
     sp.set_defaults(func=cmd_scene_context)
+
+    sp = sub.add_parser("extract",
+        help="pattern-match session-log against verb_table_seed.yaml; propose edges "
+             "with verbatim source anchors (LLM-free)")
+    add_camp(sp)
+    sp.add_argument("--write", metavar="FILE",
+        help="write proposals as JSON for later --apply review")
+    sp.add_argument("--last-session-only", action="store_true",
+        help="only scan the last ## Session N block of session-log.md")
+    sp.set_defaults(func=cmd_extract)
+
+    sp = sub.add_parser("extract-apply",
+        help="apply edge proposals from a JSON file produced by extract --write")
+    add_camp(sp)
+    sp.add_argument("--proposals", required=True, metavar="FILE",
+        help="proposals JSON file path")
+    sp.add_argument("--pick", metavar="N1,N2,...",
+        help="apply only the listed proposal numbers (1-indexed); default: apply all")
+    sp.add_argument("--review", action="store_true",
+        help="walk proposals one at a time with y/n/q prompts; mutually exclusive with --pick")
+    sp.add_argument("--no-auto-nodes", action="store_true",
+        help="error on edges referencing unknown nodes instead of auto-creating placeholder npc nodes")
+    sp.set_defaults(func=cmd_extract_apply)
 
     args = p.parse_args()
     return args.func(args)

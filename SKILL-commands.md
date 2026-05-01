@@ -36,7 +36,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 | `/gm arc [status\|advance\|revise\|view]` | Manage the dynamic campaign arc. See `/gm arc` procedure below. |
 | `/gm path [<new-path>\|reset]` | View or configure where campaign data is stored (`GM_CAMPAIGN_ROOT`). Follow `/gm path` branch. |
 | `/gm update [--check]` | Pull the latest skill changes from origin/main. Follow `/gm update` branch. |
-| `/gm graph <subcommand>` | Campaign relationship graph: `init`, `add-node`, `add-edge`, `close-edge`, `list`, `show`, `subgraph`, `scene-context`. See `/gm graph` procedure below. |
+| `/gm graph <subcommand>` | Campaign relationship graph: `init`, `add-node`, `add-edge`, `close-edge`, `supersede-edge`, `list`, `show`, `subgraph`, `scene-context`, `extract`, `extract-apply`. See `/gm graph` procedure below. |
 
 ---
 
@@ -182,8 +182,11 @@ Add a single node. Type is open vocab; suggested: `npc`, `faction`, `place`, `it
 ### `/gm graph add-edge --from <id> --to <id> --type T [--since N] [--note ...]`
 Add a typed edge between two existing nodes. Edge type is open vocab; common: `loyal_to`, `opposes`, `allied_with`, `member_of`, `lives_in`, `controls`, `knows_about`, `friends_with`, `lover_of`, `owes`, `rules`, `related_by_blood`, `advances_thread`, `blocks_thread`. Always supply `--since` (the current session number from state.md) so historical replay works.
 
-### `/gm graph close-edge --id <edge-id> --at-session N`
-Mark an edge as ended at session N (e.g. when an alliance breaks). Original edge is preserved with `until_session` set; it remains visible in historical queries but is excluded from "active at session ≥ N" results.
+### `/gm graph close-edge --id <edge-id> --at-session N [--anchor "..."]`
+Mark an edge as ended at session N (e.g. when an alliance breaks). Original edge is preserved with `until_session` set; it remains visible in historical queries but is excluded from "active at session ≥ N" results. The optional `--anchor "..."` records the verbatim phrase that justifies the closure as a `closed_anchor` field on the edge.
+
+### `/gm graph supersede-edge --id <edge-id> [--by <correct-edge-id>] [--reason "..."]`
+Mark an edge as wrong (hard retcon) — use when canon explicitly contradicts a prior extraction. The wrong edge stays in the graph for audit trail; `scene-context` filters it out, but `subgraph` and `show` queries can still surface it. Distinct from `close-edge`: closing ends a real relationship cleanly; superseding says the original was wrong. Optional `--by` links to the corrected edge.
 
 ### `/gm graph list [--type T] [--at-session N]`
 Print a compact node table grouped by type. With `--at-session`, also reports active edge count at that session.
@@ -196,6 +199,12 @@ Print one node with all incoming and outgoing edges.
 
 ### `/gm graph subgraph --seed <id> [--seed <id>] [--hops H] [--at-session N]`
 Lower-level traversal — same as `scene-context` but with arbitrary seed nodes. Use when the scene framing doesn't fit (e.g. tracing faction politics independent of any specific place).
+
+### `/gm graph extract [--write FILE] [--last-session-only]`
+Pattern-match the campaign's session-log against the verb-table seed (`data/graph/verb_table_seed.yaml`) and propose edges with verbatim source-anchors. **LLM-free** — uses the deterministic extractor only. Output JSON has the same schema as the upstream Haiku extractor. With `--write FILE`, writes proposals to disk for `extract-apply` to consume; without, prints to stdout. `--last-session-only` narrows the scan to the most recent `## Session N` block.
+
+### `/gm graph extract-apply --proposals FILE [--pick N1,N2,...] [--review] [--no-auto-nodes]`
+Apply edge proposals from a JSON file produced by `extract --write`. Default behaviour: apply all. `--pick "1,3,5"` applies only the listed proposal numbers. `--review` walks proposals one at a time with `y / n / q` prompts (mutually exclusive with `--pick`). Categorical proposals automatically create category nodes (`type: category`, `category_node: true`); other unknown entities are auto-created as placeholder npcs unless `--no-auto-nodes` is set.
 
 ### Suggested GM workflow
 
