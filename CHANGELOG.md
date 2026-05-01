@@ -12,6 +12,49 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-05-01
+
+Two follow-ups from the v0.8.0 deferred list. The first replaces the upstream's D&D-specific `--inspiration-reason` with a system-agnostic equivalent. The second ports forward the future-tense planning verbs that just shipped in claude-dnd-skill v1.7.3.
+
+### What's new
+
+- **Generic milestone-event support** in the display companion. New `send.py` flags:
+  - `--milestone-award NAME [--reason "..."] [--label "Inspiration"]`
+  - `--milestone-spend NAME [--label "Inspiration"]`
+
+  `--label` is the system-specific name for what was earned: `"Inspiration"` (D&D 5e), `"Bennie"` (Savage Worlds), `"Hero Point"` (Pathfinder 2e), `"Fate Point"`, etc. Default is `"Milestone"`.
+
+  The award fires a gold-glow `.milestone-block` in the feed showing the character name, label, and reason. Spend events are processed but don't render a feed block (future work: sidebar counter for stack-based systems like Bennies). System modules can map their reward mechanic to this generic event without touching display code.
+
+  The award block is also persisted in the session tail and replayed on browser reconnect.
+
+- **Six new future-tense verbs in the seed**: `plans_to`, `intends_to`, `scheduled_to`, `aims_to`, `expected_to`, `targets`. All `lifetime: dispositional`, medium confidence. The deterministic extractor now picks up GM session-prep prose like *"Vedra plans to file the nomination Friday"* — previously silently dropped.
+
+- **`V` wildcard in pattern templates** — represents a variable verb phrase (1–4 lowercase tokens) between a fixed modal phrase and an entity. One template `"X plans to V Y"` matches `"plans to file"`, `"plans to meet"`, `"plans to ambush before dawn"` against the same regex. Implemented with `(?-i:...)` so the wildcard never accidentally consumes a capitalized entity prefix.
+
+### Test suite (55 tests, up from 48)
+
+- Seven new `FutureTenseVerbTests` ported from upstream — V-wildcard capture, capital-letter exclusion, all six new patterns, end-to-end extraction.
+
+### Demo verification
+
+```
+$ python3 display/send.py --milestone-award "Aldric" --label "Inspiration" \
+    --reason "took the harder path through the Stairs"
+→ gold-glow block in feed: "Aldric  INSPIRATION" / "took the harder path..."
+
+$ /gm graph extract  (against synthetic 1-session log)
+Captain Renna Voss --[plans_to]--> Mira Solveig
+  "Captain Renna Voss plans to ambush Mira Solveig at the docks."
+```
+
+### What stays deferred
+
+- Sidebar counter for stack-based milestone systems (Bennies, Fate Points). Fires correctly, just doesn't accumulate visually yet.
+- Phase 3 hybrid mode — still out of scope for this LLM-agnostic fork.
+
+---
+
 ## [0.8.0] — 2026-05-01
 
 This sync ports forward the deterministic extractor + Phase 2.5 graph features that landed in claude-dnd-skill v1.7.1 and v1.7.2 today. The deterministic extractor is the centerpiece — it's exactly the LLM-free path the v0.7.0 release said was deferred, and it's why this fork exists.
