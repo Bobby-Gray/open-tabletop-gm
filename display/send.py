@@ -330,6 +330,16 @@ def main() -> None:
         help="End a timed effect: NAME:SPELL (narrative end — broken, dispelled, player drops)")
     parser.add_argument("--set-campaign", metavar="NAME",
         help="Register the active campaign with the display server (call at /gm load)")
+    parser.add_argument("--milestone-award", metavar="NAME",
+        help="Fire a milestone-award block for character NAME (system-agnostic — "
+             "D&D maps to Inspiration, Savage Worlds to Bennies, etc.)")
+    parser.add_argument("--milestone-spend", metavar="NAME",
+        help="Mark a milestone as spent for character NAME (decrements sidebar count)")
+    parser.add_argument("--milestone-reason", metavar="TEXT",
+        help="Optional reason text rendered inside the milestone-award block")
+    parser.add_argument("--milestone-label", metavar="TEXT",
+        help='Optional label for the milestone type (default: "Milestone"). '
+             'Use the system-specific name: "Inspiration", "Bennie", "Hero Point", "Fate Point", etc.')
 
     args = parser.parse_args()
 
@@ -339,9 +349,34 @@ def main() -> None:
     _has_content_flag = bool(
         args.player or args.npc or args.dice or args.tutor or args.action
     )
-    _has_bodyless_flag = bool(args.set_campaign or _build_stats_payload(args))
+    _has_bodyless_flag = bool(
+        args.set_campaign or args.milestone_award or args.milestone_spend
+        or _build_stats_payload(args)
+    )
     text = sys.stdin.read() if (_has_content_flag or not _has_bodyless_flag) else ""
     token = _read_token()
+
+    # ── Milestone award/spend (generic — system-agnostic) ────────────────────
+    # The label argument lets a system module map this to system-specific
+    # vocabulary: Inspiration (D&D 5e), Bennie (Savage Worlds), Hero Point
+    # (Pathfinder 2e), Fate Point, etc. Defaults to "Milestone".
+    if args.milestone_award:
+        name = args.milestone_award.strip()
+        body: dict = {"milestone_award": name, "text": name}
+        if args.milestone_reason:
+            body["reason"] = args.milestone_reason.strip()
+        if args.milestone_label:
+            body["label"] = args.milestone_label.strip()
+        _post(FLASK_URL, json.dumps(body).encode(), token)
+        return
+
+    if args.milestone_spend:
+        name = args.milestone_spend.strip()
+        body = {"milestone_spend": name, "text": name}
+        if args.milestone_label:
+            body["label"] = args.milestone_label.strip()
+        _post(FLASK_URL, json.dumps(body).encode(), token)
+        return
 
     # ── Campaign registration ─────────────────────────────────────────────────
     # Sent with or without narration text. The server writes .campaign and reloads

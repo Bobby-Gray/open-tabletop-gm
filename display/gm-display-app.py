@@ -981,6 +981,32 @@ def chunk():
         except Exception:
             pass
 
+    # Milestone award/spend — system-agnostic event for "the GM rewarded great play".
+    # Renders as a gold-glow block in the feed. The system module supplies the label
+    # (Inspiration / Bennie / Hero Point / Fate Point / etc.); default is "Milestone".
+    is_milestone_award = bool(data.get("milestone_award"))
+    is_milestone_spend = bool(data.get("milestone_spend"))
+    if is_milestone_award or is_milestone_spend:
+        name = str(data.get("milestone_award") or data.get("milestone_spend") or "").strip()[:80]
+        label = str(data.get("label") or "Milestone").strip()[:40]
+        payload: dict = {
+            "milestone_award" if is_milestone_award else "milestone_spend": name,
+            "label": label,
+            "text": name,
+        }
+        log_entry: dict = dict(payload)
+        if is_milestone_award and data.get("reason"):
+            payload["reason"] = str(data["reason"]).strip()[:240]
+            log_entry["reason"] = payload["reason"]
+        with _text_log_lock:
+            _text_log.append(log_entry)
+        with _tail_lock:
+            _tail_buffer.append(log_entry)
+        _persist_log()
+        _persist_tail()
+        _broadcast(payload)
+        return "", 204
+
     raw = data.get("text", "")
     if not raw:
         return "", 204

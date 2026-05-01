@@ -252,6 +252,38 @@
     border-radius: 1px;
   }
 
+  /* ── Milestone award (Inspiration / Bennie / Hero Point / Fate Point / etc.) ── */
+  .milestone-block {
+    margin: 0.6em 0 1.6em;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+    text-align: center;
+    padding: 0.65em 1.1em 0.7em;
+    border-top: 1px solid rgba(220, 180, 90, 0.35);
+    border-bottom: 1px solid rgba(220, 180, 90, 0.35);
+    background: linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(40, 30, 10, 0.1));
+    box-shadow: 0 0 22px rgba(220, 180, 90, 0.18);
+  }
+  .milestone-header {
+    font-family: 'Cinzel', serif;
+    color: #e0bf6e;
+    text-shadow: 0 0 12px rgba(220, 180, 90, 0.45);
+    letter-spacing: 1.5px;
+  }
+  .milestone-icon { margin-right: 0.4em; opacity: 0.85; }
+  .milestone-name { font-size: 13px; }
+  .milestone-label {
+    font-size: 11px; opacity: 0.75; margin-left: 0.6em;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .milestone-detail {
+    margin-top: 0.45em;
+    font-style: italic;
+    font-size: 12px;
+    color: #d2b76a;
+    opacity: 0.85;
+  }
+
   /* ── Tutor / learning mode hint blocks ── */
   .tutor-block {
     margin-bottom: 2em;
@@ -2427,10 +2459,41 @@ function renderTutorBlock(text, isReplay) {
   _dmHelpReset();
 }
 
+// ── Milestone award block (system-agnostic) ───────────────────────────
+// The label parameter lets the system module name what was earned —
+// "Inspiration", "Bennie", "Hero Point", "Fate Point", etc.
+function renderMilestoneBlock(name, label, reason, isReplay) {
+  _flushForBlock();
+  const block = document.createElement('div');
+  block.className = 'milestone-block';
+  if (isReplay) block.style.opacity = '0.7';
+
+  const header = document.createElement('div');
+  header.className = 'milestone-header';
+  header.innerHTML = `<span class="milestone-icon">✦</span>` +
+                     `<span class="milestone-name">${name}</span>` +
+                     `<span class="milestone-label">${label}</span>`;
+  block.appendChild(header);
+
+  if (reason) {
+    const detail = document.createElement('div');
+    detail.className = 'milestone-detail';
+    detail.textContent = reason;
+    block.appendChild(detail);
+  }
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
 // ── Replay batch (reconnect / session resume) ─────────────────────────
 function renderReplayBatch(items) {
   flushNewBlock();
   items.forEach(item => {
+    if (item && item.milestone_award) {
+      renderMilestoneBlock(item.milestone_award, item.label || 'Milestone', item.reason || '', true);
+      return;
+    }
     if (!item || !item.text) return;
     if (item.action) {
       renderActionBlock(item.action, item.text, true);
@@ -4024,7 +4087,11 @@ function connect() {
     if (payload.sfx) {
       _playSfx(payload.sfx);
     }
-    if (payload.text) {
+    if (payload.milestone_award) {
+      renderMilestoneBlock(payload.milestone_award, payload.label || 'Milestone', payload.reason || '');
+    } else if (payload.milestone_spend) {
+      // Spend events don't render a feed block; future: decrement a sidebar counter.
+    } else if (payload.text) {
       if (payload.action) {
         renderActionBlock(payload.action, payload.text);
       } else if (payload.player) {
