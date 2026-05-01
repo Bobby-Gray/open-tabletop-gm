@@ -360,22 +360,31 @@ def main() -> None:
     # The label argument lets a system module map this to system-specific
     # vocabulary: Inspiration (D&D 5e), Bennie (Savage Worlds), Hero Point
     # (Pathfinder 2e), Fate Point, etc. Defaults to "Milestone".
+    #
+    # Two POSTs per event:
+    #   1. /chunk → renders the gold-glow feed block
+    #   2. /stats → increments / decrements the sidebar counter so stack-based
+    #      systems (Bennies, Fate Points) accumulate visibly
     if args.milestone_award:
         name = args.milestone_award.strip()
-        body: dict = {"milestone_award": name, "text": name}
+        label = (args.milestone_label or "Milestone").strip()
+        body: dict = {"milestone_award": name, "text": name, "label": label}
         if args.milestone_reason:
             body["reason"] = args.milestone_reason.strip()
-        if args.milestone_label:
-            body["label"] = args.milestone_label.strip()
         _post(FLASK_URL, json.dumps(body).encode(), token)
+        _post(STATS_URL, json.dumps({
+            "players": [{"name": name, "_milestone_inc": label}]
+        }).encode(), token)
         return
 
     if args.milestone_spend:
         name = args.milestone_spend.strip()
-        body = {"milestone_spend": name, "text": name}
-        if args.milestone_label:
-            body["label"] = args.milestone_label.strip()
+        label = (args.milestone_label or "Milestone").strip()
+        body = {"milestone_spend": name, "text": name, "label": label}
         _post(FLASK_URL, json.dumps(body).encode(), token)
+        _post(STATS_URL, json.dumps({
+            "players": [{"name": name, "_milestone_dec": label}]
+        }).encode(), token)
         return
 
     # ── Campaign registration ─────────────────────────────────────────────────

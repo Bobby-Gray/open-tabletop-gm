@@ -1111,6 +1111,7 @@ def stats():
                     "_slot_use", "_slot_restore",
                     "_hd_use", "_hd_restore",
                     "_effect_start", "_effect_end",
+                    "_milestone_inc", "_milestone_dec",
                 }
                 if match:
                     for key, val in incoming.items():
@@ -1182,6 +1183,21 @@ def stats():
                             if removed and any(e.get("concentration") for e in removed):
                                 if match.get("concentration", "").lower() == spell_lower:
                                     match["concentration"] = None
+                        elif key == "_milestone_inc":
+                            # val is the label string ("Inspiration" / "Bennie" / etc.).
+                            # Increments milestones[label]; max = system-defined cap or 99.
+                            label = str(val) or "Milestone"
+                            ms = match.setdefault("milestones", {})
+                            cap = match.get("milestone_caps", {}).get(label, 99)
+                            ms[label] = min(ms.get(label, 0) + 1, cap)
+                        elif key == "_milestone_dec":
+                            label = str(val) or "Milestone"
+                            ms = match.setdefault("milestones", {})
+                            ms[label] = max(ms.get(label, 0) - 1, 0)
+                            # Drop the key entirely when it hits 0 — keeps the
+                            # sidebar clean (no "Bennie: 0" lingering).
+                            if ms.get(label, 0) == 0:
+                                ms.pop(label, None)
                         elif isinstance(val, dict) and isinstance(match.get(key), dict):
                             match[key].update(val)
                         else:

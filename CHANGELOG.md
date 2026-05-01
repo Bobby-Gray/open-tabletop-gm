@@ -12,6 +12,39 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-05-01
+
+The milestone feature is now visually complete. The award block alone wasn't enough for stack-based reward systems where the count is the whole point — Bennies, Fate Points, Hero Points all rely on knowing how many you have at any moment. This release adds the sidebar counter that v0.8.1 promised was coming.
+
+### What's new
+
+- **Milestone counter in the player sidebar.** Each character card now shows a row per active milestone label (`INSPIRATION 1`, `BENNIE 3`, `HERO POINT 2`) with a gold count pill. Empty labels are not rendered, and a label drops out of the sidebar entirely when its count hits zero — the card stays clean rather than accumulating zero-count entries.
+- **Server-side mutation ops `_milestone_inc` and `_milestone_dec`** — the same pattern as the existing `_conditions_add` / `_slot_use` family. Increments are floor-clamped at 0 (a spend before any award has no effect; the label simply doesn't exist on the player).
+- **`milestone_caps` per-player override** — for binary reward systems like D&D 5e Inspiration, set `milestone_caps: {"Inspiration": 1}` on the player and the count will never exceed 1 regardless of how many awards arrive. System modules can set this at character creation.
+- **`send.py` now POSTs to both `/chunk` and `/stats`** for milestone events. The chunk renders the gold-glow feed block (already shipped in v0.8.1); the stats POST drives the sidebar counter (new).
+
+### Test suite (now 63 tests)
+
+`tests/test_milestone_counter.py` (8 new tests):
+- Increment from zero creates the label
+- Repeated increments accumulate
+- Decrement-to-zero removes the label entirely
+- Decrement below zero is floor-clamped (no negative counts)
+- Multiple labels coexist on the same player
+- `milestone_caps` per-label cap is respected
+- Decrement without a prior increment is a no-op
+- Other stat mutations (conditions, slots) don't clobber milestones
+
+### Demo verification
+
+In-process simulation: 3 award + 1 spend on Aldric → `{Bennie: 2, Hero Point: 1}`. Mira with `milestone_caps: {Inspiration: 1}` correctly capped at 1 despite two award calls.
+
+### What stays deferred
+
+- Phase 3 hybrid extractor mode — still out of scope for this LLM-agnostic fork.
+
+---
+
 ## [0.8.1] — 2026-05-01
 
 Two follow-ups from the v0.8.0 deferred list. The first replaces the upstream's D&D-specific `--inspiration-reason` with a system-agnostic equivalent. The second ports forward the future-tense planning verbs that just shipped in claude-dnd-skill v1.7.3.

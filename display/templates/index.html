@@ -947,6 +947,32 @@
     font-style: italic; text-align: center; padding: 22px 0;
   }
 
+  /* ── Milestones (sidebar — Inspiration / Bennie / Hero Point / Fate Point / etc.) ── */
+  .sb-milestones { margin-top: 6px; }
+  .sb-milestone-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2px; gap: 6px;
+  }
+  .sb-milestone-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(220, 180, 90, 0.75);
+  }
+  .sb-milestone-count {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: #e0bf6e;
+    background: rgba(220, 180, 90, 0.18);
+    border: 1px solid rgba(220, 180, 90, 0.35);
+    padding: 0 5px;
+    border-radius: 7px;
+    min-width: 14px;
+    text-align: center;
+    box-shadow: 0 0 6px rgba(220, 180, 90, 0.18) inset;
+  }
+
   /* ── Spell slots (sidebar) ── */
   .sb-slots { margin-top: 5px; }
   .sb-slot-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
@@ -2816,6 +2842,31 @@ function _buildPlayerCard(p, solo) {
         slotsEl.appendChild(row);
       });
     if (slotsEl.children.length) card.appendChild(slotsEl);
+  }
+
+  // Milestones (system-agnostic — Inspiration / Bennie / Hero Point / Fate Point / etc.)
+  // Renders one row per active milestone label with a count pill.
+  if (p.milestones && Object.keys(p.milestones).length) {
+    const msEl = document.createElement('div');
+    msEl.className = 'sb-milestones';
+    msEl.dataset.role = 'milestones';
+    Object.entries(p.milestones)
+      .filter(([_, count]) => count > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([label, count]) => {
+        const row = document.createElement('div');
+        row.className = 'sb-milestone-row';
+        const lbl = document.createElement('span');
+        lbl.className = 'sb-milestone-label';
+        lbl.textContent = label;
+        const pill = document.createElement('span');
+        pill.className = 'sb-milestone-count';
+        pill.textContent = count;
+        row.appendChild(lbl);
+        row.appendChild(pill);
+        msEl.appendChild(row);
+      });
+    if (msEl.children.length) card.appendChild(msEl);
   }
 
   // Features (Second Wind etc)
