@@ -183,7 +183,12 @@ Read `## Campaign Arc` at every session load alongside `## GM Style Notes`. The 
 
 7. **All Is Lost (beat 2b) is earned, not punitive.** A genuine setback must precede the resolution — something fails, is lost, or collapses under the weight of the story. It comes from the world's logic, not arbitrary bad luck.
 
-8. **Do not reference the arc document to players.** Players experience it as natural story progression.
+8. **Pre-emption is a revision trigger, not a beat-skipper.** When players act faster than the world (the most common 2b failure mode), the world_pressure event you wrote can play out fully WITHOUT the beat's consequence landing. The beat is now overdue and its current shape is wrong; **at /gm end, treat this as automatic input to `/gm arc revise`.** Do not wait for the player to flag it. Pick from three landing-path templates:
+   - **Cost path:** the party paid for moving fast — exposure, lost cover, burned ally, expended resource that mattered. The setback is the cost, not the failure.
+   - **Secondary consequence path:** the world responds to having been pre-empted in a way the party didn't anticipate. The faction/NPC the party prevented from acting now does something WORSE because they read the disruption as a signal.
+   - **Deferred path:** the original setback is delayed but inevitable. Adjust `world_pressure` to a NEW pressure that points at the same `what_changes`, scheduled for the next 1–2 sessions.
+
+9. **Do not reference the arc document to players.** Players experience it as natural story progression.
 
 **Dice convention:**
 - Roll initiative automatically via `combat.py init` for all combatants at combat start

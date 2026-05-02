@@ -12,6 +12,51 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-05-01 — Display robustness + arc pre-emption (sync from claude-dnd-skill v1.7.5)
+
+Three reliability bugs land hard fixes here, with regression tests so they don't come back. Synced from claude-dnd-skill v1.7.5 — same root causes affected both repos.
+
+### What changed
+
+**send.py — body-bundling restored, integrity checks added**
+
+Bug: when `--stat-*` flags were combined with a heredoc body, `send.py` dispatched the stat update but silently dropped the narration. Root cause was in the stdin-read decision: `_build_stats_payload(args)` was treated as a "body-less" signal, so reading stdin was skipped even when a heredoc was attached.
+
+- **Stdin decision rewritten.** Three categories distinguished cleanly: content flags require a body; truly body-less flags (`--milestone-award`, `--milestone-spend`) skip stdin; stat flags and `--set-campaign` are body-OPTIONAL — stdin read when piped (heredoc), skipped when an interactive TTY (avoids blocking).
+- **Pre-flight `_validate_payload(...)`.** Chunk payloads must have text, an award, or a campaign tag; multiple content tags rejected; stats payloads must carry a list. Validation failures abort `sys.exit(2)` with stderr diagnostic.
+- **HTTP-level receipt verification.** `_post(...)` now logs every send to `_SEND_LOG` and inspects response status. Non-2xx surfaces body excerpt to stderr.
+- **Post-flight self-check.** Tallies failures from `_SEND_LOG`; display-offline yields one quiet stderr line; other partial failures yield `PARTIAL FAILURE` summary + `sys.exit(3)`.
+- **Optional `--verify` round-trip** against the new `/health` endpoint. Use during dev/debug.
+
+**gm-display-app.py — non-destructive tail persistence + atomic writes**
+
+Bug: `session_tail.json` got silently wiped to `[]` between sessions, so `/gm load` had no last-scene replay. Root cause: `_load_tail()` cleared the buffer then re-appended campaign-filtered entries; if every entry filtered out, the buffer ended up zeroed and the next `_persist_tail()` wrote `[]` over the file.
+
+- **`_load_tail` is non-destructive.** Builds a candidate buffer first; only swaps it in if at least one entry survived filtering. Empty/all-filtered/corrupt → buffer left alone.
+- **`_persist_tail` skips on empty.** Refuses to overwrite an existing non-empty file with an empty buffer. Stderr warning when it does.
+- **Atomic writes.** Tempfile + `os.replace(...)` — readers can never see partial state.
+- **Legacy fallback path removed.** Tails only land in the campaign-specific file. If `CAMP_FILE` is missing/empty, persist holds the buffer in memory and skips disk — no shared file that bleeds across campaigns.
+- **`/health` endpoint added.** Returns `alive`, `tail_buffer` count, `tail_file_size`, `text_log` count, `campaign`, `clients`. No auth required (no PII).
+
+**`/gm save` tail backstop + `verify_tail.sh` + `write_canonical_tail.py`**
+
+Belt-and-suspenders for the worst case. `verify_tail.sh <campaign>` checks the on-disk tail is healthy (>50 bytes, parses as a non-empty JSON list, entries have recognizable shape). When unhealthy, the GM writes a canonical replacement directly to disk via `write_canonical_tail.py` from session context — bypasses the display entirely so the file is good even after server crashes. Atomic write, campaign-stamped, capped at 30 entries. Both helpers respect `GM_CAMPAIGN_ROOT`.
+
+**Beat 2b structural fix — pre-emption is a revision trigger**
+
+Bug (campaign-level): when players act faster than the world, a beat's `world_pressure` event plays out fully without the `what_changes` consequence landing. Beats go stale.
+
+Root cause: arc beats were generated with `what_changes` written event-shaped (something specific happens) when it should be consequence-shaped (something fundamentally different is true).
+
+- **SKILL.md rule 8 added.** Pre-emption auto-triggers `/gm arc revise` at `/gm save`. Three landing-path templates: **cost** (party paid for moving fast), **secondary consequence** (world responds to being pre-empted), **deferred** (rewrite `world_pressure` toward same consequence on a longer horizon).
+- **`/gm new` step 14 strengthened.** Arc-generation prompt explicitly demands `what_changes` be consequence-shaped, with worked event-vs-consequence example.
+- **`/gm save` arc-check rewritten.** Performs explicit pre-emption check on each outstanding beat; auto-triggers `/gm arc revise` when needed.
+- **`/gm arc revise` enhanced.** Surfaces three landing-path templates as a structured choice; before/after diff shown for review.
+
+### Tests
+
+- New `tests/test_display_robustness.py` (20 tests) covers: stdin-read decision across all flag combinations including the bundled-stat regression, payload validation, tail load (empty/filtered-out/matching/corrupt/missing CAMP_FILE), tail persist (skip-on-empty/atomic/no-camp-no-write), set-campaign body-optional path.
+
 ## [0.9.0] — 2026-05-01
 
 The milestone feature is now visually complete. The award block alone wasn't enough for stack-based reward systems where the count is the whole point — Bennies, Fate Points, Hero Points all rely on knowing how many you have at any moment. This release adds the sidebar counter that v0.8.1 promised was coming.

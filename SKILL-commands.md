@@ -60,7 +60,7 @@ Do NOT run `git init` or any git commands in campaign directories.
    - `theme` — one sentence: what this story is ultimately about (not what happens, but what it means)
    - `resolution` — the committed endpoint shape: not specific events, but the emotional/thematic truth if the party succeeds
    - Six beats across three acts (Inciting Incident, Complication, Midpoint Shift, All Is Lost, Final Confrontation, Resolution)
-   - For each beat: `label`, `what_changes` (consequence, not event), `world_pressure` (faction/NPC move that delivers it)
+   - For each beat: `label`, `what_changes` (**CRITICAL: write as a CONSEQUENCE, not an event** — a state-of-the-world AFTER the beat, not one specific thing that happens. Consequences survive when players pre-empt the obvious delivery; events break and the beat goes stale. Example contrast for an All Is Lost beat: ❌ event-shaped *"the antagonist's preferred candidate takes the open council seat"* — fragile, can't land if the party flips the clerk in time; ✅ consequence-shaped *"the party experiences a concrete cost from the antagonist's escalation that they cannot reverse"* — survives multiple delivery paths), `world_pressure` (the faction/NPC move that delivers it — MAY be event-shaped, but if pre-empted, expect to revise per SKILL.md rule 8)
 
    Write to `state.md → ## Campaign Arc` with `type: dynamic`. Deliver a one-paragraph arc summary. A capable model (Opus-class or equivalent) is recommended for this step — the quality of the arc depends on synthesising all world data into a coherent thematic shape.
 
@@ -77,10 +77,20 @@ Do NOT run `git init` or any git commands in campaign directories.
 3. **Sync World State** — update `state.md → ## World State`: advance in-world date if time passed, update faction states if they shifted, advance the threat arc stage if events warrant it.
 4. **Update `## Live State Flags`** — review and update the compact key-value block: cover/party position, faction stances toward the party (non-neutral only), NPC dispositions (changed or notable only). This section must be accurate after every save — it is the compaction-resilience anchor for future sessions.
 5. **Arc check** (dynamic arcs only — skip for sandbox and structured):
-   - If `## Campaign Arc` has `type: dynamic`, review this session's key events against `outstanding_beats`.
-   - Ask: *"Did any arc beats land this session? [beat id(s) like '1b 2a', or 'none']"*
-   - If beats landed: run `/gm arc advance <beat-id>` for each. Update `steering_notes` for the next outstanding beat.
+   - If `## Campaign Arc` has `type: dynamic`, do all of:
+     - Ask: *"Did any arc beats land this session? [beat id(s) like '1b 2a', or 'none']"*
+     - If beats landed: run `/gm arc advance <beat-id>` for each.
+     - **Pre-emption check** (added 2026-05-01): for each remaining outstanding beat whose `world_pressure` was visibly delivered this session (the named world event actually appeared in narration or Faction Moves), evaluate whether the beat's `what_changes` consequence ALSO landed. Three possible states:
+       - **Landed cleanly** → mark beat complete via `/gm arc advance`.
+       - **Pressure absorbed without consequence** → the beat is overdue and its current shape no longer fits. **Run `/gm arc revise` immediately**; do not just update `steering_notes`. The beat's `what_changes` was event-shaped when it should be consequence-shaped — revise both `what_changes` and `world_pressure` to fit a path that DOES land. The committed shape bends; it does not break.
+       - **Pressure not yet delivered** → leave beat alone; expected to deliver next session.
+     - Update `steering_notes` for the next outstanding beat with the *consequence shape* expected, not the specific event.
 6. **Session log archival** (after session count > 3): keep only the 2 most recent full entries in session-log.md. Move older entries to `session-log-archive.md` (append only, never delete). Before archiving each entry, extract a 3–5 bullet continuity summary and write it to `## Continuity Archive` in state.md.
+7. **Tail verification** (added 2026-05-01): if the display companion is running, verify the campaign-side `session_tail.json` is healthy before closing the session:
+   ```bash
+   bash display/verify_tail.sh <campaign-name>
+   ```
+   Exit 0 = healthy. Exit 1 = missing/empty/corrupt → write a canonical replacement to `<GM_CAMPAIGN_ROOT>/<name>/session_tail.json` from session context (5–8 entries, each `{"text": "...", "_camp": "<name>"}`) using `display/write_canonical_tail.py`. The display's own `_persist_tail` has skip-on-empty + atomic-write guards (since 2026-05-01), but the backstop ensures a worst-case file state is impossible. After display kill (if applicable), re-run `verify_tail.sh` to catch any final-write race; restore from the canonical version if needed.
 
 ---
 
@@ -144,7 +154,17 @@ Manage the dynamic campaign arc. Active only when `state.md → ## Campaign Arc`
   - **Yes** → run `/gm arc new` (see below).
   - **No** → mark campaign concluded. The arc stays in state.md as a record.
 
-- **`/gm arc revise`** — revise the arc when a player choice significantly redirects the story. Update outstanding beats to fit the new direction. Log the revision in `revision_log`. The committed `resolution` shape should bend to the story, not break — revise beats, not the endpoint.
+- **`/gm arc revise`** — revise the arc when a player choice significantly redirects the story OR when the auto-trigger from /gm save's pre-emption check fires (most common case). The committed `resolution` shape should bend to the story, not break — revise beats, not the endpoint.
+  1. Show all outstanding beats with their current `what_changes` and `world_pressure`.
+  2. Ask: *"What's changed in the story that the arc doesn't reflect?"* — or, when auto-triggered by pre-emption, name the pre-empted beat directly: *"Beat 2b's pressure delivered but the consequence didn't land. Picking a revision path…"*
+  3. **Apply one of three landing-path templates** (per SKILL.md rule 8):
+     - **Cost path** — `what_changes` becomes "the party paid a concrete cost for moving fast"; `world_pressure` becomes the specific cost (cover blown, ally compromised, position lost). Best when the party pre-empted cleanly.
+     - **Secondary consequence path** — `what_changes` becomes "the world responded to being pre-empted in a way the party didn't anticipate"; `world_pressure` becomes the new escalation. Best when the antagonist is intelligent and adaptive.
+     - **Deferred path** — keep the original `what_changes` shape; rewrite `world_pressure` to a NEW pressure pointing at the same consequence, scheduled for the next 1–2 sessions. Best when the original consequence is still narratively essential and only the timing slipped.
+  4. Rewrite `what_changes` (consequence-shaped per the rule in /gm new step 14) and `world_pressure` (event-shaped is fine) for the affected beat. Do NOT modify completed beats.
+  5. Append to `revision_log`: `"<date>: <beat-id> — <path: cost/secondary/deferred> — <one-sentence why>"`
+  6. Update `steering_notes` to describe the next session's expected delivery.
+  7. Confirm what was revised. Show before/after for `what_changes` and `world_pressure`.
 
 - **`/gm arc view`** — print the full arc yaml from state.md.
 

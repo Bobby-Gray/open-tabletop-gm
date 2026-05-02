@@ -794,56 +794,128 @@ _load_log()
 # replay. The tail buffer (maxlen=30) is a parallel, leaner record stamped with
 # the campaign name so cross-campaign replay does not bleed.
 #
-# Path is campaign-specific so tails from different campaigns do not overwrite
-# each other. The fallback at the display dir is used only when no campaign is
-# registered (first-run state).
-_TAIL_FALLBACK = os.path.join(_DISPLAY_DIR, "session_tail.json")
+# ROBUSTNESS GUARANTEES (post 2026-05-01 wipe-bug fix):
+#   1. _load_tail is NON-DESTRUCTIVE: it never wipes the in-memory buffer based
+#      on an empty/filtered-out load. If the file is empty, missing, or every
+#      entry is filtered out by campaign mismatch, the existing buffer stays.
+#   2. _persist_tail SKIPS ON EMPTY: it never overwrites an existing non-empty
+#      file with an empty buffer. Breaks the "filter zeros buffer → persist
+#      writes [] → file lost" failure chain at the persistence end.
+#   3. _persist_tail uses ATOMIC WRITES: writes to a tempfile and atomically
+#      renames into place, so a partial/crashed write can never produce a
+#      truncated or zero-byte file.
+#   4. The legacy fallback path is gone. Tails only ever land in the campaign-
+#      specific file. If CAMP_FILE is missing/empty when persist would fire,
+#      we keep the buffer in memory and skip the write — no shared file that
+#      bleeds across campaigns.
 _tail_buffer: deque = deque(maxlen=30)
 _tail_lock = threading.Lock()
 
 
-def _get_tail_file() -> str:
-    """Return the campaign-specific tail path, or the fallback display-dir path."""
+def _get_tail_file() -> "str | None":
+    """Return the campaign-specific tail path, or None if no campaign is set.
+
+    Previously this fell back to a process-local path on the display side. That
+    fallback caused tail bleed across campaigns and made the wipe-on-load bug
+    much harder to diagnose. New contract: campaign-specific or nothing.
+    """
     try:
         camp = open(CAMP_FILE).read().strip()
         if camp:
             return str(_campaign_dir(camp) / "session_tail.json")
     except Exception:
         pass
-    return _TAIL_FALLBACK
+    return None
 
 
 def _persist_tail() -> None:
-    """Write the current tail buffer to disk. Called after every chunk."""
+    """Write _tail_buffer to disk. Refuses to overwrite content with empty.
+
+    Atomic-write guarantee: writes to <path>.tmp then renames, so observers
+    (the next /gm load reading the file) never see a partial or zero-byte
+    state.
+    """
+    path = _get_tail_file()
+    if not path:
+        # No active campaign — keep the buffer in memory, skip disk.
+        return
     try:
         with _tail_lock:
             data = list(_tail_buffer)
-        with open(_get_tail_file(), "w") as f:
+        # Skip-on-empty guard: never blank a file that currently has content.
+        if not data and os.path.exists(path):
+            try:
+                if os.path.getsize(path) > 2:  # 2 bytes = "[]"
+                    print(f"_persist_tail: skipping empty write — {path} has content",
+                          file=sys.stderr)
+                    return
+            except OSError:
+                pass
+        tmp = path + ".tmp"
+        with open(tmp, "w") as f:
             json.dump(data, f)
-    except Exception:
-        pass
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                pass
+        os.replace(tmp, path)
+    except Exception as e:
+        print(f"_persist_tail: write failed: {e}", file=sys.stderr)
 
 
 def _load_tail() -> None:
-    """Load the previously persisted tail. Called at startup and on campaign switch.
-    Filters by campaign stamp so a stale shared file cannot bleed entries from
-    another campaign into the active one."""
+    """Load tail from disk into the buffer. NON-DESTRUCTIVE on empty/mismatch.
+
+    Old behavior: cleared the buffer first, then re-appended filtered entries.
+    Created the wipe bug: if every entry was filtered out (campaign mismatch)
+    the buffer ended up empty and the next _persist_tail wrote [] to disk.
+
+    New behavior: build the candidate buffer first, then ONLY swap it into
+    place if at least one entry survived filtering. If nothing survives, the
+    in-memory buffer is left alone — preserves whatever was already loaded.
+    """
+    path = _get_tail_file()
+    if not path:
+        return
     try:
-        with open(_get_tail_file()) as f:
+        with open(path) as f:
             data = json.load(f)
-        try:
-            current_camp = open(CAMP_FILE).read().strip()
-        except Exception:
-            current_camp = ""
-        with _tail_lock:
-            _tail_buffer.clear()
-            for item in data[-30:]:
-                item_camp = item.get("_camp", "")
-                if current_camp and item_camp and item_camp != current_camp:
-                    continue
-                _tail_buffer.append(item)
+    except FileNotFoundError:
+        return  # No file yet — keep in-memory state
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"_load_tail: read failed for {path}: {e}", file=sys.stderr)
+        return
+    if not isinstance(data, list):
+        print(f"_load_tail: file content is not a list — leaving buffer alone",
+              file=sys.stderr)
+        return
+
+    try:
+        current_camp = open(CAMP_FILE).read().strip()
     except Exception:
-        pass
+        current_camp = ""
+
+    candidate: list = []
+    for item in data[-30:]:
+        if not isinstance(item, dict):
+            continue
+        item_camp = item.get("_camp", "")
+        # If we know the campaign and the entry stamps a different campaign,
+        # skip it. Entries with no stamp are kept (legacy data + tolerance).
+        if current_camp and item_camp and item_camp != current_camp:
+            continue
+        candidate.append(item)
+
+    if not candidate:
+        # Loaded data filtered down to nothing. DO NOT replace the buffer —
+        # this is the wipe-bug guard.
+        return
+
+    with _tail_lock:
+        _tail_buffer.clear()
+        for item in candidate:
+            _tail_buffer.append(item)
 
 
 _load_tail()
@@ -961,6 +1033,47 @@ def srd_lookup():
 @app.route("/ping")
 def ping():
     return "ok", 200
+
+
+@app.route("/health")
+def health():
+    """Server-side integrity probe used by send.py --verify and external monitors.
+
+    Returns the live counts the send-side cares about:
+      - alive: always True if the route runs
+      - tail_buffer: number of entries currently in the rolling tail
+      - tail_file_size: size in bytes of the on-disk session_tail.json
+      - text_log: number of entries in the replay log
+      - campaign: the active campaign name (empty if none set)
+      - clients: connected SSE clients
+
+    No auth required — liveness/monitoring endpoint, no PII or game content
+    is exposed.
+    """
+    try:
+        camp = open(CAMP_FILE).read().strip()
+    except Exception:
+        camp = ""
+    tail_path = _get_tail_file()
+    try:
+        tail_size = os.path.getsize(tail_path) if tail_path and os.path.exists(tail_path) else 0
+    except OSError:
+        tail_size = 0
+    with _tail_lock:
+        tail_count = len(_tail_buffer)
+    with _text_log_lock:
+        log_count = len(_text_log)
+    with _clients_lock:
+        client_count = len(_clients)
+    return {
+        "alive": True,
+        "tail_buffer": tail_count,
+        "tail_file_size": tail_size,
+        "tail_path": tail_path or "",
+        "text_log": log_count,
+        "campaign": camp,
+        "clients": client_count,
+    }, 200
 
 
 @app.route("/chunk", methods=["POST"])
