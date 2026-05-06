@@ -431,22 +431,24 @@ def main() -> None:
     #   3. Stat flags (--stat-* / --effect-*): body OPTIONAL — they can be sent
     #      alone OR bundled with narration. Read stdin only if it is actually
     #      piped (heredoc / pipe), not if it is an interactive TTY.
+    # Two categories of flags drive whether to read stdin:
+    #   1. Content flags (--player/--npc/--dice/--tutor/--action): body REQUIRED.
+    #      Always read stdin — script will abort below if the body is empty.
+    #   2. Everything else (plain narration, stat-only, --set-campaign,
+    #      milestone-award/spend, milestone-only with bundled body):
+    #      body OPTIONAL. Read stdin when piped (heredoc/pipe), skip when
+    #      interactive TTY to avoid blocking on an unattended call.
+    #
+    # Award flags (--milestone-*) used to force text="" which silently dropped
+    # any heredoc body bundled with them. Reading piped stdin under the same
+    # isatty() gate as stat flags lets bundled narration flow through to the
+    # text-send block below.
     _has_content_flag = bool(
         args.player or args.npc or args.dice or args.tutor or args.action
     )
-    # NOTE: --set-campaign is body-OPTIONAL (you can register a campaign with
-    # accompanying narration). Treat it like stat flags: read stdin if piped.
-    _truly_bodyless = bool(
-        args.milestone_award or args.milestone_spend
-    )
     if _has_content_flag:
         text = sys.stdin.read()
-    elif _truly_bodyless:
-        text = ""
     else:
-        # Plain narration, stat-only, or set-campaign with optional body.
-        # Read stdin when piped (heredoc); skip when interactive TTY to avoid
-        # blocking on an unattended call.
         text = "" if sys.stdin.isatty() else sys.stdin.read()
     token = _read_token()
 
@@ -459,27 +461,29 @@ def main() -> None:
     #   1. /chunk → renders the gold-glow feed block
     #   2. /stats → increments / decrements the sidebar counter so stack-based
     #      systems (Bennies, Fate Points) accumulate visibly
+    # Award/spend flags POST their styled block + stat update first, then fall
+    # through to the text-send block below. Bundling a heredoc body with an
+    # award flag now broadcasts BOTH the gold block AND the narration chunk —
+    # previously the narration was silently dropped by an early return here.
     if args.milestone_award:
         name = args.milestone_award.strip()
         label = (args.milestone_label or "Milestone").strip()
-        body: dict = {"milestone_award": name, "text": name, "label": label}
+        award_body: dict = {"milestone_award": name, "text": name, "label": label}
         if args.milestone_reason:
-            body["reason"] = args.milestone_reason.strip()
-        _post(FLASK_URL, json.dumps(body).encode(), token)
+            award_body["reason"] = args.milestone_reason.strip()
+        _post(FLASK_URL, json.dumps(award_body).encode(), token)
         _post(STATS_URL, json.dumps({
             "players": [{"name": name, "_milestone_inc": label}]
         }).encode(), token)
-        return
 
     if args.milestone_spend:
         name = args.milestone_spend.strip()
         label = (args.milestone_label or "Milestone").strip()
-        body = {"milestone_spend": name, "text": name, "label": label}
-        _post(FLASK_URL, json.dumps(body).encode(), token)
+        spend_body: dict = {"milestone_spend": name, "text": name, "label": label}
+        _post(FLASK_URL, json.dumps(spend_body).encode(), token)
         _post(STATS_URL, json.dumps({
             "players": [{"name": name, "_milestone_dec": label}]
         }).encode(), token)
-        return
 
     # ── Pre-flight integrity check ────────────────────────────────────────────
     # If a content flag is set but no text arrived on stdin, that's almost
