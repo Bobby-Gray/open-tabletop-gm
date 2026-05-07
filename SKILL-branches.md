@@ -176,10 +176,12 @@ Each turn in combat:
 
 ## `/gm character new`
 
-1. Read `scripts/character.md`
+1. Read `scripts/character.md`. Ask the player for the character's name.
+
+   **Name uniqueness check:** run `python3 <skill-base>/scripts/name_registry.py check "<name>"`. Exit 1 (duplicate) prints which prior campaign / session used the name; surface as a non-blocking warning and ask the player to confirm or change. After write (step 4), call `name_registry.py add --name "<name>" --type pc --campaign <name> --session <current>`.
 2. Follow character creation procedure from `systems/<system>/system.md`
 3. Run `ability-scores.py` and `character.py calc`
-4. Write character file; mirror to global roster
+4. Write character file; mirror to global roster; record name in registry (see step 1)
 
 ---
 

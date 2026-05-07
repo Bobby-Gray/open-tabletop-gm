@@ -31,7 +31,9 @@ Do NOT run `git init` or any git commands in campaign directories.
 | `/gm characters` | List all characters in the global roster. |
 | `/gm tutor on\|off` | Toggle tutor mode. Write `tutor_mode: true\|false` to state.md. |
 | `/gm display <on\|off> [--lan]` | Start or stop the display companion. Follow `/gm display` branch. Start before `/gm load` if you want it active. |
-| `/gm npc <name>` | Generate or retrieve an NPC. Write to npcs.md / npcs-full.md. |
+| `/gm npc <name>` | Generate or retrieve an NPC. Write to npcs.md / npcs-full.md. **New:** before write, run `name_registry.py check` and surface any prior use; record after write. |
+| `/gm npc rename "Old Name" <"New Name"\|random> [--type pc] [--dry-run] [--yes] [--include-archive]` | Rename a character across npcs.md, npcs-full.md, state.md, session-log.md, world.md, session_tail.json, graph.json (node + edges preserved), and `characters/<slug>.md` if `--type pc`. Backs up the campaign first. `--random` picks from a bundled fantasy-name corpus, rejecting any slug already in the registry. session-log-archive.md left untouched by default + audit note added. Maps to: `python3 <skill-base>/scripts/npc_rename.py --campaign <current> --old "..." --new "..."`. |
+| `/gm registry <subcommand>` | Cross-campaign name registry stored at `<GM_CAMPAIGN_ROOT>/.name_registry.json`. Subcommands: `rebuild [--include-prose]`, `list [--campaign C] [--type] [--source canonical\|prose]`, `lookup <name>`, `check <name> [--json]` (exit 0 unique, 1 duplicate), `add`, `retire`. Maps to `python3 <skill-base>/scripts/name_registry.py <subcommand>`. Severity (`warn`\|`strict`\|`none`) configurable via `<GM_CAMPAIGN_ROOT>/.name_registry_config.json`. |
 | `/gm import <filepath> [campaign-name]` | Import a pre-written campaign source (PDF, MD, DOCX, TXT). See `/gm import` procedure below. |
 | `/gm arc [status\|advance\|revise\|view]` | Manage the dynamic campaign arc. See `/gm arc` procedure below. |
 | `/gm path [<new-path>\|reset]` | View or configure where campaign data is stored (`GM_CAMPAIGN_ROOT`). Follow `/gm path` branch. |
