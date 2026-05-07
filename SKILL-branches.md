@@ -51,16 +51,31 @@ Identify `<current-location>` from `state.md → ## World State → location` (o
 
 Output is a focused subgraph (nodes by type + relationships block). **Internalize this subgraph before delivering the narration** — it is the authoritative source for who-relates-to-whom in the current scene. Do not re-read `npcs-full.md` for relationships you can answer from the subgraph.
 
-If output reads `# graph not initialized` — graph hasn't been seeded for this campaign yet. Offer the GM the auto-init flow before delivering the narration:
+If output reads `# graph not initialized` — graph hasn't been seeded for this campaign yet. **Graph init is a hard requirement, not deferrable.** The going-forward Continuity Archive compression rule (see `/gm save` Step 4) assumes graph.json is present and canonical for relational state; deferring init creates state-archive drift that compounds session-over-session. Run the init flow before delivering the narration:
 
-> *"This campaign doesn't have a relationship graph yet. I can initialize one now — it improves long-session continuity recall when full NPC files fall out of context. As a safety precaution, I'll back up the campaign first to `~/open-tabletop-gm/campaigns/<name>.backup-YYYYMMDD-HHMMSS/`. Proceed? [y/n]"*
+1. **Detect legacy.** A campaign is "legacy" if any of: `Session count > 1` in state.md header, OR `## Continuity Archive` has at least one `### Session N` entry, OR session-log.md is > 100 lines. A freshly-created campaign at `/gm new` time fails all three signals — do NOT classify it as legacy.
 
-- `y` → snapshot the campaign directory, then run `/gm graph init <name>` (which proposes seed nodes/edges and asks for GM approval before writing). After init completes, re-run scene-context.
-  ```
-  cp -R ~/open-tabletop-gm/campaigns/<name> \
-        ~/open-tabletop-gm/campaigns/<name>.backup-$(date +%Y%m%d-%H%M%S)
-  ```
-- `n` → continue without graph for this session; do not re-prompt this session. The GM can run `/gm graph init` later at their convenience.
+2. **Backup the campaign directory** (always — both fresh and legacy):
+   ```
+   cp -R ~/open-tabletop-gm/campaigns/<name> \
+         ~/open-tabletop-gm/campaigns/<name>.backup-$(date +%Y%m%d-%H%M%S)
+   ```
+   Tell the GM the backup path explicitly so they can revert if needed.
+
+3. **Run `/gm graph init <name>`** — propose seed nodes/edges from `npcs.md`, `world.md`, and `state.md` (Live State Flags + Active Quests + recent NPC dispositions). Show the GM a single approval block (counts by type + named entries) and ask for one go/no-go. After approval, batch-execute the `add-node` and `add-edge` calls. Use `--since N` matching when each node/edge first became canon.
+
+4. **Validate** with a `scene-context` query at the current location to confirm the subgraph is reachable.
+
+5. **(Legacy only)** Offer the one-time Continuity Archive compression pass:
+
+   > *"This campaign is legacy ({session_count} sessions, {archive_count} archive entries). Now that `graph.json` is the canonical source for faction memberships, NPC dispositions, and typed-edge relationships, I can do a one-time pass to trim the existing `## Continuity Archive` entries of relational restatements that the graph now answers. Mechanical changes, plot beats, atmospheric/decision moments, and disclosed information stay in full. Estimated reduction: 5–30% of archive bytes. Backup is already at `<backup-path>`. Proceed? [y/n]"*
+
+   - `y` → trim each archive entry surgically; keep the bullet structure; remove ONLY pure-relational restatements that have a corresponding edge in the just-initialized graph. Preserve: mechanical changes, plot beats, atmospheric moments, disclosed content, calibration material, off-screen world events. Add a one-line note at the top of `## Continuity Archive`: *"Compressed YYYY-MM-DD (graph init pass). Relational state is canonical in graph.json — entries below preserve mechanical changes, plot beats, disclosed content, atmospheric/decision moments, and calibration material."*
+   - `n` → leave the archive untouched. The going-forward rule (per `/gm save`) still applies to NEW entries from this session forward.
+
+   For fresh (non-legacy) campaigns: skip the offer entirely — there's nothing to compress yet, and the going-forward rule covers all future entries.
+
+6. Re-run scene-context (now populated). Then proceed to Step 5 (narration).
 
 **Step 5 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
 
@@ -174,6 +189,26 @@ No script reads needed.
 1. Write session events to `session-log.md`
 2. Update `state.md` (location, quests, HP/resources, recent events, faction moves)
 3. Update any `characters/*.md` that changed; mirror to `~/open-tabletop-gm/characters/`
+
+   **Going-forward Continuity Archive compression rule (when `graph.json` exists for the campaign):** Continuity Archive bullets in state.md must NOT restate relational state the graph holds canonically.
+
+   **Omit:**
+   - "X is allied with Y" / "X is hostile to Y" — already a typed edge with `--since N`
+   - "X is a member of faction F" / "X works for Y" / "X reports to Y" — already a `member_of` / `works_for` / `reports_on` edge
+   - "Z saw the party's faces" — already a `hostile_to` / `surveils` edge
+   - Faction memberships and NPC dispositions that haven't changed this session
+   - Restated NPC profiles already in node tags + summary
+
+   **Keep:**
+   - Mechanical changes (XP, levels, items gained/spent, slots burned, HP deltas)
+   - Plot beats (arc beat completions, named turning points)
+   - Atmospheric / decision moments with no graph edge
+   - Disclosed content (the WHAT was learned) even when the relational fact is graph-captured
+   - Off-screen world events / faction moves
+   - Calibration / GM Notes / cliffhangers
+
+   Treat each bullet as one sentence with one job. If the only job is restating a graph edge, drop it. If it carries content + edge, keep the content half. The graph is queried at `/gm load` Step 4; the archive is queried for chronological narrative + mechanical state — they should not overlap.
+
 4. **Campaign-graph relationship-shift sweep.** Skip if `graph.json` doesn't exist for this campaign. Otherwise scan this session's narration for relationship shifts that weren't captured live via `/gm graph add-edge` / `close-edge`. Look for moments matching:
    - New alliance, betrayal, or rivalry between named NPCs / factions
    - An NPC moving into / out of a location
