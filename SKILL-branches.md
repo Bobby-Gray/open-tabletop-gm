@@ -6,7 +6,7 @@ This file is always in context. When any command or state transition occurs, loo
 
 ## `/gm load <name>`
 
-**No questions. Six steps. Do them in order and stop.**
+**Minimal questions. Seven steps. Do them in order and stop.**
 
 **Step 1 — Check display state:**
 ```
@@ -33,12 +33,30 @@ Skip this step entirely if `display=OFF`.
 
    Send entries in array order. The display will render them as the previous session's last exchanges, restoring continuity for any reconnecting browser.
 
-**Step 3 — Read these three files:**
+**Step 3 — System-version migration check** (legacy-campaign backwards compat):
+```
+python3 <skill-base>/scripts/migrate_system_version.py <name> --check
+```
+Exit codes: 0 = already migrated, 1 = needs migration, 2 = missing campaign/state.md.
+
+If exit 1, this campaign predates the `**System Version:**` field. Look up the default version from the campaign's system module (`systems/<system>/system.md → ## System Versions`) and ask the GM:
+
+> *"Campaign '\<name\>' predates the system-version field. Stamp it as version `<system-default>`? [Y/n]"*
+
+If they confirm, run:
+```
+python3 <skill-base>/scripts/migrate_system_version.py <name> --version <chosen> --yes
+```
+The migrator backs up `state.md` to `state.md.backup-pre-system-version-<timestamp>` before writing. Idempotent — safe to re-run.
+
+Skip this step if exit 0 or if the system declares no versions.
+
+**Step 4 — Read these three files:**
 1. `~/open-tabletop-gm/campaigns/<name>/state.md`
 2. `~/open-tabletop-gm/campaigns/<name>/world.md`
 3. `~/open-tabletop-gm/campaigns/<name>/npcs.md`
 
-**Step 4 — Pull scene-context from the campaign graph.** Always run, even if you suspect `graph.json` doesn't exist — the script exits cleanly with a notice when uninitialized.
+**Step 5 — Pull scene-context from the campaign graph.** Always run, even if you suspect `graph.json` doesn't exist — the script exits cleanly with a notice when uninitialized.
 ```
 python3 <skill-base>/scripts/gm_graph.py scene-context \
   --campaign <name> \
@@ -51,7 +69,7 @@ Identify `<current-location>` from `state.md → ## World State → location` (o
 
 Output is a focused subgraph (nodes by type + relationships block). **Internalize this subgraph before delivering the narration** — it is the authoritative source for who-relates-to-whom in the current scene. Do not re-read `npcs-full.md` for relationships you can answer from the subgraph.
 
-If output reads `# graph not initialized` — graph hasn't been seeded for this campaign yet. **Graph init is a hard requirement, not deferrable.** The going-forward Continuity Archive compression rule (see `/gm save` Step 4) assumes graph.json is present and canonical for relational state; deferring init creates state-archive drift that compounds session-over-session. Run the init flow before delivering the narration:
+If output reads `# graph not initialized` — graph hasn't been seeded for this campaign yet. **Graph init is a hard requirement, not deferrable.** The going-forward Continuity Archive compression rule (see `/gm save` Step 4) assumes graph.json is present and canonical for relational state; deferring init creates state-archive drift that compounds session-over-session. Run the init sub-flow before delivering the narration:
 
 1. **Detect legacy.** A campaign is "legacy" if any of: `Session count > 1` in state.md header, OR `## Continuity Archive` has at least one `### Session N` entry, OR session-log.md is > 100 lines. A freshly-created campaign at `/gm new` time fails all three signals — do NOT classify it as legacy.
 
@@ -75,11 +93,11 @@ If output reads `# graph not initialized` — graph hasn't been seeded for this 
 
    For fresh (non-legacy) campaigns: skip the offer entirely — there's nothing to compress yet, and the going-forward rule covers all future entries.
 
-6. Re-run scene-context (now populated). Then proceed to Step 5 (narration).
+6. Re-run scene-context (now populated). Then proceed to Step 6 (narration).
 
-**Step 5 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
+**Step 6 — Deliver opening narration as plain text.** Do not run any bash commands. Do not read any more files. Just write the narration. Set the scene from what you read. End with a question to the player.
 
-**Step 6 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
+**Step 7 — Enter active GM mode.** `/gm` prefix not needed. Characters and system rules load on demand during the session.
 
 ---
 

@@ -45,7 +45,8 @@ Do NOT run `git init` or any git commands in campaign directories.
 ## `/gm new` — World Generation Procedure
 
 1. If `[system]` not supplied, ask which game system
-2. Create campaign directory at `~/open-tabletop-gm/campaigns/<name>/characters/`
+2. **System version selection** — if the chosen system has more than one supported version (consult `systems/<system>/system.md → ## System Versions`), ask which to use. The default if the GM has no preference is whatever the system module declares as default. The chosen value is stamped into `state.md` header as `**System Version:** <value>` at step 13. Skip this step if the system module declares no versions.
+3. Create campaign directory at `~/open-tabletop-gm/campaigns/<name>/characters/`
 4. Copy blank templates from `systems/<system>/` and `templates/` into the campaign directory
 5. Ask: party size and starting level
 6. **Tone/Genre Wizard** — present all four in one message: tone · magic level · setting type · danger level. Randomise any blank with dice.py.
@@ -55,7 +56,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 10. **2 Factions** — archetype, activity, relationship to party → world.md + state.md summary
 11. **3 NPCs** — one-line index in npcs.md; full detail in npcs-full.md; each needs 2+ relationships
 12. **3-5 Quest Seeds** → write to `## Quest Seed Bank` in world.md
-13. Write state.md: session count 0, starting location, system, display flag
+13. Write state.md: session count 0, starting location, system, display flag, and the chosen `**System Version:**` value on the header line (from step 2; omit the field if the system has no versions)
 14. **Dynamic Campaign Arc** — optional arc generation. Ask: *"Generate a committed narrative arc? [y/n — recommended]"*
 
    **If yes:** Drawing from theme, threat arc stages, factions, Three Truths, NPC motivations, and quest seeds, derive:

@@ -1093,6 +1093,19 @@ def chunk():
             _load_tail()
         except Exception:
             pass
+        # Resolve and stash the system version for this campaign so the sidebar
+        # badge can render. Empty string when the field is unset (legacy
+        # campaigns predating the field — they should be migrated via
+        # scripts/migrate_system_version.py at /gm load). Wrapped in try/except
+        # so a missing paths import or malformed state.md never breaks /chunk.
+        try:
+            from paths import campaign_system_version as _campaign_system_version
+            _sv = _campaign_system_version(str(data["campaign"]).strip())
+            with _stats_lock:
+                _current_stats["system_version"] = _sv
+                _broadcast({"stats": dict(_current_stats)})
+        except Exception:
+            pass
 
     # Milestone award/spend — system-agnostic event for "the GM rewarded great play".
     # Renders as a gold-glow block in the feed. The system module supplies the label
@@ -1407,6 +1420,18 @@ def stats():
         if not any(k in data for k in ("players", "turn_order", "world_time", "factions",
                                         "replace_players", "sheet")):
             return "", 204
+
+    # Explicit system-version override (e.g. push_stats.py --system-version 2024).
+    # The value is opaque — display just renders it as a badge. Empty/missing
+    # value clears the badge. Validation happens in the system module, not core.
+    if "system_version" in data:
+        sv_in = str(data.get("system_version") or "").strip()
+        with _stats_lock:
+            if sv_in:
+                _current_stats["system_version"] = sv_in
+            else:
+                _current_stats.pop("system_version", None)
+            current = dict(_current_stats)
 
     _persist_stats()
     _broadcast({"stats": current})
