@@ -4,6 +4,25 @@ This file is loaded alongside `SKILL.md` at session start. It defines the mechan
 
 ---
 
+## System Versions
+
+Two ruleset versions are supported. The campaign's chosen version is recorded on the `state.md` header line as `**System Version:** <value>` and read by `paths.campaign_system_version()`.
+
+| Value | Description | Default? |
+|-------|-------------|----------|
+| `2014` | Classic 5e (Player's Handbook 2014, original SRD). | yes |
+| `2024` | 2024 revision (weapon mastery, expanded class features). |  |
+
+`2014` is the default for legacy campaigns predating the field. The migrator script (`scripts/migrate_system_version.py`) stamps `2014` into pre-field campaigns when invoked at `/gm load`.
+
+Per-version data files (when built) live under `systems/dnd5e/data/`:
+- `dnd5e_srd.json` — 2014 dataset
+- `dnd5e_srd_2024.json` — 2024 dataset (build via `build_srd.py --version 2024`; see `lookup.py --version`)
+
+System-version-aware scripts (`lookup.py`, `build_srd.py`, etc.) accept a `--campaign <name>` flag (resolves the version from state.md) or an explicit `--version <value>` override. When neither is given, they fall back to `2014`.
+
+---
+
 ## Dice Convention
 
 - Most checks, attacks, and saves: `d20 + ability modifier + proficiency bonus (if applicable)` vs a Difficulty Class (DC) or Armor Class (AC)

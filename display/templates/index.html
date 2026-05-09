@@ -1159,6 +1159,29 @@
     margin-top: 1px;
   }
 
+  /* ── System version badge (below world clock, top-right) ── */
+  /* Opaque label sourced from the campaign's state.md System Version field. */
+  /* The system module decides what values are valid; display just renders. */
+  #system-version-badge {
+    position: fixed;
+    top: 78px; right: 32px;
+    z-index: 5;
+    display: none;
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(180,140,60,0.55);
+    border: 1px solid rgba(180,140,60,0.28);
+    border-radius: 3px;
+    padding: 2px 6px 2px 7px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s ease;
+    user-select: none;
+  }
+  #system-version-badge.has-data { display: inline-block; opacity: 0.8; }
+
   /* ── Audio toggle controls ── */
   #audio-controls {
     position: fixed;
@@ -1502,6 +1525,9 @@
   <div id="wc-date"></div>
   <div id="wc-sub"></div>
 </div>
+
+<!-- System version badge (just below world clock); populated from stats.system_version -->
+<div id="system-version-badge"></div>
 
 <!-- Audio toggle controls — SFX triggered by narration text -->
 <div id="audio-controls">
@@ -4017,6 +4043,21 @@ function updateWorldClock(wt) {
   skyRenderer.setState(wt);
 }
 
+// System version badge — opaque label sourced from campaign state.md.
+// Empty/undefined hides the badge; any non-empty string renders.
+function updateSystemVersionBadge(version) {
+  const el = document.getElementById('system-version-badge');
+  if (!el) return;
+  const v = String(version || '').trim();
+  if (!v) {
+    el.classList.remove('has-data');
+    el.textContent = '';
+    return;
+  }
+  el.textContent = v;
+  el.classList.add('has-data');
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // SIDEBAR TOGGLE
 // ═══════════════════════════════════════════════════════════════════
@@ -4070,6 +4111,8 @@ function connect() {
       if (payload.stats.world_time) {
         updateWorldClock(payload.stats.world_time);
       }
+      // Always pass — undefined/empty clears the badge
+      updateSystemVersionBadge(payload.stats.system_version);
     }
     if (payload.staged_inputs !== undefined) {
       _handleStagedInputs(payload.staged_inputs);

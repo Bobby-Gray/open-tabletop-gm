@@ -1,5 +1,5 @@
 # Campaign: <name>
-**Created:** <date>  **Last session:** —  **Session count:** 0
+**Created:** <date>  **Last session:** —  **Session count:** 0  **System Version:** <version>
 
 ## Current Situation
 - **Location:**

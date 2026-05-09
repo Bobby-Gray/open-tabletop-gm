@@ -172,6 +172,11 @@ def main() -> None:
                         help="Start autorun countdown: broadcast interval + current timestamp to display")
     parser.add_argument("--autorun-threshold", metavar="N", type=int,
                         help="Set min players needed to auto-fire (0 or omit to reset to player count)")
+    parser.add_argument("--system-version", metavar="VALUE",
+                        help="Override the system-version badge displayed in the sidebar. "
+                             "Opaque to the display — pass whatever the system module uses "
+                             "(e.g. 2014, 2024, 1e). Server normally auto-resolves this from "
+                             "the active campaign's state.md when send.py --set-campaign fires.")
     args = parser.parse_args()
 
     payload: dict = {}
@@ -302,6 +307,12 @@ def main() -> None:
     if args.autorun_threshold is not None:
         # 0 = reset to auto (use player count); positive int = explicit minimum
         payload["autorun_threshold"] = args.autorun_threshold if args.autorun_threshold > 0 else None
+
+    # ── System version override ────────────────────────────────────────────────
+    if args.system_version:
+        sv = args.system_version.strip()
+        if sv:
+            payload["system_version"] = sv
 
     # ── Clear display ─────────────────────────────────────────────────────────
     if args.clear:
