@@ -12,6 +12,55 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-05-08 — System-versioning infrastructure (sync from claude-dnd-skill v1.8.0)
+
+Many tabletop systems ship more than one set of rules over their lifetime. A campaign should declare the edition it's playing once and have the GM honour it from then on, without re-explaining at the start of every session which book the table is using. This release lays the framework-level groundwork for that — system-agnostic, deliberately small, deliberately opaque. The *infrastructure* lives in core; the *content* of any specific edition stays in the system module.
+
+### What changed
+
+**Per-campaign `**System Version:**` field on state.md**
+
+A campaign records its chosen edition on the header line. The value is an opaque string from the framework's perspective — core never parses or validates it. The system module owns what counts as a valid value and what the default is.
+
+- **`paths.campaign_system_version(name)`** for any script that needs to read the field. CLI passthrough: `paths.py campaign-system-version <campaign> [default]`.
+- **`paths.system_data_path(system, version, filename)`** for any module that wants to ship version-keyed data files. Resolves to `systems/<system>/data/<filename>`; the system module composes file names however it prefers.
+
+**`scripts/migrate_system_version.py`**
+
+Backwards-compat migrator for legacy campaigns. `--check` (strictly non-mutating) and `--yes` (idempotent stamp + timestamped backup) modes. Used by `/gm load` against legacy campaigns. Edge cases handled cleanly: missing campaign exits 2; non-standard headers exit 0 "not-applicable" (so `/gm load` doesn't pester GMs of campaigns with hand-rolled metadata blocks).
+
+**`/gm new` step 2 (optional version prompt)**
+
+When the system module advertises a `## System Versions` section in its `system.md`, `/gm new` prompts for a version at creation time. Skipped silently otherwise.
+
+**`/gm load` step 3 (migration check)**
+
+Runs the migrator's `--check` and surfaces a one-time migration prompt for legacy campaigns. Already-stamped campaigns proceed silently. Subsequent steps renumbered.
+
+**Display companion `#system-version-badge`**
+
+Sidebar badge populated automatically from the campaign's recorded value. Empty hides. The server reads `paths.campaign_system_version` on `/stats --set-campaign`; `push_stats.py --system-version` exposes an explicit override.
+
+**`systems/dnd5e/system.md` worked example**
+
+Documents how a system module declares its versions via the `## System Versions` section. Other system modules can follow the same pattern when they need multi-edition support.
+
+### Out of scope (deferred to follow-up PRs scoped to system modules)
+
+- Per-version build and lookup routing scripts. These belong in `systems/<system>/scripts/`, not core.
+- Edition-specific mechanics (e.g. weapon mastery in 5e 2024). Those are system content.
+- The dnd5e module's per-edition datasets. Will land as a separate PR scoped to `systems/dnd5e/`.
+
+### Backwards compatibility
+
+Legacy campaigns predate the field. The migrator backs `state.md` up before any write, stamps the chosen version, and is idempotent. The migration default is **system-defined**, not core-defined — a system module configures whether legacy campaigns silently inherit "the older edition" or are forced to make an explicit choice. Core has no opinion. Character files don't need their own migration; they inherit the campaign's version at runtime.
+
+### Companion development upstream
+
+The parent project, [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill), shipped v1.8.0 today using this pattern. The dnd5e module there now carries data for both of its published editions, with provenance preserved per record (CC-BY-4.0). otgm users running the dnd5e module will get those data files in a follow-up PR scoped to `systems/dnd5e/`.
+
+---
+
 ## [0.9.1] — 2026-05-01 — Display robustness + arc pre-emption (sync from claude-dnd-skill v1.7.5)
 
 Three reliability bugs land hard fixes here, with regression tests so they don't come back. Synced from claude-dnd-skill v1.7.5 — same root causes affected both repos.
