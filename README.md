@@ -436,3 +436,13 @@ If you're running Claude Code, [`claude-dnd-skill`](https://github.com/Bobby-Gra
 ## Contributing
 
 System modules for new games are the most valuable contribution. If you've built and tested a module for a system not listed here, a PR adding `systems/<your-system>/` is welcome. Include at minimum a filled-in `system.md` and a note in the PR about what you tested and how well it worked.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide and the contribution licensing handshake.
+
+---
+
+## License
+
+[AGPL-3.0-or-later](LICENSE). Copyright (c) 2026 Neural Initiative LLC.
+
+Self-hosting and modification are explicitly welcome — fork, run, change as you like. The AGPL specifically protects against re-hosting this as a closed-source SaaS without sharing modifications back. For most users this distinction never matters.

@@ -12,6 +12,8 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+- **License formalized as AGPL-3.0-or-later.** Added canonical `LICENSE` file with `Copyright (c) 2026 Neural Initiative LLC` and a `CONTRIBUTING.md` documenting the contribution licensing handshake. The README now includes a proper License section. Self-hosting and modification remain explicitly welcome; AGPL protects against closed-source SaaS forks.
+
 ## [0.10.0] — 2026-05-08 — System-versioning infrastructure (sync from claude-dnd-skill v1.8.0)
 
 Many tabletop systems ship more than one set of rules over their lifetime. A campaign should declare the edition it's playing once and have the GM honour it from then on, without re-explaining at the start of every session which book the table is using. This release lays the framework-level groundwork for that — system-agnostic, deliberately small, deliberately opaque. The *infrastructure* lives in core; the *content* of any specific edition stays in the system module.
