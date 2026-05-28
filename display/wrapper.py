@@ -87,9 +87,32 @@ def _notify_consumed() -> None:
 
 # ─── Trigger sanitisation ─────────────────────────────────────────────────────
 
-_PRINTABLE    = re.compile(r"[^\x20-\x7E]")          # strip non-printable ASCII
+_PRINTABLE    = re.compile(
+    "[^"
+    "\x20-\x7E"
+    " -ɏ"             # Latin-1 + Latin Extended A/B
+    "Ͱ-Ͽ"             # Greek
+    "Ѐ-ӿ"             # Cyrillic
+    "֐-׿"             # Hebrew
+    "؀-ۿ"             # Arabic
+    "ݐ-ݿ"             # Arabic Supplement
+    "ऀ-ॿ"             # Devanagari
+    "ঀ-৿"             # Bengali
+    "஀-௿"             # Tamil
+    "ఀ-౿"             # Telugu
+    "฀-๿"             # Thai
+    "Ḁ-ỿ"             # Latin Extended Additional (Vietnamese)
+    "　-〿"             # CJK Symbols
+    "぀-ゟ"             # Hiragana
+    "゠-ヿ"             # Katakana
+    "㐀-䶿"             # CJK Ext A
+    "一-鿿"             # CJK Unified
+    "가-힯"             # Hangul
+    "＀-￯"             # Halfwidth / Fullwidth
+    "]"
+)
 _SHELL_CHARS  = re.compile(r'[$`\\;|&><()\[\]{}!]')  # no shell metacharacters
-_CHAR_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,48}[A-Za-z]$|^[A-Za-z]$")
+_CHAR_NAME_RE = re.compile(r"^\w[\w '\-]{0,48}\w$|^\w{1,2}$", re.UNICODE)
 _ACTION_LINE  = re.compile(r"^\[([^\]]{1,50})\]:\s*(.{1,500})$")
 
 _MAX_LINES    = 8     # sanity cap — no party this large exists

@@ -144,6 +144,17 @@ This project tracks behind [claude-dnd-skill](https://github.com/Bobby-Gray/clau
 
 ---
 
+## Other ways to play
+
+Two sibling projects share this framework's design DNA, in case neither this nor the Claude-specific version fit how you want to set up:
+
+- [claude-dnd-skill](https://github.com/Bobby-Gray/claude-dnd-skill) — Claude Code-specific version with deeper tool-call integration. The right home if you're running Claude.
+- [neuralinitiative.ai](https://neuralinitiative.ai) — hosted browser version. Sign in with Google, top up a balance, play. Same model-picker philosophy, refined web GUI, no install. Costs more per session than running your own keys, in exchange for zero setup.
+
+All three share the same maintainer and design DNA — pick the one that matches how you want to set up.
+
+---
+
 ## Quick Start
 
 **Improvised campaign** — GM generates world and narrative arc:

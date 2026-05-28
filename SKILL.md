@@ -81,7 +81,8 @@ Players who take creative risks, commit hard to a roleplay choice, or do somethi
       data/             ← SRD dataset
     TEMPLATE.md         ← scaffold for building a new system module
   scripts/              ← universal scripts: dice.py, combat.py, tracker.py, calendar.py, campaign_search.py
-  display/              ← optional cinematic display companion
+  display/              ← optional cinematic display companion (gm-display-app.py, send.py, tts.py, …)
+  docs/                 ← optional setup walkthroughs (SKILL-tts.md for narrator TTS)
   templates/            ← blank campaign file templates
 
 <campaigns-dir>/<name>/
