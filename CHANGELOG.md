@@ -14,6 +14,38 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 - **License formalized as AGPL-3.0-or-later.** Added canonical `LICENSE` file with `Copyright (c) 2026 Neural Initiative LLC` and a `CONTRIBUTING.md` documenting the contribution licensing handshake. The README now includes a proper License section. Self-hosting and modification remain explicitly welcome; AGPL protects against closed-source SaaS forks.
 
+## [0.11.0] — 2026-05-28 — Narrator TTS + i18n expansion (sync from claude-dnd-skill v1.10.0)
+
+Two additive features ported from claude-dnd-skill v1.10.0, adapted to open-tabletop-gm conventions (GM terminology, relative paths, `GM_TTS_KEY` / `GM_SFX_LANGUAGES` env vars, key file at `~/.config/open-tabletop-gm/tts.key`).
+
+### Narrator TTS via Gemini Flash TTS (optional)
+
+Per-block speaker buttons on every `.dm-block` and `.npc-block` in the display companion, paired with a 9-voice dropdown (4 male: Charon, Enceladus, Fenrir, Umbriel; 5 female: Aoede, Gacrux, Kore, Vindemiatrix, Zephyr). Click to hear the block read aloud. Synthesis happens server-side via Google's Gemini Flash TTS through your own AI Studio API key — full setup walkthrough at `docs/SKILL-tts.md`, about five minutes with a free Google account.
+
+A per-browser **Auto Narrate** toggle in the top-right audio controls (saved to `localStorage`) auto-plays each new narration block on that browser only. Turn it on for the casting TV, leave it off on player phones.
+
+Voice selection is per-campaign — persisted to `state.md → ## Session Flags → tts_voice: <name>`. Switching voices mid-session updates the active marker across every visible block's dropdown simultaneously.
+
+**Off by default.** With no key configured, the speaker buttons don't render and the display behaves exactly as it did before. Three layered fail-silent gates: no key → 503 and inert button; invalid voice → silent fallback to default; upstream error → button shows a brief diagnostic label, then resets, with text-only narration continuing.
+
+Browser-side playback uses AudioContext with manual Int16 → Float32 PCM conversion rather than HTMLAudioElement, because iOS WebKit's per-call gesture gating on `<audio>` is hard to work around reliably. AudioContext only needs `ctx.resume()` once per session inside a user gesture. The 2000-character input cap matches Gemini Flash TTS's effective response limit; longer GM blocks are naturally chunked at block flush.
+
+Gemini Flash TTS auto-detects the input language from the text — all 24 supported locales work transparently without any explicit language code on the request. A Spanish-language campaign just narrates in Spanish.
+
+### i18n expansion to all 24 Gemini-supported locales
+
+The two-language SFX foundation (English + Chinese) introduced upstream is extended to all 24 locales Gemini Flash TTS supports: `ar`, `bn`, `de`, `en`, `es`, `fr`, `hi`, `id`, `it`, `ja`, `ko`, `mr`, `nl`, `pl`, `pt`, `ro`, `ru`, `ta`, `te`, `th`, `tr`, `uk`, `vi`, `zh`. Same dict-of-dicts language-pack structure — each language contributes trigger phrases per SFX category, Latin scripts use word-boundary regex, unspaced scripts (CJK, Thai, Arabic) use literal substring matching.
+
+The `_PRINTABLE` character allowlist and `_CHAR_NAME_RE` regex in `display/gm-display-app.py` and `display/wrapper.py` widen to accept letters from every script in scope: Latin Extended A/B, Greek, Cyrillic, Hebrew, Arabic, Devanagari, Bengali, Tamil, Telugu, Thai, Vietnamese diacritics, Hiragana, Katakana, Hangul, and the existing CJK ranges. Player and NPC names in any supported script are now first-class.
+
+Default behavior is unchanged. The active language list stays `["en"]` (English-only) until explicitly overridden via the new `GM_SFX_LANGUAGES` environment variable (e.g. `export GM_SFX_LANGUAGES=en,zh,es`) or per-campaign via `state.md → ## Session Flags → sfx_languages: en,zh`.
+
+Translation quality across the new packs is best-effort starter content. Community PRs to refine any pack are welcomed — the structure is designed for additive, language-by-language extension with zero code changes.
+
+### README — Other ways to play
+
+The README gains a short "Other ways to play" section between the Status block and Quick Start. It names the two sibling projects sharing this framework's design DNA: claude-dnd-skill (the Claude Code-specific upstream) and neuralinitiative.ai (a hosted browser version for users who'd rather skip a local install). Same maintainer, same design DNA, different surfaces.
+
 ## [0.10.0] — 2026-05-08 — System-versioning infrastructure (sync from claude-dnd-skill v1.8.0)
 
 Many tabletop systems ship more than one set of rules over their lifetime. A campaign should declare the edition it's playing once and have the GM honour it from then on, without re-explaining at the start of every session which book the table is using. This release lays the framework-level groundwork for that — system-agnostic, deliberately small, deliberately opaque. The *infrastructure* lives in core; the *content* of any specific edition stays in the system module.

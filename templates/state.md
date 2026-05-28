@@ -146,7 +146,7 @@ revision_log: []
 *(leave empty until the first arc completes)*
 
 ## Session Flags
-*(tutor_mode, etc. — session-scoped flags set via /gm commands)*
+*(tutor_mode, autorun, autorun_interval, tts_voice, sfx_languages — session-scoped flags set via /gm commands or by the display companion)*
 
 ## GM Style Notes
 *Distilled calibration for this specific player — read at every /gm load, updated at /gm end only when a genuinely new pattern emerges.*
