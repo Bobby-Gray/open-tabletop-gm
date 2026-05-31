@@ -2,14 +2,40 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="dnd-token" content="{{ lan_token }}">
 <meta name="narrator-voice" content="{{ narrator_voice }}">
 <meta name="tts-available" content="{{ '1' if tts_available else '0' }}">
+
+<!-- Theme anti-FOUC. Runs synchronously before the stylesheet parses so the
+     correct data-theme attribute is on <html> before any rule resolves —
+     prevents a dark→light or light→dark flash on every load. Three states:
+       "dark"  → force dark regardless of system
+       "light" → force light regardless of system
+       "auto"  → defer to prefers-color-scheme (no data-theme attribute set)
+     Persisted to localStorage["dnd-theme"]; matches the picker logic below. -->
+<script>
+  (function () {
+    try {
+      var v = window.localStorage.getItem('gm-theme');
+      if (v === 'dark' || v === 'light') {
+        document.documentElement.setAttribute('data-theme', v);
+      }
+      // 'auto' or missing → leave the attribute off; CSS @media handles it.
+    } catch (_) { /* private mode / disabled storage — silently fall back to dark */ }
+  })();
+</script>
+
 <title>DnD — Dungeon Master</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon"  href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32"  href="/icons/app_icon_32.png">
+<link rel="apple-touch-icon" sizes="180x180"      href="/icons/app_icon_180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/app_icon_192.png">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -146,8 +172,40 @@
     text-shadow: 0 1px 6px rgba(0,0,0,0.8);
   }
 
-  /* Italic for atmospheric/narration lines */
-  .dm-block p em { color: #c8b080; }
+  /* Emphasis inside narration — warm amber, upright (italic is hard to read at distance) */
+  .dm-block p em {
+    color: #c8b080;
+    font-style: normal;
+  }
+
+  /* Markdown tables inside narration */
+  .dm-block table.dm-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8em 0 1em;
+    font-size: 0.92em;
+    color: #d4c4a0;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  .dm-block table.dm-table th {
+    text-align: left;
+    padding: 0.45em 0.9em;
+    background: rgba(80, 55, 30, 0.35);
+    color: rgba(230, 210, 170, 0.95);
+    font-weight: 600;
+    border-bottom: 1px solid rgba(180, 140, 90, 0.45);
+  }
+  .dm-block table.dm-table td {
+    padding: 0.4em 0.9em;
+    border-bottom: 1px solid rgba(180, 140, 90, 0.18);
+    vertical-align: top;
+  }
+  .dm-block table.dm-table tr:last-child td {
+    border-bottom: none;
+  }
+  .dm-block table.dm-table strong {
+    color: #ffffff;
+  }
 
   /* ── Player action blocks ── */
   .player-block {
@@ -228,15 +286,19 @@
   }
 
   .npc-block p {
-    color: #c8a878;
-    font-style: italic;
+    color: #ffffff;
+    font-style: normal;
     font-size: 0.95em;
     text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+  .npc-block p em {
+    font-style: normal;
+    color: #ffffff;
   }
 
   /* ── Dice result blocks ── */
   .dice-block {
-    margin: 0.4em 0 1.6em;
+    margin: -1em 0 1em;
     opacity: 0;
     animation: fadeIn 0.3s ease forwards;
     text-align: center;
@@ -247,43 +309,15 @@
     font-family: 'Cinzel', serif;
     font-size: 12px;
     letter-spacing: 2px;
-    color: #c8a040;
-    text-shadow: 0 0 10px rgba(200, 160, 64, 0.3);
+    /* Brightened gold + stronger glow + stronger border for legibility. The
+       prior #c8a040 (muted bronze) with 0.3 shadow + 0.18 border alpha sat
+       too close to the dark backdrop and was barely visible at table-side. */
+    color: #f0d27a;
+    text-shadow: 0 0 12px rgba(255, 210, 110, 0.55), 0 0 3px rgba(20, 14, 6, 0.9);
     padding: 0.25em 1.2em;
-    border: 1px solid rgba(200, 160, 64, 0.18);
+    border: 1px solid rgba(220, 180, 90, 0.4);
     border-radius: 1px;
-  }
-
-  /* ── Milestone award (Inspiration / Bennie / Hero Point / Fate Point / etc.) ── */
-  .milestone-block {
-    margin: 0.6em 0 1.6em;
-    opacity: 0;
-    animation: fadeIn 0.6s ease forwards;
-    text-align: center;
-    padding: 0.65em 1.1em 0.7em;
-    border-top: 1px solid rgba(220, 180, 90, 0.35);
-    border-bottom: 1px solid rgba(220, 180, 90, 0.35);
-    background: linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(40, 30, 10, 0.1));
-    box-shadow: 0 0 22px rgba(220, 180, 90, 0.18);
-  }
-  .milestone-header {
-    font-family: 'Cinzel', serif;
-    color: #e0bf6e;
-    text-shadow: 0 0 12px rgba(220, 180, 90, 0.45);
-    letter-spacing: 1.5px;
-  }
-  .milestone-icon { margin-right: 0.4em; opacity: 0.85; }
-  .milestone-name { font-size: 13px; }
-  .milestone-label {
-    font-size: 11px; opacity: 0.75; margin-left: 0.6em;
-    text-transform: uppercase; letter-spacing: 2px;
-  }
-  .milestone-detail {
-    margin-top: 0.45em;
-    font-style: italic;
-    font-size: 12px;
-    color: #d2b76a;
-    opacity: 0.85;
+    background: rgba(40, 28, 8, 0.35);
   }
 
   /* ── Tutor / learning mode hint blocks ── */
@@ -437,8 +471,8 @@
   #sidebar-toggle {
     position: fixed;
     left: 28px;
-    top: 32px;
-    z-index: 6;
+    top: 94px;
+    z-index: 8;
     background: none;
     border: none;
     cursor: pointer;
@@ -466,7 +500,7 @@
     scrollbar-width: none;
     background: linear-gradient(to right, rgba(0,0,0,0.6) 70%, transparent);
     border-right: 1px solid rgba(180,140,60,0.15);
-    padding: 10px 12px 16px 28px;
+    padding: 54px 12px 16px 28px;
     opacity: 0;
     transition: opacity 0.7s ease, transform 0.4s ease;
     transform: translateX(0);
@@ -494,19 +528,20 @@
     text-transform: uppercase;
     color: rgba(200,165,80,0.9);
     margin-bottom: 2px;
+    padding-right: 34px;
   }
   .sb-identity {
     font-size: 10px;
     color: rgba(200,185,150,0.5);
     line-height: 1.4;
     margin-bottom: 8px;
+    padding-right: 34px;
   }
 
   /* ── HP row ── */
   .sb-hp-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 3px;
   }
   .sb-label {
@@ -515,11 +550,13 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: rgba(180,140,60,0.5);
+    margin-left: 5px;
   }
   .sb-hp-nums {
     font-family: 'Cinzel', serif;
     font-size: 10px;
     color: rgba(220,200,160,0.75);
+    margin-left: auto;
   }
   .sb-bar-track {
     height: 3px;
@@ -542,8 +579,7 @@
   /* ── XP row ── */
   .sb-xp-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-top: 4px;
     margin-bottom: 2px;
   }
@@ -551,6 +587,7 @@
     font-family: 'Cinzel', serif;
     font-size: 9px;
     color: rgba(180,140,60,0.55);
+    margin-left: auto;
   }
   .sb-xp-bar { background: rgba(180,140,60,0.4); }
 
@@ -675,39 +712,6 @@
     line-height: 1.6;
   }
 
-  /* ── Ability scores — only rendered when 1 player ── */
-  .sb-abilities {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(180,140,60,0.08);
-  }
-  .sb-ab-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px 2px;
-  }
-  .sb-ab-cell {
-    text-align: center;
-  }
-  .sb-ab-name {
-    font-family: 'Cinzel', serif;
-    font-size: 7.5px;
-    letter-spacing: 1px;
-    color: rgba(180,140,60,0.45);
-    text-transform: uppercase;
-  }
-  .sb-ab-score {
-    font-family: 'Cinzel', serif;
-    font-size: 12px;
-    color: rgba(220,200,160,0.8);
-    line-height: 1.2;
-  }
-  .sb-ab-mod {
-    font-size: 9px;
-    color: rgba(180,140,60,0.65);
-    font-family: 'IM Fell English', Georgia, serif;
-  }
-
   /* ── Player card — clickable ── */
   .sb-player {
     cursor: pointer;
@@ -769,9 +773,9 @@
     height: 1px; background: rgba(180,140,60,0.12); margin: 15px 0;
   }
   .sm-section-title {
-    font-family: 'Cinzel', serif; font-size: 8.5px;
+    font-family: 'Cinzel', serif; font-size: 11px;
     letter-spacing: 3px; text-transform: uppercase;
-    color: rgba(180,140,60,0.5); margin-bottom: 10px;
+    color: rgba(180,140,60,0.65); margin-bottom: 10px;
   }
   .sm-combat-strip {
     display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 2px;
@@ -949,7 +953,63 @@
     font-style: italic; text-align: center; padding: 22px 0;
   }
 
-  /* ── Milestones (sidebar — Inspiration / Bennie / Hero Point / Fate Point / etc.) ── */
+  /* ── Inspiration badge (sidebar) ── */
+  .sb-inspiration {
+    display: block; margin-top: 5px;
+    font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(220,190,60,0.85);
+    animation: inspBadgePulse 2.5s ease infinite;
+  }
+  @keyframes inspBadgePulse {
+    0%, 100% { opacity: 0.65; } 50% { opacity: 1; }
+  }
+
+  /* ── Inspiration feed block ── */
+  .inspiration-block {
+    margin-bottom: 1.6em; padding: 14px 20px;
+    border: 1px solid rgba(220,190,60,0.45);
+    border-radius: 2px; background: rgba(180,140,40,0.05);
+    text-align: center;
+    opacity: 0;
+    animation: inspirationGlow 0.9s ease forwards;
+  }
+  @keyframes inspirationGlow {
+    0%   { opacity: 0; box-shadow: 0 0 0   rgba(220,190,60,0); }
+    35%  { opacity: 1; box-shadow: 0 0 22px rgba(220,190,60,0.45); }
+    100% { opacity: 1; box-shadow: 0 0 8px  rgba(220,190,60,0.12); }
+  }
+  .inspiration-title {
+    font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 4px;
+    text-transform: uppercase; color: rgba(220,190,60,0.92);
+  }
+  .inspiration-sub {
+    font-size: 12px; font-style: italic;
+    color: rgba(220,190,60,0.55); margin-top: 3px;
+  }
+  .inspiration-detail {
+    font-size: 11px; font-style: italic;
+    color: rgba(220,190,60,0.42); margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ── XP award feed block ── */
+  .xp-block {
+    margin-bottom: 1.4em; padding: 10px 16px;
+    border-left: 2px solid rgba(140,200,120,0.35);
+    background: rgba(80,160,80,0.04);
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.1s forwards;
+  }
+  .xp-line {
+    font-size: 12px; font-family: 'Cinzel', serif;
+    letter-spacing: 1px; color: rgba(140,200,120,0.7);
+  }
+  .xp-detail {
+    font-size: 11px; color: rgba(140,200,120,0.4);
+    font-style: italic; margin-top: 2px;
+  }
+
+  /* ── Milestones (sidebar — Bardic Inspiration / Hero Coin / Fate Token / etc.) ── */
   .sb-milestones { margin-top: 6px; }
   .sb-milestone-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -973,6 +1033,38 @@
     min-width: 14px;
     text-align: center;
     box-shadow: 0 0 6px rgba(220, 180, 90, 0.18) inset;
+  }
+
+  /* ── Milestone award block (feed; stack-based reward, distinct from binary Inspiration) ── */
+  .milestone-block {
+    margin: 0.6em 0 1.6em;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+    text-align: center;
+    padding: 0.65em 1.1em 0.7em;
+    border-top: 1px solid rgba(220, 180, 90, 0.35);
+    border-bottom: 1px solid rgba(220, 180, 90, 0.35);
+    background: linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(40, 30, 10, 0.1));
+    box-shadow: 0 0 22px rgba(220, 180, 90, 0.18);
+  }
+  .milestone-header {
+    font-family: 'Cinzel', serif;
+    color: #e0bf6e;
+    text-shadow: 0 0 12px rgba(220, 180, 90, 0.45);
+    letter-spacing: 1.5px;
+  }
+  .milestone-icon { margin-right: 0.4em; opacity: 0.85; }
+  .milestone-name { font-size: 13px; }
+  .milestone-label {
+    font-size: 11px; opacity: 0.75; margin-left: 0.6em;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .milestone-detail {
+    margin-top: 0.45em;
+    font-style: italic;
+    font-size: 12px;
+    color: #d2b76a;
+    opacity: 0.85;
   }
 
   /* ── Spell slots (sidebar) ── */
@@ -1161,28 +1253,29 @@
     margin-top: 1px;
   }
 
-  /* ── System version badge (below world clock, top-right) ── */
-  /* Opaque label sourced from the campaign's state.md System Version field. */
-  /* The system module decides what values are valid; display just renders. */
-  #system-version-badge {
-    position: fixed;
-    top: 78px; right: 32px;
-    z-index: 5;
+  /* ── Ruleset badge (near world clock, top-right) ── */
+  /* 5e 2014 = subdued, 5e 2024 = amber/gold accent so the DM notices at a glance */
+  #ruleset-badge {
     display: none;
+    margin-top: 6px;
+    padding: 2px 7px;
     font-family: 'Cinzel', serif;
     font-size: 8px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
+    border: 1px solid rgba(180,140,60,0.35);
+    border-radius: 2px;
     color: rgba(180,140,60,0.55);
-    border: 1px solid rgba(180,140,60,0.28);
-    border-radius: 3px;
-    padding: 2px 6px 2px 7px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 1s ease;
-    user-select: none;
+    background: rgba(20,12,4,0.45);
+    line-height: 1.4;
   }
-  #system-version-badge.has-data { display: inline-block; opacity: 0.8; }
+  #ruleset-badge.has-data { display: inline-block; }
+  #ruleset-badge.rs-2024 {
+    color: rgba(245,200,90,0.92);
+    border-color: rgba(245,200,90,0.55);
+    background: rgba(50,30,4,0.55);
+    box-shadow: 0 0 6px rgba(245,200,90,0.25);
+  }
 
   /* ── Audio toggle controls ── */
   #audio-controls {
@@ -1192,37 +1285,62 @@
     display: flex;
     flex-direction: column;
     gap: 7px;
-    opacity: 0.38;
-    transition: opacity 0.3s ease;
+    /* Default opacity bumped from 0.38 to 0.78 — the old value combined
+       with rgba(*,0.75) text alpha gave ~0.28 effective alpha against the
+       dark backdrop, which was barely legible. Per-row hover (defined on
+       .audio-row) brightens individual rows further so the row under the
+       cursor reads as the active target. */
+    opacity: 0.78;
+    transition: opacity 0.2s ease;
     pointer-events: auto;
   }
-  #audio-controls:hover { opacity: 0.85; }
-  .speed-label {
+  #audio-controls:hover { opacity: 1; }
+  /* Pill-button styling shared across the three click-to-cycle labels in
+     #audio-controls (Type Speed / Auto Narrate / Theme). Each is a stateful
+     toggle; the pill affordance makes that interactivity readable at a
+     glance. Slight border + dark inset bg, brightens on row hover. */
+  .speed-label,
+  .narrate-label,
+  .theme-label {
     font-family: 'Cinzel', serif;
     font-size: 7.5px;
     letter-spacing: 1.5px;
-    color: rgba(180,140,60,0.75);
+    color: rgba(220,185,100,0.92);
     text-transform: uppercase;
-    min-width: 42px;
-    text-align: right;
+    min-width: 48px;
+    text-align: center;
     cursor: pointer;
     user-select: none;
+    padding: 3px 8px;
+    border: 1px solid rgba(180,140,60,0.4);
+    border-radius: 4px;
+    background: rgba(20,12,4,0.45);
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
-  .speed-label:hover { color: rgba(220,185,100,1); }
-
-  .narrate-label {
-    font-family: 'Cinzel', serif;
-    font-size: 7.5px;
-    letter-spacing: 1.5px;
-    color: rgba(180,140,60,0.75);
-    text-transform: uppercase;
-    cursor: pointer;
-    user-select: none;
+  /* Hover brightens whether the cursor is on the label itself or anywhere in
+     the row (label-only hover preserves the existing affordance, row-hover
+     extends it so clicking the "Type Speed" word also reads as interactive). */
+  .audio-row:hover .speed-label,
+  .audio-row:hover .narrate-label,
+  .audio-row:hover .theme-label,
+  .speed-label:hover,
+  .narrate-label:hover,
+  .theme-label:hover {
+    color: rgba(245,215,130,1);
+    background: rgba(180,140,60,0.22);
+    border-color: rgba(220,185,100,0.7);
   }
-  .narrate-label:hover { color: rgba(220,185,100,1); }
-  .narrate-label.on { color: rgba(240,210,120,1); }
+  /* "On" state — slightly brighter text + stronger border so an active toggle
+     reads as engaged even without hover. */
+  .narrate-label.on,
+  .theme-label.on {
+    color: rgba(245,220,130,1);
+    border-color: rgba(220,185,100,0.6);
+  }
 
-  /* ── TTS per-block bar ── */
+  /* ── TTS per-block bar ──
+     Hidden until block is fully flushed (set by flushNewBlock).
+     Dim at rest; bright on parent-block hover or focus-within. */
   .tts-bar {
     display: flex;
     align-items: center;
@@ -1556,29 +1674,41 @@
     gap: 7px;
     cursor: pointer;
     user-select: none;
+    padding: 3px 4px;
+    border-radius: 5px;
+    transition: background 0.15s ease;
   }
+  /* Per-row hover affordance — subtle background pill so the row currently
+     under the cursor reads as the active click target. Pairs with the brighter
+     label colors below. */
+  .audio-row:hover { background: rgba(180,140,60,0.10); }
   .audio-label {
     font-family: 'Cinzel', serif;
     font-size: 7.5px;
     letter-spacing: 1.8px;
-    color: rgba(180,140,60,0.75);
+    color: rgba(220,185,100,0.85);
     text-transform: uppercase;
     min-width: 42px;
     text-align: right;
+    transition: color 0.15s ease;
   }
+  .audio-row:hover .audio-label { color: rgba(245,215,130,1); }
   .toggle-track {
     width: 28px; height: 14px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(180,140,60,0.25);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(220,185,100,0.45);
     border-radius: 7px;
     position: relative;
-    transition: background 0.3s, border-color 0.3s;
+    transition: background 0.2s, border-color 0.2s;
     flex-shrink: 0;
   }
   .toggle-track.on {
-    background: rgba(180,140,60,0.28);
-    border-color: rgba(180,140,60,0.65);
+    background: rgba(220,185,100,0.35);
+    border-color: rgba(245,215,130,0.8);
   }
+  /* Per-row hover brightens the toggle track in the SFX row to match the
+     label affordance on the other rows. */
+  .audio-row:hover .toggle-track { border-color: rgba(245,215,130,0.7); }
   .toggle-thumb {
     position: absolute;
     top: 2px; left: 2px;
@@ -1590,6 +1720,1160 @@
   .toggle-track.on .toggle-thumb {
     transform: translateX(14px);
     background: rgba(220,180,70,0.92);
+  }
+
+  /* ── Corner logo ── */
+  #corner-logo {
+    position: fixed;
+    top: 22px; left: 22px;
+    width: 68px; height: 68px;
+    object-fit: contain;
+    opacity: 0.72;
+    z-index: 8;
+    pointer-events: none;
+    filter: drop-shadow(0 0 8px rgba(177,77,255,0.4));
+    transition: opacity 0.3s;
+  }
+  #corner-logo:hover { opacity: 1; pointer-events: all; }
+
+  /* ── Dice block icon ── */
+  .dice-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .dice-block-icon {
+    width: 48px; height: 48px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(177,77,255,0.55));
+  }
+
+  /* ── Sidebar row icons ── */
+  .sb-row-icon {
+    width: 16px; height: 16px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    margin-top: 1px;
+    filter: drop-shadow(0 0 3px rgba(57,255,20,0.4));
+  }
+
+  /* ── Turn tracker icons ── */
+  .sb-turn-item.sb-turn-has-icon {
+    padding-left: 2px;
+  }
+  .sb-turn-item.sb-turn-has-icon::before {
+    display: none;
+  }
+  .sb-turn-icon {
+    width: 16px; height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    filter: drop-shadow(0 0 4px rgba(177,77,255,0.45));
+  }
+
+  /* ── Class icons ── */
+  .sb-player { position: relative; }
+  .sb-class-icon {
+    position: absolute;
+    top: 0; right: 0;
+    width: 30px; height: 30px;
+    opacity: 0.3;
+    filter: drop-shadow(0 0 6px rgba(177,77,255,0.5));
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sb-player:hover .sb-class-icon { opacity: 0.6; }
+  .sm-header-icon {
+    position: absolute;
+    top: 44px; right: 34px;
+    width: 100px; height: 100px;
+    opacity: 0.5;
+    filter: drop-shadow(0 0 14px rgba(177,77,255,0.55));
+    pointer-events: none;
+  }
+
+  /* ── Sheet modal section icons ── */
+  .sheet-section-icon {
+    width: 38px; height: 38px;
+    opacity: 0.85;
+    filter: drop-shadow(0 0 4px rgba(57,255,20,0.4));
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  /* ── Input-only view (mobile players): http://...:5001/?view=input ── */
+  body.input-only #text-scroll,
+  body.input-only #sidebar,
+  body.input-only #sidebar-toggle,
+  body.input-only #world-clock,
+  body.input-only #ruleset-badge,
+  body.input-only #audio-controls,
+  body.input-only #corner-logo,
+  body.input-only #scene-indicator,
+  body.input-only #vignette,
+  body.input-only #frame,
+  body.input-only #bottom-fade,
+  body.input-only #bg-a,
+  body.input-only #bg-b,
+  body.input-only #flash-overlay {
+    display: none !important;
+  }
+  body.input-only {
+    background: #0a0a0c !important;
+  }
+  body.input-only {
+    /* iOS Safari URL bar friendly + safe-area aware */
+    overscroll-behavior: contain;
+    -webkit-text-size-adjust: 100%;
+  }
+  body.input-only #input-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;          /* fallback */
+    height: 100dvh !important;          /* dynamic viewport (iOS 16+) */
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    transform: none !important;
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      env(safe-area-inset-bottom)
+      env(safe-area-inset-left) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  body.input-only #input-panel.collapsed {
+    transform: none !important;
+  }
+  body.input-only #input-body {
+    display: flex !important;
+    flex: 1 1 auto;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Hide the legacy "Party Input ▲" panel header in input-only mode — the tabs
+     are now the top navigation, so the old toggle no longer serves a purpose. */
+  body.input-only #input-panel-header { display: none !important; }
+
+  /* Tab bar — only shown in input-only mode, hidden on the TV view. */
+  #dp-tabs { display: none; }
+  body.input-only #dp-tabs {
+    display: flex !important;
+    flex: 0 0 auto;
+    gap: 0;
+    border-bottom: 1px solid rgba(180,140,60,0.25);
+    background: rgba(0,0,0,0.4);
+  }
+  body.input-only .dp-tab {
+    flex: 1 1 0;
+    background: transparent;
+    color: #b8a26a;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font: 700 16px/1 ui-monospace, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 16px 8px;
+    min-height: 48px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  }
+  body.input-only .dp-tab.active {
+    color: #f4e2a8;
+    border-bottom-color: rgba(220,180,90,0.85);
+    background: rgba(180,140,60,0.08);
+  }
+  body.input-only .dp-tab:active { background: rgba(180,140,60,0.18); }
+
+  /* Section visibility: only the section whose data-tab-section matches
+     #input-body[data-active-tab] is shown. Every other tagged section is
+     hidden. Untagged children stay visible (none currently). */
+  body.input-only #input-body[data-active-tab="move"]      [data-tab-section="roll"],
+  body.input-only #input-body[data-active-tab="move"]      [data-tab-section="character"],
+  body.input-only #input-body[data-active-tab="roll"]      [data-tab-section="move"],
+  body.input-only #input-body[data-active-tab="roll"]      [data-tab-section="character"],
+  body.input-only #input-body[data-active-tab="character"] [data-tab-section="move"],
+  body.input-only #input-body[data-active-tab="character"] [data-tab-section="roll"] {
+    display: none !important;
+  }
+
+  /* Move tab: let the action textarea actually use the screen. */
+  body.input-only #input-body[data-active-tab="move"] #player-input-text {
+    flex: 1 1 auto;
+    min-height: 160px;
+    font-size: 16px !important;
+    padding: 14px;
+    margin: 10px 12px;
+    border-radius: 10px;
+  }
+  body.input-only #input-body[data-active-tab="move"] #input-footer {
+    padding: 0 12px 12px;
+  }
+  body.input-only #input-body[data-active-tab="move"] #stage-btn {
+    min-height: 48px;
+    padding: 14px 18px;
+    font-size: 16px;
+  }
+  /* Character pane — phone-side read-only sheet viewer. */
+  #character-pane { display: none; }
+  body.input-only #character-pane {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 12px 14px 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    color: #d8c694;
+    font: 400 14px/1.5 ui-monospace, monospace;
+  }
+  body.input-only #cp-status {
+    color: rgba(180,140,60,0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 8px 0;
+  }
+  body.input-only #cp-body { width: 100%; }
+  body.input-only #cp-body h1 {
+    color: #f4e2a8;
+    font: 800 22px/1.2 ui-monospace, monospace;
+    margin: 0 0 6px;
+    border-bottom: 1px solid rgba(180,140,60,0.35);
+    padding-bottom: 6px;
+  }
+  body.input-only #cp-body h2 {
+    color: #ffd98a;
+    font: 700 17px/1.3 ui-monospace, monospace;
+    margin: 20px 0 6px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  body.input-only #cp-body h3 {
+    color: #d8c694;
+    font: 700 15px/1.3 ui-monospace, monospace;
+    margin: 14px 0 4px;
+  }
+  body.input-only #cp-body p {
+    margin: 4px 0 10px;
+    color: #c2b48a;
+  }
+  body.input-only #cp-body strong { color: #f4e2a8; font-weight: 700; }
+  body.input-only #cp-body em     { color: #b8a26a; font-style: italic; }
+  body.input-only #cp-body ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 4px 0 10px;
+  }
+  body.input-only #cp-body li {
+    padding: 3px 0 3px 14px;
+    position: relative;
+  }
+  body.input-only #cp-body li::before {
+    content: '•';
+    color: rgba(180,140,60,0.7);
+    position: absolute;
+    left: 2px;
+    top: 3px;
+  }
+  body.input-only #cp-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 14px;
+    font-size: 13px;
+  }
+  body.input-only #cp-body th,
+  body.input-only #cp-body td {
+    border: 1px solid rgba(180,140,60,0.25);
+    padding: 6px 8px;
+    text-align: left;
+    color: #c2b48a;
+  }
+  body.input-only #cp-body th {
+    background: rgba(180,140,60,0.12);
+    color: #f4e2a8;
+    font-weight: 700;
+  }
+  body.input-only #cp-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* Notification dot on the Roll tab when an unresolved DM request targets us. */
+  body.input-only .dp-tab.has-request::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 8px;
+    border-radius: 50%;
+    background: #ffd98a;
+    box-shadow: 0 0 8px rgba(255,220,140,0.8);
+    vertical-align: middle;
+  }
+  /* iOS: prevent auto-zoom on focus by ensuring inputs are ≥16px */
+  body.input-only #player-input-text,
+  body.input-only #dp-name,
+  body.input-only #dp-label {
+    font-size: 16px !important;
+  }
+
+  /* ── Phone dice pad (visible only in input-only view) ────────────────── */
+  #dice-pad { display: none; }
+  body.input-only #dice-pad {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px 16px;
+    border-top: 1px solid rgba(180,140,60,0.18);
+    background: rgba(0,0,0,0.35);
+  }
+  #dice-pad .dp-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+  #dice-pad .dp-die,
+  #dice-pad .dp-adv,
+  #dice-pad .dp-mod,
+  #dice-pad #dp-roll {
+    background: rgba(20,16,8,0.7);
+    color: #d8c694;
+    border: 1px solid rgba(180,140,60,0.35);
+    border-radius: 10px;
+    font: 600 16px/1 ui-monospace, monospace;
+    padding: 12px 14px;
+    min-width: 56px;
+    min-height: 44px;                       /* iOS HIG tap target */
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;             /* kill 300 ms double-tap zoom */
+    appearance: none;
+    -webkit-appearance: none;
+    transition: transform 80ms ease, background 120ms ease;
+  }
+  #dice-pad .dp-die:active,
+  #dice-pad .dp-adv:active,
+  #dice-pad .dp-mod:active,
+  #dice-pad #dp-roll:active {
+    transform: scale(0.94);
+    background: rgba(180,140,60,0.32);
+  }
+  #dice-pad .dp-die[disabled],
+  #dice-pad .dp-adv[disabled],
+  #dice-pad .dp-mod[disabled] {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+  #dice-pad #dp-label[readonly] {
+    opacity: 0.5;
+  }
+  #dp-hint {
+    text-align: center;
+    color: rgba(180,140,60,0.65);
+    font: 400 12px/1.3 ui-monospace, monospace;
+    margin-top: -4px;
+  }
+  #dice-pad .dp-die.active,
+  #dice-pad .dp-adv.active {
+    background: rgba(180,140,60,0.25);
+    border-color: rgba(220,180,90,0.8);
+    color: #f4e2a8;
+  }
+  #dice-pad .dp-mod { min-width: 38px; padding: 10px 8px; }
+  #dice-pad #dp-mod-val {
+    color: #f4e2a8;
+    font: 600 16px/1 ui-monospace, monospace;
+    min-width: 36px;
+    text-align: center;
+  }
+  #dice-pad #dp-label {
+    background: rgba(0,0,0,0.4);
+    color: #d8c694;
+    border: 1px solid rgba(180,140,60,0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: 400 14px/1.2 ui-monospace, monospace;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #dice-pad #dp-label::placeholder { color: rgba(180,140,60,0.4); }
+  #dice-pad #dp-name {
+    background: rgba(0,0,0,0.4);
+    color: #f4e2a8;
+    border: 1px solid rgba(180,140,60,0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: 600 14px/1 ui-monospace, monospace;
+    width: 120px;
+    text-align: center;
+  }
+  #dice-pad #dp-roll {
+    flex: 1 1 auto;
+    background: linear-gradient(180deg, rgba(180,140,60,0.45), rgba(120,80,30,0.55));
+    color: #fff8dc;
+    border-color: rgba(220,180,90,0.7);
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    padding: 14px 16px;
+  }
+  #dice-pad #dp-roll:disabled { opacity: 0.5; }
+
+  /* Slot-machine reel */
+  #dp-reel-wrap {
+    height: 86px;
+    border: 1px solid rgba(180,140,60,0.4);
+    border-radius: 12px;
+    background: radial-gradient(ellipse at center, rgba(40,30,10,0.9), rgba(0,0,0,0.95));
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+  }
+  #dp-reel-wrap::before,
+  #dp-reel-wrap::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 22px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  #dp-reel-wrap::before {
+    top: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.95), transparent);
+  }
+  #dp-reel-wrap::after {
+    bottom: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.95), transparent);
+  }
+  #dp-reel {
+    font: 700 44px/1 ui-monospace, monospace;
+    color: #f4e2a8;
+    text-shadow: 0 0 14px rgba(220,180,90,0.55);
+    will-change: transform;
+    transform: translateY(0);
+  }
+  #dp-reel.spinning { animation: dp-blur 80ms linear infinite; }
+  @keyframes dp-blur {
+    0%   { filter: blur(0.4px); }
+    50%  { filter: blur(1.2px); }
+    100% { filter: blur(0.4px); }
+  }
+  #dp-result-line {
+    text-align: center;
+    color: #b8a26a;
+    font: 500 13px/1.4 ui-monospace, monospace;
+    min-height: 18px;
+  }
+  #dp-result-line .total {
+    color: #f4e2a8;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  #dp-reel.locked { animation: dp-lock 0.45s ease-out; }
+  @keyframes dp-lock {
+    0%   { transform: scale(1.0); }
+    35%  { transform: scale(1.18); color: #fff8dc; text-shadow: 0 0 24px rgba(255,220,140,0.9); }
+    100% { transform: scale(1.0); }
+  }
+
+  /* Main-display "Waiting on…" badge while a DM dice-request is unresolved.
+     Hidden in input-only (phone) mode so it stays a DM-side indicator only. */
+  #dice-pending-badge {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 60;
+    background: rgba(20,12,4,0.92);
+    color: #f4e2a8;
+    border: 1px solid rgba(220,180,90,0.55);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font: 600 14px/1.3 ui-monospace, monospace;
+    letter-spacing: 0.04em;
+    text-align: center;
+    box-shadow: 0 0 22px rgba(0,0,0,0.6), 0 0 0 0 rgba(255,220,140,0.5);
+    animation: dpb-pulse 1.6s ease-in-out infinite;
+    pointer-events: none;
+    max-width: 80vw;
+  }
+  #dice-pending-badge.visible { display: block; }
+  #dice-pending-badge .dpb-label {
+    display: block;
+    font-weight: 400;
+    font-size: 12px;
+    color: #b8a26a;
+    letter-spacing: 0.02em;
+    margin-top: 2px;
+  }
+  @keyframes dpb-pulse {
+    0%   { box-shadow: 0 0 22px rgba(0,0,0,0.6), 0 0 0 0   rgba(255,220,140,0.5); }
+    70%  { box-shadow: 0 0 22px rgba(0,0,0,0.6), 0 0 0 12px rgba(255,220,140,0); }
+    100% { box-shadow: 0 0 22px rgba(0,0,0,0.6), 0 0 0 0   rgba(255,220,140,0); }
+  }
+  body.input-only #dice-pending-badge { display: none !important; }
+
+  /* ── Mode switcher (full-view button + input-view "back to full" button) ── */
+  #phone-mode-btn {
+    position: fixed;
+    top: 96px;
+    right: 28px;
+    z-index: 7;
+    background: rgba(10, 6, 2, 0.65);
+    border: 1px solid rgba(180, 140, 60, 0.45);
+    border-radius: 6px;
+    padding: 6px 11px;
+    color: rgba(220, 185, 100, 0.85);
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s, color 0.15s, background 0.15s;
+    opacity: 0.42;
+  }
+  #phone-mode-btn:hover {
+    opacity: 1;
+    color: rgba(240, 210, 120, 1);
+    background: rgba(20, 12, 4, 0.85);
+  }
+  /* Make room for the existing #audio-controls cluster — push down when both render */
+  body:not(.input-only) #audio-controls { top: 138px; }
+
+  #phone-mode-menu {
+    position: fixed;
+    top: 132px;
+    right: 28px;
+    z-index: 8;
+    background: rgba(8, 5, 2, 0.98);
+    border: 1px solid rgba(180, 140, 60, 0.55);
+    border-radius: 6px;
+    padding: 5px 0;
+    min-width: 160px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(0,0,0,0.6);
+    display: none;
+  }
+  #phone-mode-menu.open { display: block; }
+  #phone-mode-menu .pm-header {
+    padding: 6px 13px 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 7px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(180, 140, 60, 0.65);
+    pointer-events: none;
+  }
+  #phone-mode-menu .pm-opt {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    padding: 6px 13px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    color: rgba(220, 196, 148, 0.92);
+    transition: background 0.1s, color 0.1s;
+  }
+  #phone-mode-menu .pm-opt:hover {
+    background: rgba(180, 140, 60, 0.14);
+    color: rgba(240, 210, 120, 1);
+  }
+  #phone-mode-menu .pm-empty {
+    padding: 8px 13px;
+    color: rgba(180, 140, 60, 0.6);
+    font-size: 0.75rem;
+    font-style: italic;
+  }
+
+  /* Input-view: small "Full Display" toggle bottom-left */
+  #full-mode-btn {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 7;
+    background: rgba(10, 6, 2, 0.55);
+    border: 1px solid rgba(180, 140, 60, 0.35);
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: rgba(180, 140, 60, 0.6);
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s, color 0.15s, background 0.15s;
+    display: none;
+  }
+  body.input-only #full-mode-btn { display: block; }
+  #full-mode-btn:hover {
+    opacity: 1;
+    color: rgba(220, 185, 100, 1);
+    background: rgba(20, 12, 4, 0.85);
+  }
+
+  /* Bound character header + Roll-button pulse on DM request */
+  #dp-bound {
+    text-align: center;
+    color: #f4e2a8;
+    font: 700 13px/1.2 ui-monospace, monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  #dp-bound .req {
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: #ffd98a;
+    font-size: 13px;
+  }
+  body.input-only #dp-name.locked {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  #dp-roll.pulse {
+    animation: dp-pulse 0.9s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(255,220,140,0.6);
+  }
+  #dp-roll.rolled {
+    /* Visually distinct "you've already rolled — wait for the DM" state. */
+    background: rgba(20,16,8,0.6);
+    color: #8a7a4a;
+    border-color: rgba(120,90,30,0.4);
+    opacity: 0.6;
+  }
+  @keyframes dp-pulse {
+    0%   { box-shadow: 0 0 0 0   rgba(255,220,140,0.55); }
+    70%  { box-shadow: 0 0 0 14px rgba(255,220,140,0); }
+    100% { box-shadow: 0 0 0 0   rgba(255,220,140,0); }
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * VELLUM / LIGHT-MODE THEME OVERRIDES
+   *
+   * Carries the parchment palette decided on the Neural Initiative side
+   * over to claude-dnd-skill's display. Same architecture: deep-ink
+   * narration on a cream "text-content" page, with the body bg + vignette
+   * + particle scenery kept dark for contrast. The picker in
+   * #audio-controls toggles data-theme="dark|light" on <html>; an empty
+   * attribute (= "auto") defers to the prefers-color-scheme @media block.
+   *
+   * Overrides only the selectors whose dark-mode defaults render as
+   * ghost text or pure white on cream. Everything else inherits cleanly.
+   * Color tokens chosen for legibility, not pure mimicry — keep block-
+   * identity colors (DM purple, NPC bronze, player blue, tutor moss,
+   * tutor-warning amber) but shift to darker shades that read on cream.
+   * ──────────────────────────────────────────────────────────────────── */
+
+  :root[data-theme="light"] body { color: rgb(45, 35, 20); }
+
+  /* The reading "page" — parchment radial-gradient framed by darker scenery */
+  :root[data-theme="light"] #text-content {
+    background:
+      radial-gradient(ellipse at 50% 0%,
+        rgba(255, 245, 220, 0.96),
+        rgba(245, 232, 200, 0.88) 70%,
+        rgba(238, 224, 188, 0.82));
+    border: 1px solid rgba(140, 95, 20, 0.35);
+    border-radius: 4px;
+    padding: 32px 40px;
+    box-shadow:
+      0 0 60px rgba(180, 140, 60, 0.25),
+      inset 0 0 30px rgba(220, 200, 160, 0.4);
+    color: rgb(45, 35, 20);
+  }
+
+  /* DM narration — deep ink with a warm-light shadow instead of the dark mode drop */
+  :root[data-theme="light"] .dm-block p,
+  :root[data-theme="light"] .dm-block table.dm-table {
+    color: rgb(40, 28, 14);
+    text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+  }
+  :root[data-theme="light"] .dm-block p em { color: rgb(110, 70, 20); }
+  :root[data-theme="light"] .dm-block table.dm-table th {
+    background: rgba(180, 140, 60, 0.18);
+    color: rgb(70, 50, 18);
+    border-bottom-color: rgba(140, 95, 20, 0.5);
+  }
+  :root[data-theme="light"] .dm-block table.dm-table td {
+    border-bottom-color: rgba(140, 95, 20, 0.22);
+  }
+  :root[data-theme="light"] .dm-block table.dm-table strong { color: rgb(20, 14, 6); }
+
+  /* Player blocks — preserve cool-blue identity at darker shade */
+  :root[data-theme="light"] .player-block { border-left-color: rgba(50, 90, 140, 0.55); }
+  :root[data-theme="light"] .player-name { color: rgba(40, 80, 130, 0.85); }
+  :root[data-theme="light"] .player-block p {
+    color: rgb(40, 70, 110);
+    text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+  }
+  :root[data-theme="light"] .player-block p em { color: rgba(40, 80, 130, 0.85); }
+
+  /* NPC blocks — bronze name + dark-ink prose, italic emphasis stays bronze */
+  :root[data-theme="light"] .npc-block { border-left-color: rgba(140, 95, 20, 0.55); }
+  :root[data-theme="light"] .npc-name { color: rgba(95, 65, 18, 0.95); }
+  :root[data-theme="light"] .npc-block p {
+    color: rgb(40, 28, 14);
+    text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+  }
+  :root[data-theme="light"] .npc-block p em { color: rgb(110, 70, 20); }
+
+  /* Dice resolution banner — deeper bronze on parchment-tinted bg */
+  :root[data-theme="light"] .dice-block {
+    color: rgb(75, 55, 20);
+    background: rgba(180, 140, 60, 0.10);
+    border-color: rgba(140, 95, 20, 0.4);
+    text-shadow: none;
+  }
+
+  /* Tutor / learning-mode hint blocks — moss-green parchment panel */
+  :root[data-theme="light"] .tutor-block {
+    background: rgba(200, 230, 200, 0.45);
+    border-color: rgba(70, 130, 70, 0.4);
+    border-left-color: rgba(40, 100, 50, 0.7);
+  }
+  :root[data-theme="light"] .tutor-icon,
+  :root[data-theme="light"] .tutor-label,
+  :root[data-theme="light"] .tutor-chevron { color: rgba(30, 90, 45, 0.85); }
+  :root[data-theme="light"] .tutor-body p { color: rgb(25, 70, 35); text-shadow: none; }
+  :root[data-theme="light"] .tutor-block.tutor-warning {
+    background: rgba(245, 220, 175, 0.55);
+    border-color: rgba(160, 100, 30, 0.4);
+    border-left-color: rgba(140, 80, 20, 0.7);
+  }
+  :root[data-theme="light"] .tutor-block.tutor-warning .tutor-icon,
+  :root[data-theme="light"] .tutor-block.tutor-warning .tutor-label,
+  :root[data-theme="light"] .tutor-block.tutor-warning .tutor-chevron { color: rgba(140, 80, 20, 0.9); }
+  :root[data-theme="light"] .tutor-block.tutor-warning .tutor-body p { color: rgb(110, 60, 15); }
+
+  /* Effect-expired banner — brown-orange on cream */
+  :root[data-theme="light"] .effect-expired-result {
+    color: rgb(130, 70, 20);
+    border-color: rgba(160, 100, 30, 0.5);
+    text-shadow: none;
+  }
+
+  /* Input panel — parchment plate with dark-ink text */
+  :root[data-theme="light"] #input-panel {
+    background: rgba(250, 240, 215, 0.94);
+    border-color: rgba(140, 95, 20, 0.4);
+  }
+  :root[data-theme="light"] #input-panel:focus-within { border-color: rgba(140, 95, 20, 0.75); }
+  :root[data-theme="light"] #input-panel-label,
+  :root[data-theme="light"] #input-toggle-arrow { color: rgba(110, 75, 20, 0.85); }
+  :root[data-theme="light"] #input-badge {
+    background: rgba(220, 195, 130, 0.95);
+    border-color: rgba(140, 95, 20, 0.6);
+    color: rgb(70, 50, 18);
+  }
+  :root[data-theme="light"] #player-input-text {
+    background: rgba(255, 248, 225, 0.85);
+    border-color: rgba(140, 95, 20, 0.3);
+    color: rgb(40, 28, 14);
+  }
+  :root[data-theme="light"] #player-input-text:focus { border-color: rgba(140, 95, 20, 0.65); }
+  :root[data-theme="light"] #player-input-text::placeholder { color: rgba(110, 75, 20, 0.45); }
+
+  /* Char tabs — bronze against parchment */
+  :root[data-theme="light"] .char-tab {
+    color: rgba(110, 75, 20, 0.7);
+    border-color: rgba(140, 95, 20, 0.35);
+  }
+  :root[data-theme="light"] .char-tab:hover {
+    color: rgb(70, 50, 18);
+    border-color: rgba(140, 95, 20, 0.7);
+  }
+  :root[data-theme="light"] .char-tab.active {
+    color: rgb(40, 28, 14);
+    border-color: rgba(140, 95, 20, 0.85);
+    background: rgba(220, 195, 130, 0.65);
+  }
+  :root[data-theme="light"] .char-tab-dm {
+    color: rgba(100, 55, 160, 0.75);
+    border-color: rgba(100, 55, 160, 0.4);
+  }
+  :root[data-theme="light"] .char-tab-dm:hover,
+  :root[data-theme="light"] .char-tab-dm.active {
+    color: rgba(70, 30, 130, 1);
+    border-color: rgba(100, 55, 160, 0.7);
+    background: rgba(220, 200, 240, 0.65);
+  }
+  :root[data-theme="light"] .char-tab-npc {
+    color: rgba(170, 95, 30, 0.8);
+    border-color: rgba(170, 95, 30, 0.4);
+  }
+  :root[data-theme="light"] .char-tab-npc:hover,
+  :root[data-theme="light"] .char-tab-npc.active {
+    color: rgba(140, 70, 20, 1);
+    border-color: rgba(170, 95, 30, 0.75);
+    background: rgba(240, 215, 175, 0.7);
+  }
+  :root[data-theme="light"] .staged-char { color: rgba(70, 50, 18, 0.9); }
+  :root[data-theme="light"] .staged-text { color: rgba(40, 28, 14, 0.85); }
+
+  /* Action buttons — dark plate + cream text for affordance against parchment */
+  :root[data-theme="light"] #stage-btn,
+  :root[data-theme="light"] .dm-respond-btn {
+    background: rgb(70, 50, 18);
+    border-color: rgba(140, 95, 20, 0.8);
+    color: rgb(245, 238, 222);
+  }
+  :root[data-theme="light"] #stage-btn:hover:not(:disabled),
+  :root[data-theme="light"] .dm-respond-btn:hover:not(:disabled) {
+    background: rgb(95, 70, 28);
+    border-color: rgba(140, 95, 20, 1);
+    color: rgb(255, 250, 240);
+  }
+  :root[data-theme="light"] #skip-turn-btn {
+    color: rgba(160, 60, 40, 0.85);
+    background: rgba(255, 230, 220, 0.7);
+    border-color: rgba(160, 60, 40, 0.5);
+  }
+  :root[data-theme="light"] #skip-turn-btn:hover {
+    color: rgb(140, 40, 20);
+    background: rgba(255, 215, 200, 0.85);
+    border-color: rgba(160, 60, 40, 0.8);
+  }
+
+  /* Modals — parchment panel + deep-ink text. Backdrop stays dark to dim scenery. */
+  :root[data-theme="light"] #sheet-panel,
+  :root[data-theme="light"] #srd-panel {
+    background: rgba(248, 238, 215, 0.98);
+    border-color: rgba(140, 95, 20, 0.45);
+    box-shadow:
+      0 0 80px rgba(140, 95, 20, 0.4),
+      inset 0 0 30px rgba(220, 200, 160, 0.35);
+    color: rgb(40, 28, 14);
+  }
+  :root[data-theme="light"] #sheet-close,
+  :root[data-theme="light"] #srd-close { color: rgba(110, 75, 20, 0.55); }
+  :root[data-theme="light"] #sheet-close:hover,
+  :root[data-theme="light"] #srd-close:hover { color: rgb(70, 50, 18); }
+  :root[data-theme="light"] .sm-name,
+  :root[data-theme="light"] .sm-section-title,
+  :root[data-theme="light"] #srd-body .srd-title { color: rgb(70, 50, 18); }
+  :root[data-theme="light"] .sm-identity,
+  :root[data-theme="light"] #srd-body .srd-meta { color: rgba(80, 65, 40, 0.85); }
+  :root[data-theme="light"] .sm-divider { background: rgba(140, 95, 20, 0.25); }
+
+  /* Sheet modal stat strip + ability grid + attacks table */
+  :root[data-theme="light"] .sm-stat-label,
+  :root[data-theme="light"] .sm-ab-name,
+  :root[data-theme="light"] .sm-attacks-table th { color: rgb(95, 65, 18); }
+  :root[data-theme="light"] .sm-stat-val,
+  :root[data-theme="light"] .sm-ab-score,
+  :root[data-theme="light"] .sm-attacks-table td.atk-name { color: rgb(35, 22, 8); }
+  :root[data-theme="light"] .sm-xp,
+  :root[data-theme="light"] .sm-ab-mod { color: rgba(95, 65, 18, 0.85); }
+  :root[data-theme="light"] .sm-attacks-table td { color: rgb(50, 35, 18); border-bottom-color: rgba(140, 95, 20, 0.18); }
+  :root[data-theme="light"] .sm-attacks-table td.atk-notes { color: rgba(80, 60, 30, 0.75); }
+  :root[data-theme="light"] .sm-attacks-table th { border-bottom-color: rgba(140, 95, 20, 0.35); }
+  :root[data-theme="light"] .sm-ab-cell-rollable:hover { background: rgba(140, 95, 20, 0.15); }
+  :root[data-theme="light"] .sm-ab-cell-rollable.rolled { background: rgba(180, 140, 60, 0.30); }
+
+  /* SRD modal body */
+  :root[data-theme="light"] #srd-body .srd-desc { color: rgb(40, 28, 14); }
+  :root[data-theme="light"] #srd-body .srd-wikidot-footer a,
+  :root[data-theme="light"] #srd-body .srd-wikidot-body a { color: rgb(40, 80, 130); }
+  :root[data-theme="light"] #srd-body .srd-wikidot-footer a:hover,
+  :root[data-theme="light"] #srd-body .srd-wikidot-body a:hover { color: rgb(20, 50, 100); }
+  :root[data-theme="light"] #srd-not-found,
+  :root[data-theme="light"] #srd-loading { color: rgba(80, 65, 40, 0.85); }
+
+  /* Composing indicator */
+  :root[data-theme="light"] .composing-label,
+  :root[data-theme="light"] .composing-dots span { color: rgba(110, 75, 20, 0.85); }
+
+  /* World clock */
+  :root[data-theme="light"] #world-clock { color: rgba(110, 75, 20, 0.85); }
+
+  /* ── Phone companion (PR #38) and mode-switcher (PR #39) chrome ── */
+  :root[data-theme="light"] #phone-mode-btn {
+    background: rgba(250, 240, 215, 0.92);
+    border-color: rgba(140, 95, 20, 0.5);
+    color: rgb(70, 50, 18);
+  }
+  :root[data-theme="light"] #phone-mode-btn:hover {
+    background: rgba(255, 245, 220, 1);
+    color: rgb(40, 28, 14);
+  }
+  :root[data-theme="light"] #phone-mode-menu {
+    background: rgba(252, 245, 222, 0.99);
+    border-color: rgba(140, 95, 20, 0.55);
+  }
+  :root[data-theme="light"] #phone-mode-menu .pm-header { color: rgba(110, 75, 20, 0.75); }
+  :root[data-theme="light"] #phone-mode-menu .pm-opt { color: rgb(50, 35, 18); }
+  :root[data-theme="light"] #phone-mode-menu .pm-opt:hover {
+    background: rgba(180, 140, 60, 0.18);
+    color: rgb(20, 14, 6);
+  }
+  :root[data-theme="light"] #phone-mode-menu .pm-empty { color: rgba(110, 75, 20, 0.6); }
+  :root[data-theme="light"] #full-mode-btn {
+    background: rgba(250, 240, 215, 0.85);
+    border-color: rgba(140, 95, 20, 0.45);
+    color: rgba(110, 75, 20, 0.85);
+  }
+  :root[data-theme="light"] #full-mode-btn:hover {
+    background: rgba(255, 245, 220, 1);
+    color: rgb(70, 50, 18);
+  }
+
+  /* TTS per-block bar (v1.10.0) — dim bronze against parchment */
+  :root[data-theme="light"] .tts-play-btn,
+  :root[data-theme="light"] .tts-voice-btn { color: rgba(110, 75, 20, 0.35); }
+  :root[data-theme="light"] .dm-block:hover .tts-play-btn,
+  :root[data-theme="light"] .dm-block:hover .tts-voice-btn,
+  :root[data-theme="light"] .npc-block:hover .tts-play-btn,
+  :root[data-theme="light"] .npc-block:hover .tts-voice-btn,
+  :root[data-theme="light"] .tts-bar:focus-within .tts-play-btn,
+  :root[data-theme="light"] .tts-bar:focus-within .tts-voice-btn { color: rgba(110, 75, 20, 0.75); }
+  :root[data-theme="light"] .tts-play-btn:hover,
+  :root[data-theme="light"] .tts-voice-btn:hover {
+    color: rgb(50, 35, 18);
+    background: rgba(180, 140, 60, 0.14);
+  }
+  :root[data-theme="light"] .tts-play-btn.tts-playing { color: rgba(160, 50, 30, 0.95); }
+  :root[data-theme="light"] .tts-play-btn.tts-loading { color: rgba(110, 75, 20, 0.5); }
+  :root[data-theme="light"] .tts-voice-menu {
+    background: rgba(252, 245, 222, 0.99);
+    border-color: rgba(140, 95, 20, 0.55);
+    box-shadow: 0 6px 28px rgba(140, 95, 20, 0.45), 0 0 0 1px rgba(140, 95, 20, 0.15);
+  }
+  :root[data-theme="light"] .tts-voice-group { color: rgba(110, 75, 20, 0.75); }
+  :root[data-theme="light"] .tts-voice-opt { color: rgb(50, 35, 18); }
+  :root[data-theme="light"] .tts-voice-opt:hover {
+    background: rgba(180, 140, 60, 0.18);
+    color: rgb(20, 14, 6);
+  }
+  :root[data-theme="light"] .tts-voice-opt.tts-voice-active { color: rgb(70, 30, 130); font-weight: 500; }
+
+  /* Dice-pending "Waiting on…" badge (PR #38 + #39 hardening) — parchment plate */
+  :root[data-theme="light"] #dice-pending-badge {
+    background: rgba(250, 240, 215, 0.96);
+    color: rgb(70, 50, 18);
+    border-color: rgba(140, 95, 20, 0.55);
+    box-shadow: 0 0 22px rgba(140, 95, 20, 0.35), 0 0 0 0 rgba(220, 180, 90, 0.5);
+  }
+  :root[data-theme="light"] #dice-pending-badge .dpb-label { color: rgba(110, 75, 20, 0.85); }
+
+  /* Audio controls (theme picker home) — deeper ink against parchment */
+  :root[data-theme="light"] .audio-label { color: rgba(110, 75, 20, 0.92); }
+  :root[data-theme="light"] .audio-row:hover { background: rgba(140, 95, 20, 0.14); }
+  :root[data-theme="light"] .audio-row:hover .audio-label { color: rgb(40, 28, 14); }
+  :root[data-theme="light"] .speed-label,
+  :root[data-theme="light"] .narrate-label,
+  :root[data-theme="light"] .theme-label {
+    color: rgba(70, 50, 18, 0.95);
+    background: rgba(248, 238, 215, 0.7);
+    border-color: rgba(140, 95, 20, 0.45);
+  }
+  :root[data-theme="light"] .audio-row:hover .speed-label,
+  :root[data-theme="light"] .audio-row:hover .narrate-label,
+  :root[data-theme="light"] .audio-row:hover .theme-label,
+  :root[data-theme="light"] .speed-label:hover,
+  :root[data-theme="light"] .narrate-label:hover,
+  :root[data-theme="light"] .theme-label:hover {
+    color: rgb(35, 22, 8);
+    background: rgba(255, 248, 225, 0.95);
+    border-color: rgba(140, 95, 20, 0.8);
+  }
+  :root[data-theme="light"] .narrate-label.on,
+  :root[data-theme="light"] .theme-label.on {
+    color: rgb(20, 14, 6);
+    background: rgba(220, 195, 130, 0.75);
+    border-color: rgba(140, 95, 20, 0.7);
+    font-weight: 500;
+  }
+  :root[data-theme="light"] .toggle-track { border-color: rgba(140, 95, 20, 0.55); background: rgba(255, 248, 225, 0.4); }
+  :root[data-theme="light"] .toggle-track.on { background: rgba(220, 195, 130, 0.65); border-color: rgba(140, 95, 20, 0.85); }
+
+  /* Dice-result pill — deep ink on parchment instead of glowing gold on dark.
+     Brighter contrast than the v1.12.0 pass that left .dice-result inheriting
+     dark-mode glow, which was confusing against the new parchment page. */
+  :root[data-theme="light"] .dice-result {
+    color: rgb(60, 40, 12);
+    background: rgba(220, 195, 130, 0.5);
+    border-color: rgba(140, 95, 20, 0.55);
+    text-shadow: none;
+  }
+
+  /* ── Auto (system-pref) mode — only applies when no data-theme attribute ── */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) body { color: rgb(45, 35, 20); }
+    :root:not([data-theme]) #text-content {
+      background:
+        radial-gradient(ellipse at 50% 0%,
+          rgba(255, 245, 220, 0.96),
+          rgba(245, 232, 200, 0.88) 70%,
+          rgba(238, 224, 188, 0.82));
+      border: 1px solid rgba(140, 95, 20, 0.35);
+      border-radius: 4px;
+      padding: 32px 40px;
+      box-shadow:
+        0 0 60px rgba(180, 140, 60, 0.25),
+        inset 0 0 30px rgba(220, 200, 160, 0.4);
+      color: rgb(45, 35, 20);
+    }
+    :root:not([data-theme]) .dm-block p,
+    :root:not([data-theme]) .dm-block table.dm-table {
+      color: rgb(40, 28, 14);
+      text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+    }
+    :root:not([data-theme]) .dm-block p em { color: rgb(110, 70, 20); }
+    :root:not([data-theme]) .dm-block table.dm-table th {
+      background: rgba(180, 140, 60, 0.18);
+      color: rgb(70, 50, 18);
+      border-bottom-color: rgba(140, 95, 20, 0.5);
+    }
+    :root:not([data-theme]) .dm-block table.dm-table td { border-bottom-color: rgba(140, 95, 20, 0.22); }
+    :root:not([data-theme]) .dm-block table.dm-table strong { color: rgb(20, 14, 6); }
+    :root:not([data-theme]) .player-block { border-left-color: rgba(50, 90, 140, 0.55); }
+    :root:not([data-theme]) .player-name { color: rgba(40, 80, 130, 0.85); }
+    :root:not([data-theme]) .player-block p {
+      color: rgb(40, 70, 110);
+      text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+    }
+    :root:not([data-theme]) .npc-name { color: rgba(95, 65, 18, 0.95); }
+    :root:not([data-theme]) .npc-block p {
+      color: rgb(40, 28, 14);
+      text-shadow: 0 1px 1px rgba(255, 250, 235, 0.6);
+    }
+    :root:not([data-theme]) .npc-block p em { color: rgb(110, 70, 20); }
+    :root:not([data-theme]) #input-panel {
+      background: rgba(250, 240, 215, 0.94);
+      border-color: rgba(140, 95, 20, 0.4);
+    }
+    :root:not([data-theme]) #input-panel-label,
+    :root:not([data-theme]) #input-toggle-arrow { color: rgba(110, 75, 20, 0.85); }
+    :root:not([data-theme]) #player-input-text {
+      background: rgba(255, 248, 225, 0.85);
+      border-color: rgba(140, 95, 20, 0.3);
+      color: rgb(40, 28, 14);
+    }
+    :root:not([data-theme]) #player-input-text::placeholder { color: rgba(110, 75, 20, 0.45); }
+    :root:not([data-theme]) .char-tab {
+      color: rgba(110, 75, 20, 0.7);
+      border-color: rgba(140, 95, 20, 0.35);
+    }
+    :root:not([data-theme]) .char-tab.active {
+      color: rgb(40, 28, 14);
+      border-color: rgba(140, 95, 20, 0.85);
+      background: rgba(220, 195, 130, 0.65);
+    }
+    :root:not([data-theme]) #stage-btn,
+    :root:not([data-theme]) .dm-respond-btn {
+      background: rgb(70, 50, 18);
+      border-color: rgba(140, 95, 20, 0.8);
+      color: rgb(245, 238, 222);
+    }
+    :root:not([data-theme]) .tutor-block {
+      background: rgba(200, 230, 200, 0.45);
+      border-color: rgba(70, 130, 70, 0.4);
+      border-left-color: rgba(40, 100, 50, 0.7);
+    }
+    :root:not([data-theme]) .tutor-icon,
+    :root:not([data-theme]) .tutor-label,
+    :root:not([data-theme]) .tutor-chevron { color: rgba(30, 90, 45, 0.85); }
+    :root:not([data-theme]) .tutor-body p { color: rgb(25, 70, 35); text-shadow: none; }
+    :root:not([data-theme]) .tutor-block.tutor-warning {
+      background: rgba(245, 220, 175, 0.55);
+      border-color: rgba(160, 100, 30, 0.4);
+      border-left-color: rgba(140, 80, 20, 0.7);
+    }
+    :root:not([data-theme]) .tutor-block.tutor-warning .tutor-icon,
+    :root:not([data-theme]) .tutor-block.tutor-warning .tutor-label,
+    :root:not([data-theme]) .tutor-block.tutor-warning .tutor-chevron { color: rgba(140, 80, 20, 0.9); }
+    :root:not([data-theme]) .tutor-block.tutor-warning .tutor-body p { color: rgb(110, 60, 15); }
+    :root:not([data-theme]) .effect-expired-result {
+      color: rgb(130, 70, 20);
+      border-color: rgba(160, 100, 30, 0.5);
+      text-shadow: none;
+    }
+    :root:not([data-theme]) .dice-block {
+      color: rgb(75, 55, 20);
+      background: rgba(180, 140, 60, 0.10);
+      border-color: rgba(140, 95, 20, 0.4);
+      text-shadow: none;
+    }
+    :root:not([data-theme]) #sheet-panel,
+    :root:not([data-theme]) #srd-panel {
+      background: rgba(248, 238, 215, 0.98);
+      border-color: rgba(140, 95, 20, 0.45);
+      color: rgb(40, 28, 14);
+    }
+    :root:not([data-theme]) #srd-body .srd-desc { color: rgb(40, 28, 14); }
+    :root:not([data-theme]) .composing-label { color: rgba(110, 75, 20, 0.85); }
+    :root:not([data-theme]) #world-clock { color: rgba(110, 75, 20, 0.85); }
+    :root:not([data-theme]) .audio-label { color: rgba(110, 75, 20, 0.92); }
+    :root:not([data-theme]) .audio-row:hover { background: rgba(140, 95, 20, 0.14); }
+    :root:not([data-theme]) .audio-row:hover .audio-label { color: rgb(40, 28, 14); }
+    :root:not([data-theme]) .speed-label,
+    :root:not([data-theme]) .narrate-label,
+    :root:not([data-theme]) .theme-label {
+      color: rgba(70, 50, 18, 0.95);
+      background: rgba(248, 238, 215, 0.7);
+      border-color: rgba(140, 95, 20, 0.45);
+    }
+    :root:not([data-theme]) .audio-row:hover .speed-label,
+    :root:not([data-theme]) .audio-row:hover .narrate-label,
+    :root:not([data-theme]) .audio-row:hover .theme-label {
+      color: rgb(35, 22, 8);
+      background: rgba(255, 248, 225, 0.95);
+      border-color: rgba(140, 95, 20, 0.8);
+    }
+    :root:not([data-theme]) .narrate-label.on,
+    :root:not([data-theme]) .theme-label.on {
+      background: rgba(220, 195, 130, 0.75);
+      border-color: rgba(140, 95, 20, 0.7);
+    }
+    :root:not([data-theme]) .toggle-track { border-color: rgba(140, 95, 20, 0.55); }
+    :root:not([data-theme]) .dice-result {
+      color: rgb(60, 40, 12);
+      background: rgba(220, 195, 130, 0.5);
+      border-color: rgba(140, 95, 20, 0.55);
+      text-shadow: none;
+    }
+    :root:not([data-theme]) #phone-mode-btn {
+      background: rgba(250, 240, 215, 0.92);
+      border-color: rgba(140, 95, 20, 0.5);
+      color: rgb(70, 50, 18);
+    }
+    :root:not([data-theme]) #phone-mode-menu {
+      background: rgba(252, 245, 222, 0.99);
+      border-color: rgba(140, 95, 20, 0.55);
+    }
+    :root:not([data-theme]) #phone-mode-menu .pm-opt { color: rgb(50, 35, 18); }
+    :root:not([data-theme]) .tts-voice-menu {
+      background: rgba(252, 245, 222, 0.99);
+      border-color: rgba(140, 95, 20, 0.55);
+    }
+    :root:not([data-theme]) .tts-voice-opt { color: rgb(50, 35, 18); }
+    :root:not([data-theme]) #dice-pending-badge {
+      background: rgba(250, 240, 215, 0.96);
+      color: rgb(70, 50, 18);
+      border-color: rgba(140, 95, 20, 0.55);
+    }
+    :root:not([data-theme]) #dice-pending-badge .dpb-label { color: rgba(110, 75, 20, 0.85); }
   }
 </style>
 </head>
@@ -1611,6 +2895,9 @@
 <div id="scene-indicator">— The Inn —</div>
 <div id="bottom-fade"></div>
 
+<!-- Corner logo -->
+<img id="corner-logo" src="/icons/logo_primary_fullcolor.png" alt="D20 Neural Core">
+
 <!-- Sidebar toggle button -->
 <button id="sidebar-toggle" title="Toggle character sidebar">◀ Hide</button>
 
@@ -1622,10 +2909,9 @@
   <div id="wc-icon">☀</div>
   <div id="wc-date"></div>
   <div id="wc-sub"></div>
+  <!-- Ruleset badge — '5e 2014' or '5e 2024'; populated from stats.ruleset -->
+  <div id="ruleset-badge"></div>
 </div>
-
-<!-- System version badge (just below world clock); populated from stats.system_version -->
-<div id="system-version-badge"></div>
 
 <!-- Audio toggle controls — SFX triggered by narration text -->
 <div id="audio-controls">
@@ -1641,6 +2927,10 @@
     <span class="audio-label">Auto Narrate</span>
     <span id="narrate-label" class="narrate-label">Off</span>
   </div>
+  <div class="audio-row" id="theme-row" title="Display theme — Dark / Light / Auto (system)">
+    <span class="audio-label">Theme</span>
+    <span id="theme-label" class="theme-label">Dark</span>
+  </div>
 </div>
 
 <!-- DM Help — on-demand hint button -->
@@ -1648,6 +2938,9 @@
 
 <!-- Device approval cards — shown when a new LAN device requests input access -->
 <div id="device-approvals"></div>
+
+<!-- DM-side waiting badge for active dice-requests (driven by SSE dice_pending) -->
+<div id="dice-pending-badge"></div>
 
 <!-- Player input panel — submit actions from the display companion -->
 <div id="input-panel" class="collapsed">
@@ -1664,16 +2957,70 @@
     </div>
     <span id="input-toggle-arrow">▲</span>
   </div>
-  <div id="input-body">
-    <div id="staged-queue"></div>
-    <div id="waiting-indicator"></div>
-    <div id="char-tabs">
+  <div id="input-body" data-active-tab="move">
+    <!-- Phone-only tab bar (shown by ?view=input). Top-level switcher between
+         the action input (Move) and the dice pad (Roll). The same DOM children
+         exist for the TV view too — tab data-attributes only take effect in
+         input-only mode. -->
+    <div id="dp-tabs">
+      <button class="dp-tab active" data-tab="move" type="button">Move</button>
+      <button class="dp-tab"        data-tab="roll" type="button">Roll</button>
+      <button class="dp-tab"        data-tab="character" type="button">Sheet</button>
+    </div>
+    <div id="staged-queue" data-tab-section="move"></div>
+    <div id="waiting-indicator" data-tab-section="move"></div>
+    <div id="char-tabs" data-tab-section="move">
       <button class="char-tab active" data-char="Everybody">Everybody</button>
     </div>
-    <textarea id="player-input-text" rows="2" placeholder="Enter action or dialogue…" maxlength="500"></textarea>
-    <div id="input-footer">
+    <textarea id="player-input-text" rows="2" placeholder="Enter action or dialogue…" maxlength="500"
+              data-tab-section="move"></textarea>
+    <div id="input-footer" data-tab-section="move">
       <button id="skip-turn-btn" style="display:none" title="Skip this character's turn">Skip Turn</button>
       <button id="stage-btn">Stage</button>
+    </div>
+    <!-- Phone-only dice pad (shown by ?view=input) -->
+    <div id="dice-pad" data-tab-section="roll">
+      <div id="dp-bound" style="display:none"></div>
+      <div class="dp-row">
+        <input id="dp-name" type="text" maxlength="24" placeholder="Name"
+               autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+      </div>
+      <div id="dp-reel-wrap"><div id="dp-reel">d20</div></div>
+      <div id="dp-result-line"></div>
+      <div class="dp-row" id="dp-die-row">
+        <button class="dp-die active" data-spec="1d20">d20</button>
+        <button class="dp-die" data-spec="1d4">d4</button>
+        <button class="dp-die" data-spec="1d6">d6</button>
+        <button class="dp-die" data-spec="1d8">d8</button>
+        <button class="dp-die" data-spec="1d10">d10</button>
+        <button class="dp-die" data-spec="1d12">d12</button>
+        <button class="dp-die" data-spec="1d100">d100</button>
+        <button class="dp-die" data-spec="2d6">2d6</button>
+      </div>
+      <div class="dp-row">
+        <button class="dp-adv active" data-adv="normal"  title="Roll one d20">Straight</button>
+        <button class="dp-adv"        data-adv="advantage"    title="Roll two d20s, keep higher">Adv ▲</button>
+        <button class="dp-adv"        data-adv="disadvantage" title="Roll two d20s, keep lower">Dis ▼</button>
+      </div>
+      <div id="dp-hint">Advantage / disadvantage applies only to d20 rolls.</div>
+      <div class="dp-row">
+        <button class="dp-mod" data-delta="-1" aria-label="decrease modifier">−</button>
+        <span style="opacity:.7">Mod</span>
+        <span id="dp-mod-val">+0</span>
+        <button class="dp-mod" data-delta="1" aria-label="increase modifier">+</button>
+      </div>
+      <div class="dp-row">
+        <input id="dp-label" type="text" maxlength="60" placeholder="Label (e.g. Stealth) — optional"
+               autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false">
+      </div>
+      <div class="dp-row">
+        <button id="dp-roll">Roll</button>
+      </div>
+    </div>
+    <!-- Phone-only character sheet pane (Sheet tab) -->
+    <div id="character-pane" data-tab-section="character">
+      <div id="cp-status">Loading…</div>
+      <div id="cp-body"></div>
     </div>
   </div>
 </div>
@@ -2312,12 +3659,136 @@ loop();
 const textScroll  = document.getElementById('text-scroll');
 const textContent = document.getElementById('text-content');
 
-let charQueue    = [];
-let isTyping     = false;
-let currentEl    = null;
-let currentCursor = null;
-let lastChunkTime = Date.now();
-let idleTimer     = null;
+let charQueue       = [];
+let isTyping        = false;
+let currentEl       = null;
+let currentCursor   = null;
+let _currentInlineEl = null;  // tracks open <em>/<strong> during typewriter
+let lastChunkTime   = Date.now();
+let idleTimer       = null;
+
+// ── Markdown segment parser ───────────────────────────────────────────────────
+// Converts a text string into typed queue items for the typewriter.
+// Items are plain chars, '\n' strings, {open/close tag} objects, or {table} objects.
+
+// Parse inline markdown (bold, italic) from a single line into items array.
+function _mdParseInline(text, items) {
+  let i = 0;
+  while (i < text.length) {
+    // Bold (**text**) — must check before single *
+    if (text[i] === '*' && text[i + 1] === '*') {
+      const end = text.indexOf('**', i + 2);
+      if (end === -1) { items.push(text[i]); i++; continue; }
+      items.push({open: 'strong'});
+      for (let j = i + 2; j < end; j++) items.push(text[j]);
+      items.push({close: 'strong'});
+      i = end + 2; continue;
+    }
+    // Italic (*text*)
+    if (text[i] === '*') {
+      const end = text.indexOf('*', i + 1);
+      if (end === -1) { items.push(text[i]); i++; continue; }
+      items.push({open: 'em'});
+      for (let j = i + 1; j < end; j++) items.push(text[j]);
+      items.push({close: 'em'});
+      i = end + 1; continue;
+    }
+    items.push(text[i]); i++;
+  }
+}
+
+// Split a markdown table row "| a | b | c |" into ["a","b","c"].
+function _splitTableRow(line) {
+  let s = line.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|'))   s = s.slice(0, -1);
+  return s.split('|').map(c => c.trim());
+}
+
+// Detect a markdown table block starting at lines[idx].
+// Returns {headers, rows, end} or null.
+function _detectTable(lines, idx) {
+  const header = lines[idx];
+  const sep    = lines[idx + 1];
+  if (!header || !sep) return null;
+  if (!/^\s*\|.*\|\s*$/.test(header)) return null;
+  if (!/^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)+\s*\|?\s*$/.test(sep)) return null;
+  const headerCells = _splitTableRow(header);
+  const rows = [];
+  let j = idx + 2;
+  while (j < lines.length && /^\s*\|.*\|\s*$/.test(lines[j])) {
+    rows.push(_splitTableRow(lines[j]));
+    j++;
+  }
+  return { headers: headerCells, rows, end: j };
+}
+
+// Build a <table> DOM node from a parsed table segment.
+function _buildTableNode(tbl) {
+  const t = document.createElement('table');
+  t.className = 'dm-table';
+  if (tbl.headers && tbl.headers.length) {
+    const thead = document.createElement('thead');
+    const tr = document.createElement('tr');
+    tbl.headers.forEach(h => {
+      const th = document.createElement('th');
+      const inline = [];
+      _mdParseInline(h, inline);
+      _appendInlineSegments(th, inline);
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    t.appendChild(thead);
+  }
+  const tbody = document.createElement('tbody');
+  tbl.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    row.forEach(cell => {
+      const td = document.createElement('td');
+      const inline = [];
+      _mdParseInline(cell, inline);
+      _appendInlineSegments(td, inline);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  return t;
+}
+
+// Append a flat list of inline segments to a DOM node.
+function _appendInlineSegments(parent, segments) {
+  let inline = null;
+  for (const s of segments) {
+    if (s && typeof s === 'object' && s.open) {
+      const el = document.createElement(s.open);
+      parent.appendChild(el);
+      inline = el;
+    } else if (s && typeof s === 'object' && s.close) {
+      inline = null;
+    } else {
+      (inline || parent).appendChild(document.createTextNode(s));
+    }
+  }
+}
+
+// Main parser: splits text into lines, detects table blocks, falls back to inline parsing.
+function _mdParse(text) {
+  const items = [];
+  const lines = text.split('\n');
+  for (let li = 0; li < lines.length; li++) {
+    const tbl = _detectTable(lines, li);
+    if (tbl) {
+      items.push({ table: { headers: tbl.headers, rows: tbl.rows } });
+      li = tbl.end - 1;
+      if (li < lines.length - 1) items.push('\n');
+      continue;
+    }
+    _mdParseInline(lines[li], items);
+    if (li < lines.length - 1) items.push('\n');
+  }
+  return items;
+}
 
 // Auto-scroll: only follow if the user hasn't scrolled up
 let userScrolledUp = false;
@@ -2326,7 +3797,7 @@ textScroll.addEventListener('scroll', () => {
   userScrolledUp = distFromBottom > 80;
 });
 
-let charDelay = 18;      // ms per character while typing (mutable — see speed toggle)
+let charDelay = 36;      // ms per character while typing (mutable — see speed toggle)
 const IDLE_GAP   = 1800; // ms silence before starting a new block
 
 function getOrCreateBlock() {
@@ -2344,27 +3815,36 @@ function getOrCreateBlock() {
 function typeNextChar() {
   if (charQueue.length === 0) {
     isTyping = false;
-    // Keep cursor blinking at end
     return;
   }
 
-  const ch = charQueue.shift();
-  const p  = getOrCreateBlock();
+  const item = charQueue.shift();
+  const p    = getOrCreateBlock();
 
-  // Remove cursor class from previous paragraph
-  if (currentCursor) {
-    currentCursor.classList.remove('typing-cursor');
-  }
+  if (currentCursor) currentCursor.classList.remove('typing-cursor');
 
-  if (ch === '\n') {
-    // New paragraph inside same block
+  if (item === '\n') {
+    // New paragraph — reset inline state
+    _currentInlineEl = null;
     const next = document.createElement('p');
     currentEl.appendChild(next);
+  } else if (item && typeof item === 'object' && item.table) {
+    _currentInlineEl = null;
+    currentEl.appendChild(_buildTableNode(item.table));
+  } else if (item && typeof item === 'object' && item.open) {
+    // Open a styled inline element inside current paragraph
+    const el = document.createElement(item.open);
+    p.appendChild(el);
+    _currentInlineEl = el;
+  } else if (item && typeof item === 'object' && item.close) {
+    // Close inline element
+    _currentInlineEl = null;
   } else {
-    p.appendChild(document.createTextNode(ch));
+    // Plain character — append to inline element if open, else to paragraph
+    const target = _currentInlineEl || p;
+    target.appendChild(document.createTextNode(item));
   }
 
-  // Apply cursor class to current last paragraph via ::after pseudo-element
   currentCursor = currentEl.querySelector('p:last-child');
   if (currentCursor) currentCursor.classList.add('typing-cursor');
 
@@ -2377,6 +3857,51 @@ function startTyping() {
   if (charDelay === 0) { instantFlush(); return; }
   isTyping = true;
   typeNextChar();
+}
+
+// ── Block type badge detection ───────────────────────────────────────────────
+// ── Class icon mapping ──────────────────────────────────────────────
+const _CLASS_ICONS = {
+  barbarian: 'class_barbarian', bard:      'class_bard',
+  cleric:    'class_cleric',    druid:     'class_druid',
+  fighter:   'class_fighter',   monk:      'class_monk',
+  paladin:   'class_paladin',   ranger:    'class_ranger',
+  rogue:     'class_rogue',     sorcerer:  'class_sorcerer',
+  warlock:   'class_warlock',   wizard:    'class_wizard',
+  artificer: 'class_artificer',
+};
+function _classIconSrc(classStr) {
+  if (!classStr) return null;
+  const lower = classStr.toLowerCase();
+  for (const [key, file] of Object.entries(_CLASS_ICONS)) {
+    if (lower.includes(key)) return '/icons/' + file + '.png';
+  }
+  return null;
+}
+
+const _BLOCK_BADGES = [
+  { icon: 'attack',       words: ['attack','strikes','slash','stab','sword','blade','combat','initiative','damage','hit','miss','roll','dex','str','con','saving throw','critical','fumble'] },
+  { icon: 'chat',         words: ['says','replies','whispers','mutters','speaks','voice','asks','answers','"','dialogue','npc','turns to you'] },
+  { icon: 'crystal_ball', words: ['arcane','ritual','spell','magic','incantation','rune','sigil','cast','magical','energy crackles','glows','aura'] },
+  { icon: 'treasure',     words: ['gold','coin','loot','reward','chest','pouch','found','grants','gives you','item','platinum','gp','silver'] },
+  { icon: 'location',     words: ['travel','road','path','arrive','enter','city','town','village','dungeon','forest','mountain','shore','coast','door','gate'] },
+  { icon: 'heal',         words: ['heal','rest','recover','restore','health','potion','bandage','mend','wounds close','regain'] },
+  { icon: 'scroll',       words: ['quest','mission','task','objective','assignment','letter','note','parchment','message','contract'] },
+  { icon: 'faction',      words: ['faction','guild','order','council','alliance','sworn','allegiance','representative','envoy'] },
+];
+
+function _addBlockBadge(el) {
+  const text = (el.textContent || '').toLowerCase();
+  for (const { icon, words } of _BLOCK_BADGES) {
+    if (words.some(w => text.includes(w))) {
+      const img = document.createElement('img');
+      img.src = '/icons/' + icon + '.png';
+      img.className = 'block-badge';
+      img.alt = icon;
+      el.appendChild(img);
+      return;
+    }
+  }
 }
 
 function flushNewBlock() {
@@ -2404,23 +3929,33 @@ function instantFlush() {
   if (charQueue.length === 0) return;
   clearTimeout(idleTimer);
   const pending = charQueue.splice(0);  // atomically drain
-  for (const ch of pending) {
-    if (ch === '\n') {
+  let flushInline = null;  // local inline tracker for this flush pass
+  for (const item of pending) {
+    if (item === '\n') {
+      flushInline = null;
       if (!currentEl) getOrCreateBlock();
       const next = document.createElement('p');
       currentEl.appendChild(next);
+    } else if (item && typeof item === 'object' && item.table) {
+      flushInline = null;
+      if (!currentEl) getOrCreateBlock();
+      currentEl.appendChild(_buildTableNode(item.table));
+    } else if (item && typeof item === 'object' && item.open) {
+      const p = getOrCreateBlock();
+      const el = document.createElement(item.open);
+      p.appendChild(el);
+      flushInline = el;
+    } else if (item && typeof item === 'object' && item.close) {
+      flushInline = null;
     } else {
       const p = getOrCreateBlock();
-      p.appendChild(document.createTextNode(ch));
+      const target = flushInline || p;
+      target.appendChild(document.createTextNode(item));
     }
   }
-  // The in-flight setTimeout(typeNextChar) will fire into an empty queue
-  // and set isTyping=false itself — force it false now so startTyping()
-  // can restart cleanly if new DM text arrives.
   isTyping = false;
-  if (currentCursor) {
-    currentCursor.classList.remove('typing-cursor');
-  }
+  _currentInlineEl = null;
+  if (currentCursor) currentCursor.classList.remove('typing-cursor');
   currentCursor = currentEl ? currentEl.querySelector('p:last-child') : null;
 }
 
@@ -2536,6 +4071,32 @@ function renderNPCBlock(name, text, isReplay) {
   _reanchorCursor();
 }
 
+// ── Dice block icon detection ─────────────────────────────────────────
+function _diceRollIcon(text) {
+  const t = text.toLowerCase();
+  // Highest-stakes — check first
+  if (/death save|death saving|critical hit|fumble/.test(t))             return 'dragon';
+  // Spell
+  if (/spell attack|concentration|cantrip|cast/.test(t))                 return 'spellbook';
+  // Potion / medicine
+  if (/potion|medicine|alchemist/.test(t))                               return 'potion';
+  // Mystical sensing
+  if (/insight|arcana|divination|perception/.test(t))                    return 'crystal_ball';
+  // Combat
+  if (/attack|vs ac|\bhit\b|\bmiss\b|slashing|piercing|bludgeoning|necrotic|radiant|fire|cold|lightning|damage/.test(t)) return 'attack';
+  // Saving throws
+  if (/saving throw|save dc|\bsave\b|con save|dex save|wis save|str save|int save|cha save/.test(t)) return 'shield';
+  // Knowledge checks
+  if (/investigation|history|nature|religion|survival/.test(t))          return 'scroll';
+  // Social / physical skills
+  if (/stealth|sleight|deception|persuasion|intimidation|performance|acrobatics|athletics/.test(t)) return 'dagger';
+  // Healing
+  if (/heal|restore|hit point|recover/.test(t))                          return 'heal';
+  // Initiative
+  if (/initiative/.test(t))                                              return 'timer';
+  return null;
+}
+
 // ── Dice result block ─────────────────────────────────────────────────
 function renderDiceBlock(text, isReplay) {
   _flushForBlock();
@@ -2548,6 +4109,18 @@ function renderDiceBlock(text, isReplay) {
     .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
     .replace(/\r/g, '');
 
+  // Icon on left based on roll type
+  const iconName = _diceRollIcon(cleaned);
+  if (iconName) {
+    const ico = document.createElement('img');
+    ico.src = '/icons/' + iconName + '.png';
+    ico.className = 'dice-block-icon';
+    ico.alt = '';
+    block.appendChild(ico);
+  }
+
+  // Wrap results so they flex as a group
+  const resultsWrap = document.createElement('div');
   let hasCrit = false, hasFumble = false;
   cleaned.split('\n').forEach(line => {
     const trimmed = line.trim();
@@ -2555,10 +4128,11 @@ function renderDiceBlock(text, isReplay) {
     const el = document.createElement('div');
     el.className = 'dice-result';
     el.textContent = trimmed;
-    block.appendChild(el);
+    resultsWrap.appendChild(el);
     if (/CRITICAL HIT/i.test(trimmed)) hasCrit = true;
     if (/FUMBLE/i.test(trimmed))        hasFumble = true;
   });
+  block.appendChild(resultsWrap);
 
   if (!isReplay) {
     if (hasCrit)   triggerFlash('crit');
@@ -2615,42 +4189,101 @@ function renderTutorBlock(text, isReplay) {
   _dmHelpReset();
 }
 
-// ── Milestone award block (system-agnostic) ───────────────────────────
-// The label parameter lets the system module name what was earned —
-// "Inspiration", "Bennie", "Hero Point", "Fate Point", etc.
+// ── Inspiration award block ────────────────────────────────────────────────
+function renderInspirationBlock(name, reason) {
+  _flushForBlock();
+  const block = document.createElement('div');
+  block.className = 'inspiration-block';
+  const title = document.createElement('div');
+  title.className = 'inspiration-title';
+  title.innerHTML = `<img src="/icons/focus.png" style="width:22px;height:22px;vertical-align:middle;opacity:0.85;margin-right:10px;filter:drop-shadow(0 0 6px rgba(220,190,60,0.6))">` +
+    `${name}` +
+    `<img src="/icons/focus.png" style="width:22px;height:22px;vertical-align:middle;opacity:0.85;margin-left:10px;filter:drop-shadow(0 0 6px rgba(220,190,60,0.6))">`;
+  const sub = document.createElement('div');
+  sub.className = 'inspiration-sub';
+  sub.textContent = 'Inspiration';
+  block.appendChild(title);
+  block.appendChild(sub);
+  if (reason) {
+    const detail = document.createElement('div');
+    detail.className = 'inspiration-detail';
+    detail.textContent = reason;
+    block.appendChild(detail);
+  }
+  textContent.appendChild(block);
+  _reanchorCursor();
+  scrollToBottom();
+}
+
+// ── Milestone award block (stack-based reward — Bardic Inspiration die / Hero Coin / etc.) ──
+// Distinct from the binary D&D 5e Inspiration block above. Use the label arg to name what
+// kind of reward was earned.
 function renderMilestoneBlock(name, label, reason, isReplay) {
   _flushForBlock();
   const block = document.createElement('div');
   block.className = 'milestone-block';
   if (isReplay) block.style.opacity = '0.7';
-
   const header = document.createElement('div');
   header.className = 'milestone-header';
   header.innerHTML = `<span class="milestone-icon">✦</span>` +
                      `<span class="milestone-name">${name}</span>` +
                      `<span class="milestone-label">${label}</span>`;
   block.appendChild(header);
-
   if (reason) {
     const detail = document.createElement('div');
     detail.className = 'milestone-detail';
     detail.textContent = reason;
     block.appendChild(detail);
   }
-
   textContent.appendChild(block);
   _reanchorCursor();
+  scrollToBottom();
+}
+
+// ── XP award block ─────────────────────────────────────────────────────────
+function renderXpBlock(xpData) {
+  _flushForBlock();
+  const block = document.createElement('div');
+  block.className = 'xp-block';
+  const line = document.createElement('div');
+  line.className = 'xp-line';
+  // names line: "Kat, Ben — +250 XP"
+  const names = (xpData.names || []).join(', ');
+  const amt   = xpData.xp != null ? `+${xpData.xp} XP` : '';
+  line.textContent = [names, amt].filter(Boolean).join(' — ');
+  block.appendChild(line);
+  if (xpData.reason || xpData.total) {
+    const detail = document.createElement('div');
+    detail.className = 'xp-detail';
+    const parts = [];
+    if (xpData.reason) parts.push(xpData.reason);
+    if (xpData.total)  parts.push(xpData.total);
+    detail.textContent = parts.join('  ·  ');
+    block.appendChild(detail);
+  }
+  textContent.appendChild(block);
+  _reanchorCursor();
+  scrollToBottom();
 }
 
 // ── Replay batch (reconnect / session resume) ─────────────────────────
 function renderReplayBatch(items) {
   flushNewBlock();
   items.forEach(item => {
-    if (item && item.milestone_award) {
+    if (!item) return;
+    if (item.inspiration_award) {
+      renderInspirationBlock(item.inspiration_award, item.reason || '');
+      return;
+    }
+    if (item.milestone_award) {
       renderMilestoneBlock(item.milestone_award, item.label || 'Milestone', item.reason || '', true);
       return;
     }
-    if (!item || !item.text) return;
+    if (item.xp_award) {
+      renderXpBlock(item.xp_award);
+      return;
+    }
+    if (!item.text) return;
     if (item.action) {
       renderActionBlock(item.action, item.text, true);
     } else if (item.player) {
@@ -2667,7 +4300,7 @@ function renderReplayBatch(items) {
       block.style.opacity = '0.75';
       item.text.split('\n').forEach(line => {
         const p = document.createElement('p');
-        p.textContent = line;
+        _appendInlineSegments(p, _mdParse(line));
         block.appendChild(p);
       });
       _addTtsBar(block);
@@ -2688,8 +4321,9 @@ function clearDisplay(then) {
   textContent.style.opacity = '0';
   setTimeout(() => {
     // Abort any in-progress typewriter
-    charQueue = [];
-    isTyping  = false;
+    charQueue        = [];
+    isTyping         = false;
+    _currentInlineEl = null;
     if (currentCursor && currentCursor.parentNode) {
       currentCursor.parentNode.removeChild(currentCursor);
     }
@@ -2740,14 +4374,14 @@ function handleIncomingText(text) {
     if (!isTyping && charQueue.length === 0) flushNewBlock();
   }, IDLE_GAP * 2);
 
-  // Enqueue characters
+  // Enqueue — preprocess markdown to typed segment items
   const cleaned = text
     .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')  // strip control chars (keep \n \t)
     .replace(/\[[\d;?]*[a-zA-Z]/g, '')           // strip leftover CSI remnants
     .replace(/\r/g, '')
     .replace(/\t/g, '  ');
-  for (const ch of cleaned) {
-    charQueue.push(ch);
+  for (const item of _mdParse(cleaned)) {
+    charQueue.push(item);
   }
 
   startTyping();
@@ -2774,7 +4408,7 @@ function renderReplay(text) {
   block.style.opacity = '0.75';   // subtle visual distinction for historical text
   cleaned.split('\n').forEach(line => {
     const p = document.createElement('p');
-    p.textContent = line;
+    _appendInlineSegments(p, _mdParse(line));
     block.appendChild(p);
   });
   _addTtsBar(block);
@@ -2820,6 +4454,14 @@ function _buildPlayerCard(p, solo) {
   card.className = 'sb-player';
   card.dataset.playerName = p.name;
 
+  // Class icon (top-right corner)
+  const classIco = _classIconSrc(p.class);
+  if (classIco) {
+    const ico = document.createElement('img');
+    ico.src = classIco; ico.className = 'sb-class-icon'; ico.alt = '';
+    card.appendChild(ico);
+  }
+
   // Name
   const nameEl = document.createElement('div');
   nameEl.className = 'sb-name';
@@ -2830,17 +4472,27 @@ function _buildPlayerCard(p, solo) {
   const identEl = document.createElement('div');
   identEl.className = 'sb-identity';
   const parts = [];
-  if (p.race)  parts.push(p.race);
-  if (p.class) parts.push(p.class + (p.level ? ' ' + p.level : ''));
-  if (p.background) parts.push(p.background);
-  identEl.textContent = parts.join(' · ') || '—';
+  // Line 1: Race · BaseClass Level   Line 2: Subclass (Background)
+  // p.class may be "Rogue/Thief (Criminal)" — split on "/" if present
+  let baseClass = p.class || '';
+  let subLine = p.background || '';
+  if (baseClass.includes('/')) {
+    const slashIdx = baseClass.indexOf('/');
+    subLine = baseClass.slice(slashIdx + 1).trim() + (p.background ? ' · ' + p.background : '');
+    baseClass = baseClass.slice(0, slashIdx).trim();
+  }
+  const line1 = [];
+  if (p.race)    line1.push(p.race);
+  if (baseClass) line1.push(baseClass + (p.level ? ' ' + p.level : ''));
+  identEl.innerHTML = (line1.join(' · ') || '—') +
+    (subLine ? `<br><span style="opacity:0.7">${subLine}</span>` : '');
   card.appendChild(identEl);
 
   // HP
   const hp = p.hp || {};
   const hpRow = document.createElement('div');
   hpRow.className = 'sb-hp-row';
-  hpRow.innerHTML = `<span class="sb-label">HP</span>
+  hpRow.innerHTML = `<img src="/icons/enemy.png" class="sb-row-icon" alt=""><span class="sb-label">HP</span>
     <span class="sb-hp-nums">${hp.current ?? '—'} / ${hp.max ?? '—'}</span>`;
   card.appendChild(hpRow);
 
@@ -2868,7 +4520,7 @@ function _buildPlayerCard(p, solo) {
   if (xp.current != null) {
     const xpRow = document.createElement('div');
     xpRow.className = 'sb-xp-row';
-    xpRow.innerHTML = `<span class="sb-label">XP</span>
+    xpRow.innerHTML = `<img src="/icons/ability.png" class="sb-row-icon" alt=""><span class="sb-label">XP</span>
       <span class="sb-xp-nums">${xp.current} / ${xp.next ?? '?'}</span>`;
     card.appendChild(xpRow);
     const xpTrack = document.createElement('div');
@@ -2948,6 +4600,31 @@ function _buildPlayerCard(p, solo) {
     card.appendChild(effEl);
   }
 
+  // Milestones (stack-based reward — Bardic Inspiration / Hero Coin / etc.).
+  // Distinct from the binary `inspiration` boolean badge handled elsewhere.
+  if (p.milestones && Object.keys(p.milestones).length) {
+    const msEl = document.createElement('div');
+    msEl.className = 'sb-milestones';
+    msEl.dataset.role = 'milestones';
+    Object.entries(p.milestones)
+      .filter(([_, count]) => count > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([label, count]) => {
+        const row = document.createElement('div');
+        row.className = 'sb-milestone-row';
+        const lbl = document.createElement('span');
+        lbl.className = 'sb-milestone-label';
+        lbl.textContent = label;
+        const pill = document.createElement('span');
+        pill.className = 'sb-milestone-count';
+        pill.textContent = count;
+        row.appendChild(lbl);
+        row.appendChild(pill);
+        msEl.appendChild(row);
+      });
+    if (msEl.children.length) card.appendChild(msEl);
+  }
+
   // Spell slots
   if (p.spell_slots && Object.keys(p.spell_slots).length) {
     const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX'];
@@ -2976,31 +4653,6 @@ function _buildPlayerCard(p, solo) {
     if (slotsEl.children.length) card.appendChild(slotsEl);
   }
 
-  // Milestones (system-agnostic — Inspiration / Bennie / Hero Point / Fate Point / etc.)
-  // Renders one row per active milestone label with a count pill.
-  if (p.milestones && Object.keys(p.milestones).length) {
-    const msEl = document.createElement('div');
-    msEl.className = 'sb-milestones';
-    msEl.dataset.role = 'milestones';
-    Object.entries(p.milestones)
-      .filter(([_, count]) => count > 0)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([label, count]) => {
-        const row = document.createElement('div');
-        row.className = 'sb-milestone-row';
-        const lbl = document.createElement('span');
-        lbl.className = 'sb-milestone-label';
-        lbl.textContent = label;
-        const pill = document.createElement('span');
-        pill.className = 'sb-milestone-count';
-        pill.textContent = count;
-        row.appendChild(lbl);
-        row.appendChild(pill);
-        msEl.appendChild(row);
-      });
-    if (msEl.children.length) card.appendChild(msEl);
-  }
-
   // Features (Second Wind etc)
   const feats = [];
   if (p.second_wind != null) {
@@ -3017,25 +4669,13 @@ function _buildPlayerCard(p, solo) {
     card.appendChild(featEl);
   }
 
-  // Ability scores — only for solo play
-  if (solo && p.ability_scores) {
-    const ab = p.ability_scores;
-    const abSection = document.createElement('div');
-    abSection.className = 'sb-abilities';
-    const grid = document.createElement('div');
-    grid.className = 'sb-ab-grid';
-    ['str','dex','con','int','wis','cha'].forEach(key => {
-      const cell = document.createElement('div');
-      cell.className = 'sb-ab-cell';
-      const d = ab[key] || {};
-      cell.innerHTML = `
-        <div class="sb-ab-name">${key.toUpperCase()}</div>
-        <div class="sb-ab-score">${d.score ?? '—'}</div>
-        <div class="sb-ab-mod">${d.mod ?? '—'}</div>`;
-      grid.appendChild(cell);
-    });
-    abSection.appendChild(grid);
-    card.appendChild(abSection);
+  // Inspiration badge
+  if (p.inspiration) {
+    const badge = document.createElement('div');
+    badge.className = 'sb-inspiration';
+    badge.dataset.role = 'inspiration';
+    badge.textContent = '✦ Inspiration';
+    card.appendChild(badge);
   }
 
   // Direct listener — belt-and-suspenders alongside the delegated sidebar listener
@@ -3060,9 +4700,28 @@ let _openSheetName = null;
 function openSheet(name) {
   _openSheetName = name;
   const p = _playerData[name];
-  if (!p) { console.warn('[sheet] player not found:', name, '— available:', Object.keys(_playerData)); return; }
+  if (!p) {
+    console.warn(
+      `[DnD] openSheet("${name}"): no player data found.`,
+      'Available:', Object.keys(_playerData),
+      '— Run /gm load to push character data.'
+    );
+    return;
+  }
   const content = document.getElementById('sheet-content');
   content.innerHTML = '';
+
+  // Class icon in sheet panel top-right (clean up previous if any)
+  const panel = document.getElementById('sheet-panel');
+  const prevIco = document.getElementById('sm-class-ico');
+  if (prevIco) prevIco.remove();
+  const sheetClassIco = _classIconSrc(p.class);
+  if (sheetClassIco) {
+    const ico = document.createElement('img');
+    ico.id = 'sm-class-ico'; ico.className = 'sm-header-icon';
+    ico.src = sheetClassIco; ico.alt = '';
+    panel.appendChild(ico);
+  }
 
   // Header
   const nameEl = document.createElement('div');
@@ -3130,12 +4789,20 @@ function openSheet(name) {
 
   const sheet = p.sheet || {};
 
+  // Show friendly notice when sheet data hasn't been pushed yet
+  if (!p.sheet) {
+    const noData = document.createElement('div');
+    noData.className = 'sm-no-data';
+    noData.textContent = 'Full sheet not loaded — run /gm load to restore.';
+    content.appendChild(noData);
+  }
+
   // Attacks
   if (sheet.attacks && sheet.attacks.length) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Attacks';
+    title.innerHTML = '<img src="/icons/dagger.png" class="sheet-section-icon" alt="">Attacks';
     content.appendChild(title);
     const table = document.createElement('table');
     table.className = 'sm-attacks-table';
@@ -3165,7 +4832,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Spellcasting';
+    title.innerHTML = '<img src="/icons/crystal_ball.png" class="sheet-section-icon" alt="">Spellcasting';
     content.appendChild(title);
     // Derive live slot string from spell_slots object if available; fall back to static string
     let _slotsStr = sp.slots || '';
@@ -3226,7 +4893,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Features & Passives';
+    title.innerHTML = '<img src="/icons/scroll.png" class="sheet-section-icon" alt="">Features & Passives';
     content.appendChild(title);
     sheet.features.forEach(f => {
       const el = document.createElement('div');
@@ -3249,7 +4916,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Inventory';
+    title.innerHTML = '<img src="/icons/pack.png" class="sheet-section-icon" alt="">Inventory';
     content.appendChild(title);
     const list = document.createElement('ul');
     list.className = 'sm-inventory-list';
@@ -3291,7 +4958,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const noData = document.createElement('div');
     noData.className = 'sm-no-data';
-    noData.textContent = 'Full sheet not loaded — run /gm load to restore.';
+    noData.textContent = 'Full sheet not loaded — include "sheet" in the player object when pushing stats on /gm load';
     content.appendChild(noData);
   }
 
@@ -3604,8 +5271,10 @@ function updateStats(stats) {
       list.innerHTML = '';
       (merged.order || []).forEach(name => {
         const el = document.createElement('div');
-        el.className = 'sb-turn-item' + (name === merged.current ? ' sb-turn-current' : '');
-        el.textContent = name;
+        el.className = 'sb-turn-item sb-turn-has-icon' + (name === merged.current ? ' sb-turn-current' : '');
+        const isPC = name in _playerData;
+        const iconSrc = isPC ? '/icons/helmet.png' : '/icons/enemy.png';
+        el.innerHTML = `<img src="${iconSrc}" class="sb-turn-icon" alt="">${name}`;
         list.appendChild(el);
       });
     }
@@ -3741,8 +5410,8 @@ document.getElementById('sfx-row').addEventListener('click', () => {
 
 // ── Typing speed toggle ──────────────────────────────────────────────
 const _speedSteps = [
-  { label: 'Normal',  ms: 18 },
-  { label: 'Fast',    ms: 7  },
+  { label: 'Normal',  ms: 36 },
+  { label: 'Fast',    ms: 18 },
   { label: 'Instant', ms: 0  },
 ];
 let _speedIdx = 0;
@@ -3756,8 +5425,15 @@ document.getElementById('speed-row').addEventListener('click', () => {
 
 // ═══════════════════════════════════════════════════════════════════
 // TTS — per-block narrator audio playback (Gemini Flash TTS)
-// Only .dm-block and .npc-block get a TTS bar. Per-browser AudioContext,
-// per-browser auto-narrate via localStorage.
+// Only .dm-block and .npc-block get a TTS bar. Player/dice/tutor blocks
+// are excluded by omission in their renderers.
+//
+// Per-browser AudioContext-based engine (NOT HTMLAudioElement) — iOS
+// WebKit gesture handling is more reliable: ctx.resume() once inside a
+// user gesture and the context stays running for the session.
+//
+// Auto-narrate is per-browser (localStorage). One device casting to a TV
+// can toggle it on without affecting player phones.
 // ═══════════════════════════════════════════════════════════════════
 
 const _TTS_VOICES_MALE   = ['Charon', 'Enceladus', 'Fenrir', 'Umbriel'];
@@ -3883,6 +5559,8 @@ async function _ttsPlayBlock(btn, blockEl) {
 function _ttsSaveVoice(voice) {
   _ttsVoice = voice;
   localStorage.setItem('gm_tts_voice', voice);
+  // Persist per-campaign on the server so a fresh page load lands on the same
+  // voice across browsers. Best-effort; UI never blocks on the response.
   fetch('/voice', {
     method: 'POST',
     headers: _authHeaders(),
@@ -3924,7 +5602,7 @@ function _ttsBuildVoiceMenu() {
 
 function _addTtsBar(blockEl) {
   if (!_TTS_AVAILABLE || !blockEl) return;
-  if (blockEl.querySelector(':scope > .tts-bar')) return;
+  if (blockEl.querySelector(':scope > .tts-bar')) return;  // already added
 
   const bar = document.createElement('div');
   bar.className = 'tts-bar';
@@ -3955,6 +5633,7 @@ function _addTtsBar(blockEl) {
   blockEl.appendChild(bar);
 
   if (_ttsAutoNarrate) {
+    // Defer one tick so the bar is in the DOM before triggering the click path
     setTimeout(() => _ttsPlayBlock(playBtn, blockEl), 0);
   }
 }
@@ -3963,6 +5642,7 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.tts-voice-menu').forEach(m => { m.hidden = true; });
 }, { passive: true });
 
+// Auto-narrate row — only shown if the server reports TTS available.
 if (_TTS_AVAILABLE) {
   const narrateRow = document.getElementById('narrate-row');
   const narrateLabel = document.getElementById('narrate-label');
@@ -3978,12 +5658,91 @@ if (_TTS_AVAILABLE) {
       localStorage.setItem('gm_tts_auto', _ttsAutoNarrate ? '1' : '0');
       refresh();
       if (_ttsAutoNarrate) {
+        // Prime the AudioContext from this click so auto-narrate works on the next
+        // block without needing a per-block gesture (iOS Safari).
         const ctx = _getTtsCtx();
         if (ctx.state !== 'running') ctx.resume().catch(() => {});
       }
     });
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// THEME PICKER (Dark / Light / Auto)
+// Per-browser via localStorage["dnd-theme"]. The anti-FOUC inline script
+// in <head> applies the stored value before CSS parses so there's no
+// flash on load; this module handles runtime toggling.
+// ═══════════════════════════════════════════════════════════════════
+
+const _THEME_CYCLE = ['dark', 'light', 'auto'];
+const _THEME_LABEL = { dark: 'Dark', light: 'Light', auto: 'Auto' };
+
+function _readStoredTheme() {
+  try {
+    const v = localStorage.getItem('gm-theme');
+    return (v === 'dark' || v === 'light' || v === 'auto') ? v : 'auto';
+  } catch (_) {
+    return 'auto';
+  }
+}
+
+function _applyTheme(theme) {
+  if (theme === 'auto') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+}
+
+function _systemPrefersLight() {
+  try {
+    return window.matchMedia('(prefers-color-scheme: light)').matches;
+  } catch (_) {
+    return false;
+  }
+}
+
+function _effectiveTheme(theme) {
+  if (theme === 'auto') return _systemPrefersLight() ? 'light' : 'dark';
+  return theme;
+}
+
+(function _initThemePicker() {
+  const row = document.getElementById('theme-row');
+  const label = document.getElementById('theme-label');
+  if (!row || !label) return;
+
+  let current = _readStoredTheme();
+  _applyTheme(current);
+
+  function refresh() {
+    label.textContent = _THEME_LABEL[current] || 'Dark';
+    label.classList.toggle('on', current !== 'dark');
+    // Surface the effective theme for "auto" via the tooltip
+    if (current === 'auto') {
+      row.title = `Display theme — Auto (system: ${_effectiveTheme(current)})`;
+    } else {
+      row.title = `Display theme — ${_THEME_LABEL[current]}. Click to cycle.`;
+    }
+  }
+  refresh();
+
+  row.addEventListener('click', () => {
+    const idx = _THEME_CYCLE.indexOf(current);
+    current = _THEME_CYCLE[(idx + 1) % _THEME_CYCLE.length];
+    try { localStorage.setItem('gm-theme', current); } catch (_) {}
+    _applyTheme(current);
+    refresh();
+  });
+
+  // Track system-pref changes so auto mode stays accurate without reload
+  try {
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    mq.addEventListener('change', () => {
+      if (current === 'auto') refresh();
+    });
+  } catch (_) {}
+})();
 
 // ═══════════════════════════════════════════════════════════════════
 // PLAYER INPUT PANEL
@@ -4198,19 +5957,41 @@ async function _stageAction() {
   if (!text) return;
   _stageBtn.disabled = true;
   _stageBtn.textContent = '…';
-  try {
-    const res = await fetch('/player-input/stage', {
-      method: 'POST',
-      headers: _authHeaders(),
-      body: JSON.stringify({ character: _selectedChar, text }),
-    });
-    if (res.status === 202) {
-      _stageBtn.disabled = false;
-      _stageBtn.textContent = 'Awaiting approval…';
-      return;  // leave text in box; retry once approved
+
+  // Cache submission in localStorage so text survives page reload
+  localStorage.setItem('dnd_staged_input', JSON.stringify({ char: _selectedChar, text, ts: Date.now() }));
+
+  let attempts = 0;
+  while (attempts < 3) {
+    attempts++;
+    try {
+      const res = await fetch('/player-input/stage', {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify({ character: _selectedChar, text }),
+      });
+      if (res.status === 202) {
+        // Device pending approval — persist state so it survives page reload
+        localStorage.setItem('dnd_awaiting_approval', _deviceId);
+        _stageBtn.disabled = false;
+        _stageBtn.textContent = 'Awaiting approval…';
+        return;  // leave text in box; auto-retry once approved via _onDeviceApproved
+      }
+      if (res.ok) {
+        localStorage.removeItem('dnd_staged_input');
+        localStorage.removeItem('dnd_awaiting_approval');
+        _inputText.value = '';
+        break;
+      }
+      // Non-retriable error (403, 400, etc.)
+      break;
+    } catch (_) {
+      if (attempts < 3) {
+        _stageBtn.textContent = `Retrying (${attempts})…`;
+        await new Promise(r => setTimeout(r, 2000));
+      }
     }
-    _inputText.value = '';
-  } catch (_) { /* silently ignore */ }
+  }
   _stageBtn.disabled = false;
   _stageBtn.textContent = 'Stage';
 }
@@ -4262,6 +6043,32 @@ _inputText.addEventListener('keydown', e => {
 // Initialise with no extra chars (populated when stats arrive)
 _buildCharTabs([]);
 
+// Restore cached staged input text on page load (survives reload before submission received)
+(function _restoreStagedCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('dnd_staged_input') || 'null');
+    if (!cached) return;
+    if (Date.now() - cached.ts > 10 * 60 * 1000) {
+      // Cache expired (> 10 min)
+      localStorage.removeItem('dnd_staged_input');
+      localStorage.removeItem('dnd_awaiting_approval');
+      return;
+    }
+    if (cached.text && !_inputText.value.trim()) {
+      _inputText.value = cached.text;
+    }
+    // If we were awaiting approval for this device, restore the button state;
+    // the SSE device_request replay will confirm and keep it, or clear it if approved.
+    if (localStorage.getItem('dnd_awaiting_approval') === _deviceId) {
+      _stageBtn.disabled = false;
+      _stageBtn.textContent = 'Awaiting approval…';
+    }
+  } catch (_) {
+    localStorage.removeItem('dnd_staged_input');
+    localStorage.removeItem('dnd_awaiting_approval');
+  }
+})();
+
 // ═══════════════════════════════════════════════════════════════════
 // DEVICE APPROVAL
 // ═══════════════════════════════════════════════════════════════════
@@ -4271,6 +6078,19 @@ const _deviceApprovalsEl = document.getElementById('device-approvals');
 function _showDeviceRequest(dev) {
   // Don't duplicate
   if (document.querySelector(`[data-device-id="${dev.id}"]`)) return;
+
+  // If it's our own device replayed on SSE reconnect, restore the awaiting state
+  if (dev.id === _deviceId) {
+    _stageBtn.disabled = false;
+    _stageBtn.textContent = 'Awaiting approval…';
+    // Restore cached input text if available
+    try {
+      const cached = JSON.parse(localStorage.getItem('dnd_staged_input') || 'null');
+      if (cached && cached.text && Date.now() - cached.ts < 10 * 60 * 1000) {
+        if (!_inputText.value.trim()) _inputText.value = cached.text;
+      }
+    } catch (_) {}
+  }
 
   const card = document.createElement('div');
   card.className = 'device-card';
@@ -4315,16 +6135,21 @@ async function _respondDevice(deviceId, approve) {
 function _onDeviceApproved(deviceId) {
   document.querySelector(`[data-device-id="${deviceId}"]`)?.remove();
   // If it's our own device — reset stage button and retry
-  if (deviceId === _deviceId && _stageBtn.textContent === 'Awaiting approval…') {
+  if (deviceId === _deviceId) {
+    localStorage.removeItem('dnd_awaiting_approval');
     _stageBtn.disabled = false;
     _stageBtn.textContent = 'Stage';
-    _stageAction();  // auto-retry the staged action
+    if (_inputText.value.trim()) {
+      _stageAction();  // auto-retry with cached text
+    }
   }
 }
 
 function _onDeviceDenied(deviceId) {
   document.querySelector(`[data-device-id="${deviceId}"]`)?.remove();
   if (deviceId === _deviceId) {
+    localStorage.removeItem('dnd_awaiting_approval');
+    localStorage.removeItem('dnd_staged_input');
     _stageBtn.disabled = true;
     _stageBtn.textContent = 'Access denied';
   }
@@ -4380,19 +6205,20 @@ function updateWorldClock(wt) {
   skyRenderer.setState(wt);
 }
 
-// System version badge — opaque label sourced from campaign state.md.
-// Empty/undefined hides the badge; any non-empty string renders.
-function updateSystemVersionBadge(version) {
-  const el = document.getElementById('system-version-badge');
+// Ruleset badge — '5e 2014' (subdued) or '5e 2024' (amber/gold accent)
+function updateRulesetBadge(ruleset) {
+  const el = document.getElementById('ruleset-badge');
   if (!el) return;
-  const v = String(version || '').trim();
-  if (!v) {
-    el.classList.remove('has-data');
+  const rs = String(ruleset || '').trim();
+  if (rs !== '2014' && rs !== '2024') {
+    el.classList.remove('has-data', 'rs-2014', 'rs-2024');
     el.textContent = '';
     return;
   }
-  el.textContent = v;
+  el.textContent = '5e ' + rs;
   el.classList.add('has-data');
+  el.classList.toggle('rs-2024', rs === '2024');
+  el.classList.toggle('rs-2014', rs === '2014');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4439,17 +6265,29 @@ function connect() {
     let payload;
     try { payload = JSON.parse(e.data); } catch { return; }
 
+    if (payload.dice_request && typeof window._onDiceRequest === 'function') {
+      window._onDiceRequest(payload.dice_request);
+    }
+    if (payload.dice_request_cancelled && typeof window._onDiceRequestCancelled === 'function') {
+      window._onDiceRequestCancelled(payload.dice_request_cancelled);
+    }
+    if (payload.dice_pending !== undefined) {
+      _updateDicePendingBadge(payload.dice_pending);
+    }
+
     if (payload.stats) {
       updateStats(payload.stats);
       if (payload.stats.players && payload.stats.players.length > 0) {
         _sidebarBtn.classList.add('visible');
         _buildCharTabs(payload.stats.players);
+        _modeSwitcherCachePlayers(payload.stats.players);
       }
       if (payload.stats.world_time) {
         updateWorldClock(payload.stats.world_time);
       }
-      // Always pass — undefined/empty clears the badge
-      updateSystemVersionBadge(payload.stats.system_version);
+      if (payload.stats.ruleset) {
+        updateRulesetBadge(payload.stats.ruleset);
+      }
     }
     if (payload.staged_inputs !== undefined) {
       _handleStagedInputs(payload.staged_inputs);
@@ -4518,11 +6356,17 @@ function connect() {
     if (payload.sfx) {
       _playSfx(payload.sfx);
     }
+    if (payload.inspiration_award) {
+      renderInspirationBlock(payload.inspiration_award, payload.reason || '');
+    }
     if (payload.milestone_award) {
       renderMilestoneBlock(payload.milestone_award, payload.label || 'Milestone', payload.reason || '');
-    } else if (payload.milestone_spend) {
-      // Spend events don't render a feed block; future: decrement a sidebar counter.
-    } else if (payload.text) {
+    }
+    // milestone_spend: server processes the counter decrement; no feed block
+    if (payload.xp_award) {
+      renderXpBlock(payload.xp_award);
+    }
+    if (payload.text && !payload.inspiration_award && !payload.milestone_award && !payload.milestone_spend && !payload.xp_award) {
       if (payload.action) {
         renderActionBlock(payload.action, payload.text);
       } else if (payload.player) {
@@ -4542,13 +6386,591 @@ function connect() {
   evtSource.onerror = () => {
     evtSource.close();
     setTimeout(() => {
-      reconnectDelay = Math.min(reconnectDelay * 1.5, 15000);
+      reconnectDelay = Math.min(reconnectDelay * 1.5, 3000);
       connect();
     }, reconnectDelay);
   };
 }
 
 connect();
+
+// ── Input-only mode for mobile players ───────────────────────────────────
+// Triggered by either:
+//   ?view=input              — explicit (long form, still supported)
+//   ?char=<Name>             — shorthand: char= alone implies input-only,
+//                              so players only need to type the short URL
+//                              (e.g. http://<host>:5001/?char=Mira).
+// Both forms set the character binding the same way (the binding is read
+// from ?character= or ?char= inside _initDicePad / _loadCharacterSheet).
+{
+  const _qp = new URLSearchParams(location.search);
+  const _inputMode = _qp.get('view') === 'input' || _qp.has('char') || _qp.has('character');
+  if (_inputMode) {
+    document.body.classList.add('input-only');
+    const ip = document.getElementById('input-panel');
+    if (ip) ip.classList.remove('collapsed');
+    _initInputTabs();
+    _initDicePad();
+  }
+  _initModeSwitcher(_inputMode);
+}
+
+// ── Mode switcher ─────────────────────────────────────────────────────────
+// Two entry points to save players from typing the input URL by hand:
+//   - Full DM view → "Phone Mode" button drops a character picker pulled
+//     from the latest SSE `stats` payload; click a name to jump to
+//     ?view=input&char=<Name>.
+//   - Input view → "Full Display" button bottom-left strips query params
+//     and navigates back to the DM view (useful for reading narration off
+//     the phone without losing the binding next reload).
+// Pure client-side. No server changes needed; the dropdown reads the
+// players array that already arrives via the existing /stream SSE.
+let _modePlayersCache = [];
+
+function _modeSwitcherCachePlayers(players) {
+  const names = (players || [])
+    .map(p => (p && (p.name || p.player_name || '')).toString().trim())
+    .filter(n => n);
+  // Dedupe while preserving order
+  const seen = new Set();
+  _modePlayersCache = names.filter(n => {
+    const k = n.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+function _initModeSwitcher(inputMode) {
+  if (inputMode) {
+    // Input-view: drop a "Full Display" button that strips query params
+    const btn = document.createElement('button');
+    btn.id = 'full-mode-btn';
+    btn.type = 'button';
+    btn.title = 'Switch to full DM display (read narration off this device)';
+    btn.textContent = '👁 Full Display';
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      // Strip ?view, ?char, ?character — keep any other harmless params
+      const url = new URL(window.location.href);
+      ['view', 'char', 'character'].forEach(k => url.searchParams.delete(k));
+      window.location.href = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+    });
+    document.body.appendChild(btn);
+    return;
+  }
+
+  // Full-view: "Phone Mode" button + lazy character-picker dropdown
+  const btn = document.createElement('button');
+  btn.id = 'phone-mode-btn';
+  btn.type = 'button';
+  btn.title = 'Switch this device to phone input mode for a character';
+  btn.textContent = '📱 Phone Mode';
+
+  const menu = document.createElement('div');
+  menu.id = 'phone-mode-menu';
+  menu.setAttribute('role', 'menu');
+
+  function _rebuildMenu() {
+    menu.innerHTML = '';
+    const hdr = document.createElement('div');
+    hdr.className = 'pm-header';
+    hdr.textContent = 'Bind this device to…';
+    menu.appendChild(hdr);
+
+    if (_modePlayersCache.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'pm-empty';
+      empty.textContent = 'No characters loaded yet';
+      menu.appendChild(empty);
+      return;
+    }
+
+    _modePlayersCache.forEach(name => {
+      const opt = document.createElement('button');
+      opt.className = 'pm-opt';
+      opt.type = 'button';
+      opt.textContent = _escHtml(name);  // safety: textContent already escapes, but keep symmetry
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', 'input');
+        url.searchParams.set('char', name);
+        window.location.href = url.toString();
+      });
+      menu.appendChild(opt);
+    });
+  }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (menu.classList.contains('open')) {
+      menu.classList.remove('open');
+    } else {
+      _rebuildMenu();
+      menu.classList.add('open');
+    }
+  });
+
+  // Close the menu on any outside click
+  document.addEventListener('click', () => {
+    menu.classList.remove('open');
+  }, { passive: true });
+
+  document.body.appendChild(btn);
+  document.body.appendChild(menu);
+}
+
+// ── Move / Roll tab switcher (input-only mode only) ──────────────────────
+function _initInputTabs() {
+  const body = document.getElementById('input-body');
+  if (!body) return;
+  document.querySelectorAll('.dp-tab').forEach(btn => {
+    btn.addEventListener('click', () => _setActiveTab(btn.dataset.tab));
+  });
+}
+
+function _setActiveTab(tab) {
+  if (tab !== 'move' && tab !== 'roll' && tab !== 'character') return;
+  const body = document.getElementById('input-body');
+  if (!body) return;
+  body.dataset.activeTab = tab;
+  document.querySelectorAll('.dp-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  // Clear the "DM request waiting" dot once the player navigates to Roll.
+  if (tab === 'roll') {
+    const rollTab = document.querySelector('.dp-tab[data-tab="roll"]');
+    if (rollTab) rollTab.classList.remove('has-request');
+  }
+  // Lazy-load the character sheet the first time Sheet is opened, and refresh
+  // each subsequent open so HP / slots / conditions stay current with the
+  // campaign file (which the DM updates between turns).
+  if (tab === 'character') _loadCharacterSheet();
+}
+
+// ── Character sheet pane (Sheet tab) ─────────────────────────────────────
+async function _loadCharacterSheet() {
+  const status = document.getElementById('cp-status');
+  const bodyEl = document.getElementById('cp-body');
+  if (!status || !bodyEl) return;
+  // Resolve the character: prefer ?char= / ?character=, then localStorage / typed name.
+  const _qpCh = new URLSearchParams(location.search);
+  const ch = (_qpCh.get('char') || _qpCh.get('character')
+              || localStorage.getItem('gm_player_name')
+              || '').trim();
+  if (!ch) {
+    status.textContent = 'No character bound — open with ?char=<Name>';
+    bodyEl.innerHTML = '';
+    return;
+  }
+  status.textContent = `Loading ${ch}…`;
+  try {
+    const res = await fetch(`/character/${encodeURIComponent(ch)}`, {
+      headers: _authHeaders(),
+    });
+    if (!res.ok) {
+      status.textContent = `Could not load sheet (${res.status})`;
+      bodyEl.innerHTML = '';
+      return;
+    }
+    const md = await res.text();
+    bodyEl.innerHTML = _renderMarkdown(md);
+    status.textContent = '';
+  } catch (e) {
+    status.textContent = `Network error — ${e.message || e}`;
+    bodyEl.innerHTML = '';
+  }
+}
+
+// Minimal markdown → HTML for character sheets. Supports the subset used in
+// the campaign template: # ## ### headers, **bold**, *italic*, - bullet lists,
+// and GitHub-style pipe tables. Not a full CommonMark implementation; deliberately
+// small so we don't drag in a dependency for one read-only viewer.
+function _renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const inline = (s) => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+    .replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>');
+
+  const lines = md.replace(/\r\n/g, '\n').split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // Headers
+    let m = /^(#{1,3})\s+(.*)$/.exec(line);
+    if (m) { const lvl = m[1].length; out.push(`<h${lvl}>${inline(m[2])}</h${lvl}>`); i++; continue; }
+    // Horizontal rule
+    if (/^---+\s*$/.test(line)) { out.push('<hr>'); i++; continue; }
+    // Table — header row followed by separator row of dashes/pipes.
+    if (line.includes('|') && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}.*\|/.test(lines[i+1])) {
+      const cells = (s) => s.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
+      const head = cells(line);
+      const rows = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes('|')) { rows.push(cells(lines[i])); i++; }
+      let html = '<table><thead><tr>' + head.map(h => `<th>${inline(h)}</th>`).join('') + '</tr></thead><tbody>';
+      for (const r of rows) html += '<tr>' + r.map(c => `<td>${inline(c)}</td>`).join('') + '</tr>';
+      html += '</tbody></table>';
+      out.push(html);
+      continue;
+    }
+    // Bullet list
+    if (/^\s*-\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*-\s+/.test(lines[i])) {
+        items.push(inline(lines[i].replace(/^\s*-\s+/, '')));
+        i++;
+      }
+      out.push('<ul>' + items.map(t => `<li>${t}</li>`).join('') + '</ul>');
+      continue;
+    }
+    // Blank line → paragraph break
+    if (line.trim() === '') { i++; continue; }
+    // Otherwise paragraph (collect consecutive non-blank, non-special lines)
+    const para = [line];
+    i++;
+    while (i < lines.length && lines[i].trim() !== '' && !/^#{1,3}\s/.test(lines[i])
+           && !/^\s*-\s+/.test(lines[i]) && !lines[i].includes('|')
+           && !/^---+\s*$/.test(lines[i])) {
+      para.push(lines[i]); i++;
+    }
+    out.push('<p>' + inline(para.join(' ')) + '</p>');
+  }
+  return out.join('\n');
+}
+
+// ── Shared HTML-entity escape ────────────────────────────────────────────
+// Server-side input sanitization for labels and character names strips
+// shell metacharacters (` $ \) but does NOT strip < > & — so anything that
+// pours those server-supplied strings into innerHTML must escape here. Used
+// by the dice-pending badge below; safe to reuse anywhere else that does
+// the same template-literal-into-innerHTML pattern.
+function _escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── DM-side "Waiting on Piper, Mira…" badge for unresolved dice-requests ──
+// Driven by the server's dice_pending SSE event (snapshot of all active
+// requests). Hidden when the snapshot is empty.
+function _updateDicePendingBadge(snapshot) {
+  const badge = document.getElementById('dice-pending-badge');
+  if (!badge) return;
+  const entries = Array.isArray(snapshot) ? snapshot.filter(e => e && (e.pending || []).length) : [];
+  if (entries.length === 0) {
+    badge.classList.remove('visible');
+    badge.innerHTML = '';
+    return;
+  }
+  // Most recent request first (best-effort: snapshot order is insertion order on the server).
+  // Both `e.pending` member names and `e.label` go through _escHtml — server-side
+  // sanitization strips ` $ \ but not < > &, so any approved-phone caller could
+  // otherwise inject script into the DM browser via those fields.
+  const lines = entries.map(e => {
+    const who   = (e.pending || []).map(_escHtml).join(', ');
+    const label = e.label ? `<span class="dpb-label">${_escHtml(e.label)}</span>` : '';
+    return `Waiting on: ${who}${label}`;
+  }).join('<hr style="border:none;border-top:1px solid rgba(180,140,60,0.25);margin:6px 0">');
+  badge.innerHTML = lines;
+  badge.classList.add('visible');
+}
+
+// ── Phone dice pad: server-side roll + slot-machine reveal ───────────────
+function _initDicePad() {
+  const reel    = document.getElementById('dp-reel');
+  const rollBtn = document.getElementById('dp-roll');
+  const modVal  = document.getElementById('dp-mod-val');
+  const nameEl  = document.getElementById('dp-name');
+  const labelEl = document.getElementById('dp-label');
+  const boundEl = document.getElementById('dp-bound');
+  if (!reel || !rollBtn) return;
+
+  // Character binding: ?char=Piper (or ?character=Piper) locks this phone to
+  // that player. Without the param the phone falls back to a free-text name
+  // + localStorage. Short form (?char=) is preferred for hand-typed URLs.
+  const _qp = new URLSearchParams(location.search);
+  const _bound = (_qp.get('char') || _qp.get('character') || '').trim().slice(0, 24);
+  if (_bound) {
+    nameEl.value = _bound;
+    nameEl.classList.add('locked');
+    nameEl.setAttribute('readonly', '');
+    if (boundEl) {
+      boundEl.style.display = 'block';
+      boundEl.textContent = _bound;
+    }
+  } else {
+    nameEl.value = localStorage.getItem('gm_player_name') || '';
+    nameEl.addEventListener('input', () => {
+      localStorage.setItem('gm_player_name', nameEl.value.trim().slice(0, 24));
+    });
+  }
+
+  let spec = '1d20';
+  let adv  = 'normal';
+  let mod  = 0;
+  // Currently-active DM request, if any. Echoed back on the roll POST so the
+  // server can match the response to the pending request and release any
+  // blocking --wait call on the DM side.
+  let _activeRequestId = '';
+  reel.textContent = 'd20';
+
+  function _syncAdvAvailability() {
+    const isD20 = (spec === '1d20');
+    document.querySelectorAll('.dp-adv').forEach(b => {
+      if (isD20) b.removeAttribute('disabled');
+      else       b.setAttribute('disabled', '');
+    });
+    if (!isD20 && adv !== 'normal') {
+      adv = 'normal';
+      document.querySelectorAll('.dp-adv').forEach(b => b.classList.remove('active'));
+      const n = document.querySelector('.dp-adv[data-adv="normal"]');
+      if (n) n.classList.add('active');
+    }
+    const hint = document.getElementById('dp-hint');
+    if (hint) hint.style.opacity = isD20 ? '1' : '0.4';
+  }
+
+  document.querySelectorAll('#dp-die-row .dp-die').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#dp-die-row .dp-die').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      spec = btn.dataset.spec;
+      if (!reel.classList.contains('spinning')) reel.textContent = spec.replace('1d', 'd');
+      _syncAdvAvailability();
+    });
+  });
+  _syncAdvAvailability();
+  document.querySelectorAll('.dp-adv').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.dp-adv').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      adv = btn.dataset.adv;
+    });
+  });
+  document.querySelectorAll('.dp-mod').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mod = Math.max(-30, Math.min(30, mod + Number(btn.dataset.delta)));
+      modVal.textContent = (mod >= 0 ? '+' : '') + mod;
+    });
+  });
+
+  // Slot-machine ticker: cycle random faces, ease the interval, then lock.
+  function spin(maxFace) {
+    return new Promise(resolve => {
+      reel.classList.add('spinning');
+      reel.classList.remove('locked');
+      let delay = 40;             // ms between ticks
+      const start = performance.now();
+      const minMs = 900;          // minimum spin duration
+      function tick() {
+        reel.textContent = String(1 + Math.floor(Math.random() * maxFace));
+        const elapsed = performance.now() - start;
+        delay = Math.min(260, 40 + elapsed * 0.25);   // ease out
+        if (elapsed > minMs && delay > 220) { resolve(); return; }
+        setTimeout(tick, delay);
+      }
+      tick();
+    });
+  }
+
+  function lockTo(value) {
+    reel.classList.remove('spinning');
+    reel.textContent = String(value);
+    // restart animation
+    reel.classList.remove('locked');
+    void reel.offsetWidth;
+    reel.classList.add('locked');
+  }
+
+  rollBtn.addEventListener('click', async () => {
+    const character = (nameEl.value || '').trim() || 'Player';
+    const label     = (labelEl.value || '').trim();
+    rollBtn.disabled = true;
+    document.getElementById('dp-result-line').textContent = '';
+
+    const m = /^(\d+)d(\d+)$/.exec(spec);
+    const faces = m ? Number(m[2]) : 20;
+
+    // Kick off spin animation immediately so the phone feels responsive,
+    // then await the authoritative server roll.
+    const spinPromise = spin(faces);
+    let result = null;
+    try {
+      const res = await fetch('/player-input/dice', {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify({
+          character, spec, modifier: mod, advantage: adv, label,
+          request_id: _activeRequestId || undefined,
+        }),
+      });
+      if (res.ok) result = await res.json();
+    } catch (_) { /* network error — fall through */ }
+
+    await spinPromise;
+    if (!result) {
+      reel.classList.remove('spinning');
+      reel.textContent = '!';
+      document.getElementById('dp-result-line').textContent = 'roll failed';
+      rollBtn.disabled = false;
+      rollBtn.classList.remove('pulse');
+      if (_locked) _setLocked(false);
+      return;
+    }
+
+    // Lock to the kept die value (single die) or the subtotal (multi-die).
+    const displayFace = (result.kept && result.kept.length === 1)
+      ? result.kept[0]
+      : result.subtotal;
+    lockTo(displayFace);
+
+    const line = document.getElementById('dp-result-line');
+    line.innerHTML = `${result.spec}${result.modifier ? (result.modifier > 0 ? '+' : '') + result.modifier : ''}` +
+                     ` &nbsp;→&nbsp; <span class="total">${result.total}</span>` +
+                     (result.both ? ` &nbsp;<span style="opacity:.7">(${result.both.join(' / ')} ${result.advantage})</span>` : '');
+    if (navigator.vibrate) navigator.vibrate(30);
+    rollBtn.classList.remove('pulse');
+    if (boundEl) {
+      // Clear the inline request line once the roll has been resolved.
+      const req = boundEl.querySelector('.req');
+      if (req) req.remove();
+    }
+
+    // If this was a prescribed (DM-requested) roll, keep the pad fully locked
+    // afterwards so the player can't fire another unsolicited roll. The lock
+    // is released only by the next dice_request arriving for this character
+    // (which unlocks + re-pre-fills inside _applyDiceRequest).
+    if (_activeRequestId) {
+      _setLocked(true, spec, adv);          // keep die / adv selections frozen
+      rollBtn.disabled = true;              // and disable Roll itself
+      rollBtn.classList.add('rolled');
+      if (boundEl) {
+        let done = boundEl.querySelector('.req');
+        if (!done) { done = document.createElement('span'); done.className = 'req'; boundEl.appendChild(done); }
+        done.textContent = '✓ Rolled — waiting for DM';
+      }
+      _activeRequestId = '';
+    } else {
+      // Free-roll path: unlock so the player can roll again freely.
+      rollBtn.disabled = false;
+      if (_locked) _setLocked(false);
+    }
+  });
+
+  // Lock the pad to a single prescribed roll. Only the matching die / adv
+  // button and the Roll button remain interactive. Cleared after the roll
+  // resolves (success or failure) so the player can free-roll again.
+  let _locked = false;
+  function _setLocked(active, keepSpec, keepAdv) {
+    _locked = !!active;
+    document.querySelectorAll('.dp-die').forEach(b => {
+      if (active && b.dataset.spec !== keepSpec) b.setAttribute('disabled', '');
+      else                                       b.removeAttribute('disabled');
+    });
+    document.querySelectorAll('.dp-adv').forEach(b => {
+      // Adv buttons are also gated by _syncAdvAvailability for non-d20 specs;
+      // re-syncing afterwards restores that behaviour.
+      if (active && b.dataset.adv !== keepAdv) b.setAttribute('disabled', '');
+      else                                     b.removeAttribute('disabled');
+    });
+    document.querySelectorAll('.dp-mod').forEach(b => {
+      if (active) b.setAttribute('disabled', '');
+      else        b.removeAttribute('disabled');
+    });
+    if (active) labelEl.setAttribute('readonly', '');
+    else        labelEl.removeAttribute('readonly');
+    if (!active) _syncAdvAvailability();
+  }
+
+  // ── DM → phone: react to a /dice-request broadcast ───────────────────────
+  function _applyDiceRequest(req) {
+    if (!req) return;
+    const me      = (nameEl.value || '').trim().toLowerCase();
+    const targets = Array.isArray(req.characters) && req.characters.length
+      ? req.characters.map(c => String(c).toLowerCase())
+      : [String(req.character || 'any').toLowerCase()];
+    const isAny   = targets.includes('any');
+    if (!isAny && !targets.includes(me)) return;                  // not for this phone
+
+    _activeRequestId = String(req.request_id || '');
+
+    // Spec → click the matching die button. If unknown, fall back to d20.
+    const reqSpec = (req.spec || '1d20').toLowerCase();
+    const dieBtn  = document.querySelector(`.dp-die[data-spec="${reqSpec}"]`)
+                 || document.querySelector('.dp-die[data-spec="1d20"]');
+    if (dieBtn) dieBtn.click();
+
+    // Adv/dis (only meaningful on 1d20; _syncAdvAvailability gates the rest).
+    const advBtn = document.querySelector(`.dp-adv[data-adv="${req.advantage || 'normal'}"]`);
+    if (advBtn && !advBtn.hasAttribute('disabled')) advBtn.click();
+
+    // Modifier — jump straight to the requested value rather than +/- ticking.
+    mod = Math.max(-30, Math.min(30, Number(req.modifier) || 0));
+    modVal.textContent = (mod >= 0 ? '+' : '') + mod;
+
+    // Label / DC line.
+    const baseLabel = (req.label || '').trim();
+    labelEl.value = baseLabel;
+    if (boundEl) {
+      const dcStr = (req.dc != null) ? ` · DC ${req.dc}` : '';
+      const desc  = baseLabel || (reqSpec === '1d20' ? 'Roll d20' : `Roll ${reqSpec}`);
+      let r = boundEl.querySelector('.req');
+      if (!r) { r = document.createElement('span'); r.className = 'req'; boundEl.appendChild(r); }
+      r.textContent = `↻ ${desc}${dcStr}`;
+    }
+
+    rollBtn.disabled = false;                 // re-enable after a previous "rolled" lock
+    rollBtn.classList.remove('rolled');
+    rollBtn.classList.add('pulse');
+    if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
+
+    // Lock everything except the prescribed die + adv button + Roll.
+    _setLocked(true, reqSpec, (req.advantage || 'normal'));
+
+    // Pull the player to the Roll tab so they don't miss the request. If they
+    // were already on Roll, this is a no-op; if they were on Move, the tab
+    // switches and the dot on the Roll button is cleared by _setActiveTab.
+    const onMove = document.getElementById('input-body')?.dataset.activeTab === 'move';
+    if (onMove) {
+      const rollTab = document.querySelector('.dp-tab[data-tab="roll"]');
+      if (rollTab) rollTab.classList.add('has-request');
+      _setActiveTab('roll');
+    }
+  }
+  window._onDiceRequest = _applyDiceRequest;
+
+  // DM cancelled the active prescribed roll (e.g. via DELETE /dice-request/<id>).
+  // Server broadcasts {dice_request_cancelled: <request_id>}. If it matches
+  // this phone's active request, fully unlock the pad so the player isn't
+  // stuck staring at a locked Roll button while the badge has already cleared.
+  // Cancellations for other phones (or for requests we never received) are
+  // safely ignored.
+  function _onDiceRequestCancelled(rid) {
+    if (!rid || rid !== _activeRequestId) return;
+    _activeRequestId = '';
+    if (_locked) _setLocked(false);
+    rollBtn.disabled = false;
+    rollBtn.classList.remove('pulse', 'rolled');
+    if (boundEl) {
+      const r = boundEl.querySelector('.req');
+      if (r) r.remove();
+    }
+    // Brief inline confirmation so the player sees the unlock happened.
+    const line = document.getElementById('dp-result-line');
+    if (line) {
+      line.textContent = '— request cancelled by DM —';
+      setTimeout(() => { if (line.textContent === '— request cancelled by DM —') line.textContent = ''; }, 4000);
+    }
+  }
+  window._onDiceRequestCancelled = _onDiceRequestCancelled;
+}
 </script>
 </body>
 </html>

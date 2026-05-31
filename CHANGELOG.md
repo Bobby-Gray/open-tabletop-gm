@@ -14,6 +14,55 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 - **License formalized as AGPL-3.0-or-later.** Added canonical `LICENSE` file with `Copyright (c) 2026 Neural Initiative LLC` and a `CONTRIBUTING.md` documenting the contribution licensing handshake. The README now includes a proper License section. Self-hosting and modification remain explicitly welcome; AGPL protects against closed-source SaaS forks.
 
+## [0.12.0] — 2026-05-31 — Phone companion + theme picker (sync from claude-dnd-skill v1.10.0..v1.12.1)
+
+Four upstream PRs land in one bundled sync: phone dice companion (#38), mode switcher + dice-pending badge XSS hardening (#39, v1.11.0), light/dark/auto theme picker (#40, v1.12.0), and audio-controls legibility fixes (#41, v1.12.1). All adapted to open-tabletop-gm conventions — GM terminology, relative-path scripts, `gm_*` localStorage keys (the per-browser TTS / phone / theme preferences), `GM_TTS_KEY` env var, key file at `~/.config/open-tabletop-gm/tts.key`. The `dnd-token` meta tag and the `dnd_device_id` localStorage key stay as-is in this sync — those are fossils preserved across all otgm syncs to avoid invalidating existing approved-device bindings on operator machines.
+
+### Phone dice companion (upstream PR #38, contributed by Ethros)
+
+Adds a phone-side player companion to the existing Flask + SSE display:
+
+- `?view=input&char=<Name>` URL bindings (one phone per character).
+- Three-tab phone layout: **Move** (action input) / **Roll** (server-side dice) / **Sheet** (read-only character sheet rendered from the campaign's markdown).
+- `POST /player-input/dice` rolls server-side with `secrets.randbelow`; slot-machine reveal locks on the authoritative value.
+- `POST /dice-request` lets the GM (or LLM tooling) prescribe a roll to one or more named characters — their phones pre-fill (die, modifier, adv/dis, label, optional DC), lock all controls except Roll, pulse the Roll button. Pad stays locked after a prescribed roll resolves to prevent unsolicited follow-ups.
+- `send.py --dice-request --wait` blocks the GM until every prescribed character rolls (polls `GET /dice-request/<id>`). Exits 2 on timeout with a clean `DELETE` of the request.
+- Main display "Waiting on…" badge driven by a new `dice_pending` SSE event, replayed on `/stream` connect.
+- New `scripts/dice_player.py` wrapper takes `dice.py`-style syntax (`d20+5 --player piper --label "Stealth check"`) so the GM has a familiar CLI that routes through `/dice-request`.
+- New `GET /character/<name>` endpoint serves the character markdown for the Sheet tab. Token-gated; both `<name>` and the resolved campaign value pass through an allowlist + length cap before `os.path.join`.
+
+Token-gated on every new endpoint. `secrets.randbelow` for all dice. Strict input validation: spec regex `\d{1,2}d\d{1,3}` plus range checks, modifier clamped ±100, character/label strings stripped of shell metacharacters and length-capped. No external resources loaded, no new dependencies.
+
+### Mode switcher + XSS hardening (upstream PR #39 / v1.11.0)
+
+- **Phone-mode switcher.** Base URL now carries a small "📱 Phone Mode" button on the right rail (above the audio-controls cluster). Click drops a character dropdown populated from the campaign's current player roster (read from the existing `/stream` `stats` payload — no new server endpoint). Pick a name and the browser navigates to `?view=input&char=<Name>` automatically.
+- **Full-display toggle.** Symmetric "👁 Full Display" button bottom-left in input mode strips the `?view` / `?char` query params and returns to the base view.
+- **Defense-in-depth XSS fix on the dice-pending badge.** The "Waiting on…" badge rendered the server's `dice_pending` snapshot via `innerHTML` to support inline `<span class="dpb-label">` styling. Server-side validation strips `` ` $ \ `` from labels + character names but leaves `< > &` intact. A shared `_escHtml()` helper now wraps both `e.label` and every `e.pending[]` member name before they reach the template literal. Server side of `POST /dice-request` is unchanged — the right escape boundary is the innerHTML sink.
+
+### Light / dark / auto theme picker (upstream PR #40 / v1.12.0)
+
+Three-state theme picker. Default behavior unchanged — anyone who doesn't touch the picker continues to see the same dark, atmospheric display.
+
+- **Dark** *(default)* — the existing ornate look.
+- **Light** — parchment scroll on dark scenery. Body, vignette, and particle backdrop stay dark for contrast; `#text-content` becomes a cream "page" with deep-ink narration. Block-identity colors preserved at darker shades (GM-tab purple, NPC bronze, player blue, tutor moss, tutor-warning amber).
+- **Auto** — follows the operating system's `prefers-color-scheme`. Switches automatically and tracks change live.
+
+Picker lives as a fourth row in `#audio-controls` (top-right cluster) alongside Sound Effects / Type Speed / Auto Narrate. Click to cycle through Dark → Light → Auto → Dark. Per-browser persistence in `localStorage["gm-theme"]`. A small inline `<script>` in `<head>` reads that value and sets `data-theme` on `<html>` *before* the stylesheet parses — prevents the dark→light or light→dark flash on every load. Auto mode leaves the attribute off and lets `@media (prefers-color-scheme: light)` resolve.
+
+Vellum palette carried over from the Neural Initiative implementation: parchment radial gradient `rgba(255, 245, 220, 0.96)` → `rgba(238, 224, 188, 0.82)`, deep-ink narration `rgb(40, 28, 14)` with warm-light shadow, bronze accents `rgb(70, 50, 18)` / `rgba(140, 95, 20, *)`. Action buttons flip to dark plate + cream text. Modal panels get the same parchment treatment with deep-ink text; modal backdrop stays dark to dim the scenery behind it.
+
+Covers all narration block types, input panel + char tabs + staged queue, sheet + SRD modals + content tables, world clock, composing indicator, all v0.11.0 TTS chrome, the new phone-mode + full-mode buttons, and the dice-pending badge.
+
+### Audio-controls legibility fixes (upstream PR #41 / v1.12.1)
+
+Four small fixes surfaced by table-side testing immediately after the theme picker landed:
+
+- `.theme-label` had no CSS rule and was rendering at browser-default `<span>` size (~16px) while every other label in `#audio-controls` was 7.5px Cinzel. Folded into the combined `.speed-label` / `.narrate-label` / `.theme-label` declaration so all three share font, sizing, and the new pill styling.
+- The three click-to-cycle labels (Type Speed, Auto Narrate, Theme) now look like pill buttons — subtle dark inset background, bronze 1px border, 4px corner radius. Active-state ("On", "Light", "Auto") gets a stronger pill background.
+- Default `#audio-controls` opacity bumped from 0.38 → 0.78. The cluster used to fade to barely-visible at rest; combined with `rgba(*,0.75)` text alpha that gave ~0.28 effective alpha against the dark backdrop. Individual label defaults bumped from `rgba(180,140,60,0.75)` to `rgba(220,185,100,0.85)`.
+- Per-row hover affordance — each `.audio-row` now has its own hover state (subtle background pill, brighter label color). The row under the cursor reads as the active click target.
+- `.dice-result` text was `#c8a040` with a faint glow — called out as "barely visible." Bumped to `#f0d27a` with a stronger amber glow plus a deep-ink drop shadow, wrapped in a faint dark plate. Light-mode dice-result picks up a matching deep-ink-on-parchment treatment.
+
 ## [0.11.0] — 2026-05-28 — Narrator TTS + i18n expansion (sync from claude-dnd-skill v1.10.0)
 
 Two additive features ported from claude-dnd-skill v1.10.0, adapted to open-tabletop-gm conventions (GM terminology, relative paths, `GM_TTS_KEY` / `GM_SFX_LANGUAGES` env vars, key file at `~/.config/open-tabletop-gm/tts.key`).
