@@ -10,6 +10,10 @@ display/key.pem
 display/.campaign
 display/.input_queue
 display/.input_trigger
+display/.autorun-session
+display/.approved_devices.json
+display/narration_target
+display/roll_prefs.json
 display/input_log.json
 display/player_input.json
 

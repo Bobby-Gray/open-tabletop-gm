@@ -86,11 +86,12 @@ to the sidebar on load.
 
 | Component | Role |
 |---|---|
-| `app.py` | Flask server — receives `send.py` POSTs, strips ANSI/TUI chrome, detects scene from keywords, pushes via SSE |
+| `gm-display-app.py` | Flask server — receives `send.py` POSTs, strips ANSI/TUI chrome, detects scene from keywords, pushes via SSE |
+| `autorun_wait.py` | Blocking wait for autorun mode — pure-python (TCC-safe), drives the turn loop between responses |
 | `send.py` | Single pipeline for all display updates — narration, dice, NPC dialogue, stat changes, timed effects |
 | `push_stats.py` | Bulk stat pushes (party load, turn order, world time, factions) |
 | `check_input.py` | Drains the player input queue (autorun mode) — called at turn start |
-| `dm_help.py` | One-shot hint fired by the ◈ DM Help button on the display |
+| `dm_help.py` | One-shot hint fired by the ◈ GM Help button on the display |
 | `audio.py` | Scans narration for SFX triggers; serves synthesized WAV files to browsers |
 | `index.html` | Typewriter rendering, sky canvas, particle system, CSS gradient crossfades |
 
@@ -182,16 +183,20 @@ When a round-based effect expires naturally (reaches 0 on turn advance), the dis
 
 ### Player input panel (autorun mode)
 
-When autorun is enabled, a collapsible input panel appears at the bottom of the display. Players on any device can submit their action before their turn. A pie-clock countdown shows the remaining wait window. When the timer fires or enough players are ready, the queued action is picked up automatically by `check_input.py` at turn start.
+When autorun is enabled, a collapsible input panel appears at the bottom of the display. Players on any device can submit their action before their turn with a **one-tap send** (no separate stage/ready step), and a status strip tracks the turn — *Your move → Sending… → Sent → ✓ The GM has your move → narrating*. The `✓ The GM has your move` toast fires when `check_input.py` actually drains the action off the queue, not just when it's staged. A pie-clock countdown shows the remaining wait window; the queued action is picked up automatically by `check_input.py` at turn start.
+
+Device approval defaults to trusting any LAN device; set `GM_REQUIRE_APPROVAL=1` to restore the approve/deny gate.
 
 Enable autorun:
 ```
-/dnd autorun on
+/gm autorun on
 ```
 
-### DM Help button
+**Player Settings (phone):** each device has a Settings view with a **Text Size** stepper (per-browser font scaling, anti-FOUC), a **Narration** length slider (250–2500 words → `POST /narration-pref`, surfaced to the GM as a `[[Narration length…]]` directive), and — when the device is bound to a PC — a **Rolls** toggle that flips that character between players-roll and GM-auto-roll (`POST /roll-pref`, surfaced as a `[[<Char> roll mode: …]]` directive). See SKILL.md → Dice convention for how those directives are honoured at the table.
 
-The ◈ button in the top-right corner fires a one-shot hint from `dm_help.py` — a single `--tutor` block appears in the feed with a tactical suggestion for the current situation. This is separate from tutor mode (`/dnd tutor on`) which appends hints to every response.
+### GM Help button
+
+The ◈ button in the top-right corner fires a one-shot hint from `dm_help.py` — a single `--tutor` block appears in the feed with a tactical suggestion for the current situation. This is separate from tutor mode (`/gm tutor on`) which appends hints to every response.
 
 ### Sound effects
 

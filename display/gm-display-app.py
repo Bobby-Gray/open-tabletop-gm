@@ -105,6 +105,8 @@ TOKEN_FILE    = os.path.join(_DISPLAY_DIR, ".token")
 INPUT_FILE    = os.path.join(_DISPLAY_DIR, "player_input.json")
 TRIGGER_FILE  = os.path.join(_DISPLAY_DIR, ".input_trigger")
 QUEUE_FILE    = os.path.join(_DISPLAY_DIR, ".input_queue")
+NARRATION_TARGET = os.path.join(_DISPLAY_DIR, "narration_target")  # set by display's Narration slider
+ROLL_PREFS_FILE  = os.path.join(_DISPLAY_DIR, "roll_prefs.json")   # per-character roll overrides
 
 _apply_campaign_sfx_languages()
 
@@ -257,6 +259,13 @@ def _persist_approved_devices() -> None:
 _load_approved_devices()
 
 
+# A casual home-LAN game doesn't need a per-device approval gate — it's friction
+# (every phone sits on "Awaiting approval" until the GM taps a card). Default:
+# trust any device that can already reach the server. Set GM_REQUIRE_APPROVAL=1
+# to restore the approve/deny gate (e.g. on an untrusted/shared network).
+_REQUIRE_APPROVAL = os.environ.get("GM_REQUIRE_APPROVAL", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def _device_ok(device_id: str, ip: str) -> str:
     """Return 'approved', 'pending', or 'denied' for a given device."""
     if not device_id:
@@ -267,12 +276,13 @@ def _device_ok(device_id: str, ip: str) -> str:
             return "approved"
         if device_id in _denied_devices:
             return "denied"
-        # Localhost always auto-approved
-        if ip in ("127.0.0.1", "::1"):
+        # Auto-approve localhost always, and every reachable device unless the
+        # approval gate is explicitly required.
+        if not _REQUIRE_APPROVAL or ip in ("127.0.0.1", "::1"):
             _approved_devices.add(device_id)
             _need_persist = True
         elif device_id not in _pending_devices:
-            # New LAN device — hold and notify DM
+            # New LAN device with the gate on — hold and notify GM
             _pending_devices[device_id] = {
                 "id":         device_id,
                 "ip":         ip,
@@ -802,6 +812,20 @@ def _detect_scene(text: str) -> Optional[dict]:
 
 _clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
+# Maps a connected SSE client (queue) → the character it's bound to, if any.
+# Phones connect to /stream?character=<name>; the main display has no character.
+# Lets a dice-request know whether a target PC has a live phone (→ route there)
+# or not (→ open the on-screen roller). Guarded by _clients_lock.
+_client_chars: "dict[queue.Queue, str]" = {}
+
+
+def _phone_present(char: str) -> bool:
+    """True if some connected phone is bound to this character (case-insensitive)."""
+    c = (char or "").strip().lower()
+    if not c:
+        return False
+    with _clients_lock:
+        return c in _client_chars.values()
 
 # ─── Text replay log ──────────────────────────────────────────────────────────
 # Stores the last N cleaned text chunks so late-connecting browsers can catch up.
@@ -1072,6 +1096,7 @@ def _broadcast(payload: dict) -> None:
                 dead.append(q)
         for q in dead:
             _clients.remove(q)
+            _client_chars.pop(q, None)
 
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
@@ -1593,6 +1618,74 @@ def audio_toggle():
     return state, 200
 
 
+@app.route("/narration-pref", methods=["POST"])
+def narration_pref():
+    """Set the narration-length target the GM aims for each turn.
+
+    Body: {"target_words": int}.  0 clears the preference. Persisted to the
+    display dir as a plain integer; check_input.py reads it and prepends a
+    directive to queued player input so the GM honors it that turn — no
+    separate file read required on the GM side.
+    """
+    if not _token_ok():
+        return "Forbidden", 403
+    if not _rate_ok(request.remote_addr or "?"):
+        return "Rate limited", 429
+    data = request.get_json(silent=True) or {}
+    try:
+        n = int(data.get("target_words", 0))
+    except (TypeError, ValueError):
+        n = 0
+    n = max(0, min(5000, n))
+    try:
+        if n:
+            with open(NARRATION_TARGET, "w") as f:
+                f.write(str(n))
+        elif os.path.exists(NARRATION_TARGET):
+            os.remove(NARRATION_TARGET)
+    except OSError:
+        pass
+    return {"target_words": n}, 200
+
+
+@app.route("/roll-pref", methods=["POST"])
+def roll_pref():
+    """Per-character roll preference. Body: {"character": str, "mode": "auto"|"players"}.
+
+    Persisted to roll_prefs.json; check_input.py surfaces each override as a
+    [[<Char> roll mode: …]] directive so the GM honors it for that character,
+    overriding the campaign-wide roll_mode in state.md.
+
+    The character name is validated against the active party via _char_ok before
+    persistence — otherwise a crafted value could smuggle prompt text into the GM
+    through the [[<Char> roll mode: …]] template that check_input.py emits.
+    """
+    if not _token_ok():
+        return "Forbidden", 403
+    if not _rate_ok(request.remote_addr or "?"):
+        return "Rate limited", 429
+    data = request.get_json(silent=True) or {}
+    char = (data.get("character") or "").strip()
+    mode = (data.get("mode") or "").strip().lower()
+    if not char or mode not in ("auto", "players"):
+        return {"ok": False}, 400
+    with _stats_lock:
+        known = {p["name"] for p in _current_stats.get("players", [])}
+    if not _char_ok(char, known):
+        return "Forbidden", 403
+    try:
+        prefs = {}
+        if os.path.exists(ROLL_PREFS_FILE):
+            with open(ROLL_PREFS_FILE) as f:
+                prefs = json.load(f)
+        prefs[char] = mode
+        with open(ROLL_PREFS_FILE, "w") as f:
+            json.dump(prefs, f)
+    except (OSError, ValueError):
+        pass
+    return {"ok": True, "character": char, "mode": mode}, 200
+
+
 # ─── Narrator voice (Gemini Flash TTS) ────────────────────────────────────────
 # Voice selection persists per-campaign in state.md → ## Session Flags →
 # `tts_voice: <name>`. Read at /index render, written by POST /voice.
@@ -1986,11 +2079,14 @@ def dice_request():
             }
         _broadcast({"dice_pending": _dice_pending_snapshot()})
 
+    # Targets with no live phone bound → the main display should roll on-screen.
+    onscreen_targets = [c for c in chars if c.lower() != "any" and not _phone_present(c)]
     payload = {
         "dice_request": {
             "request_id": request_id,
             "characters": chars,
             "character": chars[0] if len(chars) == 1 else "any",   # legacy single-target field
+            "onscreen_targets": onscreen_targets,
             "spec": spec,
             "modifier": modifier,
             "advantage": adv,
@@ -2323,6 +2419,11 @@ def stream():
     q: queue.Queue = queue.Queue(maxsize=256)
     with _clients_lock:
         _clients.append(q)
+        # Register this client's bound character (phones pass ?character=/?char=);
+        # the main display passes neither. Drives dice-request phone-vs-screen routing.
+        _ch = (request.args.get("character") or request.args.get("char") or "").strip().lower()[:48]
+        if _ch:
+            _client_chars[q] = _ch
 
     # Send the current scene immediately on connect so the browser
     # starts with the right background even mid-session.
@@ -2372,6 +2473,7 @@ def stream():
             "request_id": rid,
             "characters": chars,
             "character": chars[0] if len(chars) == 1 else "any",
+            "onscreen_targets": [c for c in chars if c.lower() != "any" and not _phone_present(c)],
             "spec": meta.get("spec", "1d20"),
             "modifier": meta.get("modifier", 0),
             "advantage": meta.get("advantage", "normal"),
@@ -2407,6 +2509,7 @@ def stream():
                     _clients.remove(q)
                 except ValueError:
                     pass
+                _client_chars.pop(q, None)
 
     resp = Response(
         generate(),
@@ -2439,7 +2542,7 @@ if __name__ == "__main__":
     ssl_ctx = (_cert, _key) if (_TLS_MODE and os.path.exists(_cert) and os.path.exists(_key)) else None
     scheme  = "https" if ssl_ctx else "http"
 
-    # Write .scheme so push_stats.py / send.py / autorun-wait.sh know which to use
+    # Write .scheme so push_stats.py / send.py / autorun_wait.py know which to use
     try:
         with open(os.path.join(_display_dir, ".scheme"), "w") as _sf:
             _sf.write(scheme)

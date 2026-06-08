@@ -123,13 +123,15 @@ Once a campaign is loaded, stay in GM mode. Interpret all player messages as in-
 **Player input queue (display companion):**
 At the start of each turn, run `check_input.py` before processing the player's message. If it prints output, use those queued actions as part of (or all of) the player's action this turn. Empty output means no queued input — proceed normally.
 
+A line wrapped in double brackets — e.g. `[[Narration length for this turn: aim for ~250 words…]]` — is **not** a player action; it is a directive from the display's Narration slider. Treat it as a hard length budget for **this turn's** narration: write to roughly that word count, trimming description and pacing to fit, and never pad to reach it. The remaining `[Char]: …` lines are the actual player actions. (If the only thing returned is the `[[…]]` directive with no action lines, treat it as no player input.)
+
 **Autorun mode** (`autorun: true` in `state.md → ## Session Flags`):
 
 When autorun is active, Claude drives the turn loop — no GM Enter required. After completing each response, run this blocking wait as the very last Bash call:
 
 ```bash
 # Autorun wait — Ctrl+C to return to manual mode
-AUTORUN=$(bash <skill-base>/display/autorun-wait.sh)
+AUTORUN=$(python3 <skill-base>/display/autorun_wait.py)
 echo "$AUTORUN"
 ```
 
@@ -193,10 +195,21 @@ Read `## Campaign Arc` at every session load alongside `## GM Style Notes`. The 
 
 9. **Do not reference the arc document to players.** Players experience it as natural story progression.
 
-**Dice convention:**
-- Roll initiative automatically via `combat.py init` for all combatants at combat start
-- Resolve all NPC/opponent rolls via `dice.py`, show math inline
-- Refer to your system module for the correct dice notation and resolution method
+**Dice convention — who rolls (read `roll_mode` and obey it):**
+
+Roll handling is chosen at game start and stored as `roll_mode` in `state.md → ## Session Flags` (default **players**). Read it at every `/gm load` and honor it all session:
+
+- **`roll_mode: players` (default) — players roll their own PCs.** For *any* PC check (attack, skill, save, etc.), **call for the roll by name and STOP — wait for the player's result before resolving.** Do **not** roll it for them. ⚠ **Never fall back to `dice.py` or an `[auto]` result for a PC** just because the physical-dice service isn't running — if no roll comes back, ask the player for the number out loud. You roll **only** NPC/opponent dice. (Silently auto-rolling a PC is the #1 thing players notice and dislike.)
+  - **Prescribe the roll through the display when it's running** (`_display_running = true`): call
+    `python3 <skill-base>/display/send.py --dice-request --character "<PC>" --spec 1dN [--modifier ±M] [--advantage advantage|disadvantage] [--label "<check>"] [--dc N] --wait`.
+    The roll routes to that PC's **phone** if one is bound, or **auto-opens the on-screen Dice drawer** on the shared screen when no phone is bound (or the display's *Roll on screen* setting is on) — the same roller either way. `--wait` blocks until the player rolls and then prints their result for you to resolve (it exits non-zero on timeout — fall back to asking out loud). When the display is **not** running, just call for the roll verbally and wait. Never roll the PC yourself under `players`.
+- **`roll_mode: auto` — you roll everything openly.** Resolve PC d20s yourself via `dice.py` and show full math inline (`Aldric — Perception: d20+5 = 18 → …`), no waiting. For solo / fast play.
+
+**Initiative** is always GM-rolled via `combat.py init` for all combatants (PCs and NPCs) regardless of `roll_mode`.
+
+**Per-player override:** a player can flip their own PC via the phone Settings → *Rolls* toggle. When that player has a queued action, `check_input.py` prepends a `[[<Char> roll mode: auto|players]]` directive — honor it for that character, overriding the campaign default. Precedence: **per-character directive > campaign `roll_mode`**.
+
+**NPC/opponent rolls are always yours** — resolve via `dice.py`, show math inline. Refer to your system module for the correct dice notation and resolution method.
 
 ---
 

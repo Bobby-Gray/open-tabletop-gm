@@ -57,7 +57,8 @@ Do NOT run `git init` or any git commands in campaign directories.
 11. **3 NPCs** — one-line index in npcs.md; full detail in npcs-full.md; each needs 2+ relationships
 12. **3-5 Quest Seeds** → write to `## Quest Seed Bank` in world.md
 13. Write state.md: session count 0, starting location, system, display flag, and the chosen `**System Version:**` value on the header line (from step 2; omit the field if the system has no versions)
-14. **Dynamic Campaign Arc** — optional arc generation. Ask: *"Generate a committed narrative arc? [y/n — recommended]"*
+14. **Roll handling** — ask: *"Dice rolls — `players` (default: players roll their own PCs and you wait for the result) or `auto` (you roll everything openly with full math)?"* Write the answer as `roll_mode: players|auto` to `state.md → ## Session Flags`. Default to `players` if the GM has no preference. See SKILL.md → Dice convention for the in-session behaviour.
+15. **Dynamic Campaign Arc** — optional arc generation. Ask: *"Generate a committed narrative arc? [y/n — recommended]"*
 
    **If yes:** Drawing from theme, threat arc stages, factions, Three Truths, NPC motivations, and quest seeds, derive:
    - `theme` — one sentence: what this story is ultimately about (not what happens, but what it means)
@@ -69,7 +70,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 
    **If no:** Write `type: sandbox` to `## Campaign Arc`. Story remains open-ended with no arc tracking.
 
-15. Confirm creation. Offer `/gm character new`.
+16. Confirm creation. Offer `/gm character new`.
 
 ---
 

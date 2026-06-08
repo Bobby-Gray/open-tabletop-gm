@@ -12,6 +12,17 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+### Sync from claude-dnd-skill v2.1.x — backend + GM-side discipline
+
+Ports the system-agnostic portions of the v2.1.0–v2.1.4 upstream lineup. Backend infrastructure and GM-side docs land here; the deeper phone UX bits (on-screen dice drawer for no-phones games, per-PC Rolls toggle in phone Settings, status-strip rewrite for one-tap send) are deferred to a follow-up PR to be adapted properly against OTGM's tab-based phone UX.
+
+- **`roll_mode` session flag** — campaigns now declare in `state.md → ## Session Flags` whether players roll their own PCs (default — GM waits for the result) or the GM rolls everything openly. `/gm new` asks at session 0; `/gm load` prompts once on legacy campaigns missing the field. SKILL.md → Dice convention rewritten with the new semantics, including the per-character override path via the phone Settings → Rolls toggle (surfaced to the GM as a `[[<Char> roll mode: …]]` directive prepended by `check_input.py`).
+- **Narration length directive** — display companion now exposes a Narration slider (250–2500 words). Setting it POSTs to `/narration-pref`; `check_input.py` prepends a `[[Narration length for this turn: aim for ~N words…]]` directive to the queued action so the GM honors the table's pacing this turn. SKILL.md documents how to read and obey the directive.
+- **TCC-safe autorun** — `display/autorun-wait.sh` replaced by `display/autorun_wait.py`. macOS TCC blocks shell-level file creation under `~/Documents`, which broke autorun mode for anyone running OTGM out of that path. Pure-python rewrite handles session invalidation, countdown broadcast, queue poll, and `/queue/consumed` POST with identical semantics. Old `.sh` deleted.
+- **Phone-aware dice routing infrastructure** — `gm-display-app.py` now tracks which character each SSE client is bound to (`_client_chars`) via the new `?character=<name>` stream query param, and exposes `_phone_present()` so `dice_request` payloads include `onscreen_targets` (characters with no live phone). The follow-up UI PR will use this to auto-open the on-screen dice drawer for those characters; the field is benign without UI support.
+- **`GM_REQUIRE_APPROVAL` env var** — device approval gate now defaults to **off** (auto-trust any reachable device). The approve/deny friction made every casual home-LAN game feel like a security checkpoint. Set `GM_REQUIRE_APPROVAL=1` to restore the gate on untrusted networks.
+- **Reading-text-size stepper** — display companion gains a Text Size control in audio-controls (A− / A+ / click % to reset). Multiplies `--text-scale` on `#text-content`, persisted to `localStorage["gm-text-scale"]`. Anti-FOUC read in the top-of-document inline script. Font-size, not page zoom — keeps layout intact at scale.
+- **Display README** — component table updated for `gm-display-app.py` + `autorun_wait.py`, Player input panel section rewritten to document the `GM_REQUIRE_APPROVAL` default and the phone Settings (Text Size + Narration; Rolls toggle pending in the follow-up PR).
 - **License formalized as AGPL-3.0-or-later.** Added canonical `LICENSE` file with `Copyright (c) 2026 Neural Initiative LLC` and a `CONTRIBUTING.md` documenting the contribution licensing handshake. The README now includes a proper License section. Self-hosting and modification remain explicitly welcome; AGPL protects against closed-source SaaS forks.
 
 ## [0.12.0] — 2026-05-31 — Phone companion + theme picker (sync from claude-dnd-skill v1.10.0..v1.12.1)

@@ -56,6 +56,8 @@ Skip this step if exit 0 or if the system declares no versions.
 2. `~/open-tabletop-gm/campaigns/<name>/world.md`
 3. `~/open-tabletop-gm/campaigns/<name>/npcs.md`
 
+After reading `state.md`, check `## Session Flags` for `roll_mode:`. If the field is missing (legacy campaign predating the flag), ask once: *"Dice rolls — `players` (default: players roll their own PCs and you wait) or `auto` (you roll everything openly)?"* Write the answer as `roll_mode: players|auto` to `## Session Flags`. Default to `players` if no answer. See SKILL.md → Dice convention for the in-session behaviour.
+
 **Step 5 — Pull scene-context from the campaign graph.** Always run, even if you suspect `graph.json` doesn't exist — the script exits cleanly with a notice when uninitialized.
 ```
 python3 <skill-base>/scripts/gm_graph.py scene-context \
