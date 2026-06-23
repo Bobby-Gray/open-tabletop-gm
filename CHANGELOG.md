@@ -12,6 +12,11 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+### Display input fixes (synced from claude-dnd-skill)
+
+- **The PARTY INPUT box no longer covers the bottom of the narration.** The fixed input panel grows when it expands (or the editorial drawer opens, or the mobile keyboard raises the viewport); a `ResizeObserver` now keeps `#text-scroll`'s bottom padding synced to the panel's live on-screen footprint so the last lines of narration always clear it. No-op in phone input-only mode.
+- **A failed player-input submit now says so.** If the browser→server POST fails after retries, the Stage button shows "Send failed — tap to retry" (the typed text and its `localStorage` cache are preserved, so a tap re-sends) instead of silently resetting to "Stage" — which previously read as "submitted but not acknowledged."
+
 ### Sync from claude-dnd-skill v2.1.x — backend + GM-side discipline
 
 Ports the system-agnostic portions of the v2.1.0–v2.1.4 upstream lineup. Backend infrastructure and GM-side docs land here; the deeper phone UX bits (on-screen dice drawer for no-phones games, per-PC Rolls toggle in phone Settings, status-strip rewrite for one-tap send) are deferred to a follow-up PR to be adapted properly against OTGM's tab-based phone UX.
