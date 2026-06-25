@@ -1,0 +1,89 @@
+{
+  "manifest_version": 1,
+  "system": "dnd5e",
+  "label": "D&D 5e",
+
+  "_comment": "DRAFT reference manifest — reproduces the current hardcoded D&D display. Not yet read by the renderer; see systems/UI-MANIFEST.md. Every widget self-hides when its bound field is absent, so non-casters show no spell slots, etc.",
+
+  "sidebar": [
+    {
+      "type": "bar",
+      "label": "HP",
+      "bind": "hp",
+      "fields": { "current": "current", "max": "max", "temp": "temp" },
+      "color": "#b5524a"
+    },
+    {
+      "type": "counter",
+      "label": "XP",
+      "bind": "xp",
+      "fields": { "current": "current", "next": "next" }
+    },
+    {
+      "type": "pip_track",
+      "label": "Hit Dice",
+      "bind": "hit_dice",
+      "fields": { "current": "remaining", "max": "max" },
+      "pip_color": "#c9a24b"
+    },
+    {
+      "type": "pip_track",
+      "label": "Second Wind",
+      "bind": "second_wind",
+      "boolean": true,
+      "pip_color": "#c9a24b"
+    },
+    {
+      "type": "pip_levels",
+      "label": "Spell Slots",
+      "bind": "spell_slots",
+      "pip_color": "#a078dc"
+    },
+    {
+      "type": "tag_list",
+      "label": "Conditions",
+      "bind": "conditions"
+    },
+    {
+      "type": "tag_single",
+      "label": "Concentrating",
+      "bind": "concentration",
+      "color": "#a078dc"
+    },
+    {
+      "type": "badge_set",
+      "label": "Resources",
+      "bind": "milestones"
+    }
+  ],
+
+  "sheet": {
+    "stat_grid": {
+      "label": "Ability Scores",
+      "bind": "sheet.abilities",
+      "stats": [
+        { "key": "STR", "label": "STR", "show_modifier": true },
+        { "key": "DEX", "label": "DEX", "show_modifier": true },
+        { "key": "CON", "label": "CON", "show_modifier": true },
+        { "key": "INT", "label": "INT", "show_modifier": true },
+        { "key": "WIS", "label": "WIS", "show_modifier": true },
+        { "key": "CHA", "label": "CHA", "show_modifier": true }
+      ]
+    },
+    "sections": [
+      { "type": "attacks",   "label": "Attacks",   "bind": "sheet.attacks" },
+      { "type": "spells",    "label": "Spells",    "bind": "sheet.spells" },
+      { "type": "features",  "label": "Features",  "bind": "sheet.features" },
+      { "type": "inventory", "label": "Inventory", "bind": "sheet.inventory" }
+    ]
+  },
+
+  "vocab": {
+    "conditions": [
+      "Blinded", "Charmed", "Deafened", "Frightened", "Grappled",
+      "Incapacitated", "Invisible", "Paralyzed", "Petrified", "Poisoned",
+      "Prone", "Restrained", "Stunned", "Unconscious", "Exhaustion"
+    ],
+    "sustained_term": "Concentration"
+  }
+}
