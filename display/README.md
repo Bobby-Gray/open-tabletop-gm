@@ -198,6 +198,15 @@ Enable autorun:
 
 The ◈ button in the top-right corner fires a one-shot hint from `dm_help.py` — a single `--tutor` block appears in the feed with a tactical suggestion for the current situation. This is separate from tutor mode (`/gm tutor on`) which appends hints to every response.
 
+**Which model generates the hint** is model-agnostic — OTGM shells out to whatever code-driven LLM you already run, with no hard dependency on any vendor:
+
+- `OTGM_HINT_CMD` — set this to your model command and OTGM uses it verbatim. The command receives the full prompt on **stdin** and must print the hint to **stdout**. Examples: `export OTGM_HINT_CMD='llm -m mistral-large-latest'`, `export OTGM_HINT_CMD='gemini -p'`, `export OTGM_HINT_CMD='claude -p'`.
+- If unset, OTGM auto-detects a known CLI on `PATH` (`claude`, `opencode`, `gemini`, `llm`) and uses its non-interactive mode. Claude is supported but never required.
+- `OTGM_HINT_MODEL` — optionally pin a model for the auto-detected backend.
+- `OTGM_HINT_TIMEOUT` — seconds before the hint call is abandoned (default 60).
+
+If no backend is found, the hint feature simply no-ops — a missing or misconfigured model degrades to "no hint," it never interrupts play.
+
 ### Sound effects
 
 `audio.py` scans narration text server-side via compiled regex patterns. On a match it broadcasts `{"sfx": name}` to all connected browsers via SSE. The browser fetches the WAV file from `/audio/sfx/<name>` (synthesized on demand, cached after first request) and plays it via Web Audio API.

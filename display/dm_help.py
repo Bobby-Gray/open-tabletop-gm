@@ -20,8 +20,11 @@ Lock lifecycle:
 
 import argparse
 import json
+import os
 import pathlib
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 
@@ -210,8 +213,58 @@ def get_session_context(campaign: str) -> str:
     return "\n".join(lines)
 
 
-def call_claude(display: str, state: str, session: str, arc: str) -> str:
-    """Call claude -p (non-interactive print mode) — uses Claude Code's own auth."""
+HINT_TIMEOUT = int(os.environ.get("OTGM_HINT_TIMEOUT", "60"))
+
+
+def _resolve_hint_backend(system: str, prompt: str):
+    """
+    Resolve which code-driven LLM generates the hint, and the text to feed it.
+
+    Returns (argv, stdin_text), or (None, None) when no backend is available.
+
+    Portability contract — OTGM depends on no single model or vendor:
+      * OTGM_HINT_CMD names the command explicitly. It receives the full prompt on
+        stdin and must print the hint to stdout. Works with any model/CLI, e.g.:
+            export OTGM_HINT_CMD='llm -m mistral-large-latest'
+            export OTGM_HINT_CMD='gemini -p'
+            export OTGM_HINT_CMD='claude -p'
+        This is the authoritative escape hatch — set it and OTGM uses it verbatim.
+      * If unset, auto-detect a known CLI on PATH (claude, opencode, gemini, llm)
+        and use its non-interactive mode. Claude is supported, never required.
+      * OTGM_HINT_MODEL optionally pins a model for the auto-detected backend.
+      * If nothing is found the hint feature no-ops; play is never interrupted.
+    """
+    folded = f"{system}\n\n---\n\n{prompt}"
+
+    override = os.environ.get("OTGM_HINT_CMD", "").strip()
+    if override:
+        return shlex.split(override), folded
+
+    model = os.environ.get("OTGM_HINT_MODEL", "").strip()
+
+    # Every backend reads the prompt on stdin and prints the hint to stdout.
+    if shutil.which("claude"):
+        argv = ["claude", "-p", "--system-prompt", system]
+        if model:
+            argv += ["--model", model]
+        return argv, prompt  # claude accepts the system prompt natively
+    if shutil.which("opencode"):
+        return ["opencode", "run"] + (["--model", model] if model else []), folded
+    if shutil.which("gemini"):
+        return ["gemini"] + (["-m", model] if model else []), folded
+    if shutil.which("llm"):
+        return ["llm"] + (["-m", model] if model else []), folded
+
+    return None, None
+
+
+def call_model(display: str, state: str, session: str, arc: str) -> str:
+    """
+    Generate a GM hint via whatever code-driven LLM the operator runs.
+    Model-agnostic by design (see _resolve_hint_backend for the contract).
+    Returns "SKIP" when no backend is available or the call fails, so a missing
+    or misconfigured model degrades to "no hint" rather than breaking play.
+    """
     system = (
         "You are a tabletop RPG Game Master generating a brief in-character GM hint. "
         "You are given three sources of context in decreasing order of freshness: "
@@ -252,17 +305,20 @@ def call_claude(display: str, state: str, session: str, arc: str) -> str:
 
     prompt = "\n\n".join(prompt_parts)
 
-    result = subprocess.run(
-        [
-            "claude", "-p",
-            "--model", "claude-sonnet-4-6",
-            "--system-prompt", system,
-            prompt,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+    argv, stdin_text = _resolve_hint_backend(system, prompt)
+    if argv is None:
+        return "SKIP"
+
+    try:
+        result = subprocess.run(
+            argv,
+            input=stdin_text,
+            capture_output=True,
+            text=True,
+            timeout=HINT_TIMEOUT,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return "SKIP"
 
     if result.returncode != 0:
         return "SKIP"
@@ -293,7 +349,7 @@ def main() -> None:
         if not display and not state and not session:
             return
 
-        hint = call_claude(display, state, session, arc)
+        hint = call_model(display, state, session, arc)
         if hint.strip().upper() == "SKIP":
             return
 

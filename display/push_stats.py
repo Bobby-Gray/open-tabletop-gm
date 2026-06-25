@@ -80,7 +80,7 @@ _DISPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 _SCHEME_FILE = os.path.join(_DISPLAY_DIR, ".scheme")
 _SCHEME = open(_SCHEME_FILE).read().strip() if os.path.exists(_SCHEME_FILE) else "http"
 FLASK_URL  = f"{_SCHEME}://localhost:5001/stats"
-TOKEN_FILE = os.path.expanduser("~/.claude/skills/dnd/display/.token")
+TOKEN_FILE = os.path.join(_DISPLAY_DIR, ".token")
 TIMEOUT    = 2.0
 
 # SSL context — only used when running HTTPS (self-signed cert)

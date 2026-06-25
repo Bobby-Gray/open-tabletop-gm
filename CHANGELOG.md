@@ -12,6 +12,11 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+### Model-agnostic GM hint (thanks @eviloverclaude)
+
+- **The ◈ GM Help hint no longer depends on Claude.** `dm_help.py` previously shelled out to a hardcoded `claude -p --model claude-sonnet-4-6`, so the feature silently produced nothing for anyone running OTGM through opencode, gemini, mistral, or any non-Claude tooling. It now resolves a backend portably: set `OTGM_HINT_CMD` to your own model command (prompt on stdin, hint on stdout), or let OTGM auto-detect a known CLI on `PATH` (`claude`, `opencode`, `gemini`, `llm`). `OTGM_HINT_MODEL` pins a model for the auto-detected backend; `OTGM_HINT_TIMEOUT` bounds the call. Claude still works out of the box but is no longer a dependency, and with no backend available the feature no-ops instead of breaking play.
+- **Fixed `push_stats.py` reading the display token from a hardcoded `~/.claude/skills/dnd/display/.token`** instead of its own display directory like every sibling script. This broke stat pushes for any install outside the Claude skill path.
+
 ### Display input fixes (synced from claude-dnd-skill)
 
 - **The PARTY INPUT box no longer covers the bottom of the narration.** The fixed input panel grows when it expands (or the editorial drawer opens, or the mobile keyboard raises the viewport); a `ResizeObserver` now keeps `#text-scroll`'s bottom padding synced to the panel's live on-screen footprint so the last lines of narration always clear it. No-op in phone input-only mode.
