@@ -55,6 +55,7 @@ from paths import (
     campaign_dir as _campaign_dir,
     find_campaign as _find_campaign,
     campaign_system as _campaign_system,
+    characters_dir as _characters_dir,
 )
 
 # Audio module — degrades silently if numpy not installed
@@ -2176,12 +2177,13 @@ def get_character_sheet(character):
     """Return the markdown content of a PC sheet for the active campaign.
 
     Used by the phone's Character tab. Resolves the active campaign from
-    CAMP_FILE, then reads:
-        <DND_CAMPAIGN_ROOT>/campaigns/<campaign>/characters/<character>.md
+    CAMP_FILE, then reads (via paths.py, which honors GM_CAMPAIGN_ROOT):
+        <root>/campaigns/<campaign>/characters/<character>.md
 
-    Falls back to the global roster at ~/.claude/dnd/characters/<character>.md
-    if the campaign-side file is missing — useful when the character was just
-    imported but not yet replicated.
+    Falls back to the global roster (<root>/characters/<character>.md) if the
+    campaign-side file is missing — useful when the character was just imported
+    but not yet replicated. The legacy ~/.claude/dnd/characters/ path is kept as
+    a final fallback for older Claude-skill installs.
 
     Returns text/markdown so the phone can render in JS without server-side
     dependencies (no `markdown` lib required).
@@ -2203,10 +2205,11 @@ def get_character_sheet(character):
     # here could pivot to arbitrary `<name>.md` reads via os.path.join.
     camp = re.sub(r"[^A-Za-z0-9_-]", "", camp)[:50]
 
-    root = os.environ.get("DND_CAMPAIGN_ROOT", os.path.expanduser("~/.claude/dnd"))
     candidates = []
     if camp:
-        candidates.append(os.path.join(root, "campaigns", camp, "characters", f"{safe}.md"))
+        candidates.append(str(_find_campaign(camp) / "characters" / f"{safe}.md"))
+    candidates.append(str(_characters_dir() / f"{safe}.md"))
+    # Legacy Claude-skill global roster — final fallback for older installs.
     candidates.append(os.path.expanduser(f"~/.claude/dnd/characters/{safe}.md"))
 
     for path in candidates:
