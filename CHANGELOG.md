@@ -12,6 +12,8 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-06-27 — System-agnostic character UI + model-agnostic GM hint
+
 ### System-agnostic character UI (systems can define their own sidebar + sheet)
 
 - **The character sidebar and sheet are now driven by a per-system UI manifest** instead of a hardcoded D&D layout. A system ships `systems/<name>/ui.json` describing its sidebar widgets, sheet combat strip, and attribute grid; the display renders from it. A new system becomes a ~40-line JSON file rather than new front-end code. See `systems/UI-MANIFEST.md` for the widget catalog and a Shadowrun 5e example, and `systems/dnd5e/ui.json` for the reference manifest.
