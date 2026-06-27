@@ -13,7 +13,7 @@ Usage:
     python3 combat.py attack --atk <bonus> --ac <target_ac> --dmg <notation> [--crit]
         Resolves a single attack roll and damage.
 
-Input / Output is JSON-friendly so the DM (Claude) can pipe state between turns.
+Input / Output is JSON-friendly so the GM agent can pipe state between turns.
 
 Example:
     python3 combat.py init '[{"name":"Flerb","dex_mod":0,"hp":12,"ac":16,"type":"pc"},

@@ -2,7 +2,7 @@
 """
 character.py — D&D 5e character stat calculator
 
-Derives all secondary stats from raw inputs. Used by the DM (Claude)
+Derives all secondary stats from raw inputs. Used by the GM agent
 to verify and generate character sheets without manual arithmetic.
 
 Usage:

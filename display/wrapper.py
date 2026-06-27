@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 """
-wrapper.py — Claude CLI PTY wrapper with secure player-input injection
+wrapper.py — agent CLI PTY wrapper with secure player-input injection
 
 Usage:
-    python3 wrapper.py [claude args...]
+    python3 wrapper.py [agent args...]
 
-Spawns the claude CLI inside a PTY so the terminal experience is identical
-to running `claude` directly. The wrapper's only job beyond pass-through is:
+Spawns the agent CLI inside a PTY so the terminal experience is identical to
+running the agent directly. The agent defaults to `claude`; set GM_AGENT_CMD to
+wrap any code-driven agent (e.g. `opencode`, `gemini`). The wrapper's only job
+beyond pass-through is:
 
   - Poll for `.input_trigger` every 50ms
   - Validate and sanitise the payload
-  - Inject it into Claude's PTY stdin (text + Enter)
+  - Inject it into the agent's PTY stdin (text + Enter)
+
+NOTE: this PTY wrapper is a legacy/optional path. The canonical setup runs the
+agent directly and pushes display content via send.py / push_stats.py (see
+display/README.md) — no wrapper needed.
 
 Display content (narration, stats) is pushed explicitly by the DnD skill
 via send.py / push_stats.py — NOT captured from the raw PTY stream.
@@ -36,6 +42,7 @@ import os
 import pathlib
 import re
 import select
+import shlex
 import signal
 import subprocess
 import sys
@@ -288,11 +295,15 @@ def _sync_winsize(src_fd: int, dst_fd: int) -> None:
 # ─── Entry point ─────────────────────────────────────────────────────────────
 
 def main() -> None:
+    # The agent CLI to wrap. Defaults to `claude` for backward compatibility;
+    # set GM_AGENT_CMD to wrap any code-driven agent (e.g. `opencode`, `gemini`).
+    # Multi-word commands are supported (shlex-split).
+    agent_cmd = shlex.split(os.environ.get("GM_AGENT_CMD", "claude")) or ["claude"]
     argv = sys.argv[1:]
-    if not argv:
-        argv = ["claude"]
-    if argv[0] != "claude":
-        argv = ["claude"] + argv
+    # If the caller didn't name the agent binary themselves, treat their args as
+    # extra args to the configured agent command.
+    if not argv or argv[0] != agent_cmd[0]:
+        argv = agent_cmd + argv
 
     import pty as _pty
     master_fd, slave_fd = _pty.openpty()

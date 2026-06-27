@@ -12,6 +12,12 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+### Cleared remaining Claude-coupling leftovers
+
+- **`wrapper.py` wraps any agent**, not just Claude — set `GM_AGENT_CMD` (default `claude`) to wrap `opencode`, `gemini`, etc. The PTY wrapper is a legacy/optional path anyway (the canonical setup runs the agent directly + `send.py`).
+- **The phone `/character` route resolves via `paths.py`** (honors `GM_CAMPAIGN_ROOT`) instead of `DND_CAMPAIGN_ROOT` + a hardcoded `~/.claude/dnd` root; the legacy `~/.claude/dnd/characters/` path is kept as a final fallback for older installs.
+- Cosmetic: "the DM (Claude)" → "the GM agent" in a couple of script docstrings.
+
 ## [0.13.0] — 2026-06-27 — System-agnostic character UI + model-agnostic GM hint
 
 ### System-agnostic character UI (systems can define their own sidebar + sheet)
