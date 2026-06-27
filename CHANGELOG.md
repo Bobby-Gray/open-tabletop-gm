@@ -12,6 +12,12 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+### System-agnostic character UI (systems can define their own sidebar + sheet)
+
+- **The character sidebar and sheet are now driven by a per-system UI manifest** instead of a hardcoded D&D layout. A system ships `systems/<name>/ui.json` describing its sidebar widgets, sheet combat strip, and attribute grid; the display renders from it. A new system becomes a ~40-line JSON file rather than new front-end code. See `systems/UI-MANIFEST.md` for the widget catalog and a Shadowrun 5e example, and `systems/dnd5e/ui.json` for the reference manifest.
+- **Backward compatible.** The renderer carries a built-in default manifest that reproduces the original D&D 5e display exactly, so campaigns with no `ui.json` (or no system declared) look identical to before. The attribute grid now also supports raw ratings (`show_modifier: false`) for dice-pool systems, not just D&D's score+modifier.
+- A campaign selects its system module with a `**System Module:** <name>` line in `state.md` (distinct from the human-readable `**System:**` label); absent ⇒ `dnd5e`. New `paths.campaign_system()` resolves it. Switching systems takes effect on the next display load.
+
 ### Model-agnostic GM hint (thanks @eviloverclaude)
 
 - **The ◈ GM Help hint no longer depends on Claude.** `dm_help.py` previously shelled out to a hardcoded `claude -p --model claude-sonnet-4-6`, so the feature silently produced nothing for anyone running OTGM through opencode, gemini, mistral, or any non-Claude tooling. It now resolves a backend portably: set `OTGM_HINT_CMD` to your own model command (prompt on stdin, hint on stdout), or let OTGM auto-detect a known CLI on `PATH` (`claude`, `opencode`, `gemini`, `llm`). `OTGM_HINT_MODEL` pins a model for the auto-detected backend; `OTGM_HINT_TIMEOUT` bounds the call. Claude still works out of the box but is no longer a dependency, and with no backend available the feature no-ops instead of breaking play.

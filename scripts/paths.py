@@ -120,6 +120,37 @@ def campaign_system_version(name: str, default: str = "") -> str:
     return m.group(1).strip()
 
 
+_SYSTEM_MODULE_PAT = _re.compile(
+    r"\*\*System Module:\*\*\s*([^\s|]+)", _re.IGNORECASE
+)
+
+
+def campaign_system(name: str, default: str = "dnd5e") -> str:
+    """Return the campaign's system *module* directory name, or `default` if unset.
+
+    Reads a `**System Module:** <name>` header line from state.md, where `<name>`
+    matches a directory under `systems/` (e.g. `dnd5e`, `shadowrun5e`). This is
+    deliberately distinct from the human-readable `**System:**` label some
+    campaigns carry (e.g. "D&D 5e") — that's for display, this is for resolution.
+    Campaigns predating the field fall back to `default`, so nothing breaks.
+
+    Also distinct from `campaign_system_version`, which returns the
+    edition/ruleset string (e.g. "2014"); this returns which module owns the
+    campaign.
+    """
+    state = find_campaign(name) / "state.md"
+    if not state.exists():
+        return default
+    try:
+        text = state.read_text(errors="replace")
+    except OSError:
+        return default
+    m = _SYSTEM_MODULE_PAT.search(text)
+    if not m:
+        return default
+    return m.group(1).strip()
+
+
 def system_data_path(system: str, version: str = "", filename: str = "") -> pathlib.Path:
     """Return a path under `systems/<system>/data/`.
 

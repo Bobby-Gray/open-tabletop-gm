@@ -22,6 +22,7 @@ Endpoints:
 
 import hmac
 import json
+import pathlib
 import os
 import queue
 import re
@@ -50,7 +51,11 @@ except Exception:
     _lookup = None          # type: ignore
     _SRD_AVAILABLE = False
 
-from paths import campaign_dir as _campaign_dir, find_campaign as _find_campaign
+from paths import (
+    campaign_dir as _campaign_dir,
+    find_campaign as _find_campaign,
+    campaign_system as _campaign_system,
+)
 
 # Audio module — degrades silently if numpy not installed
 import sys as _sys
@@ -1101,6 +1106,36 @@ def _broadcast(payload: dict) -> None:
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
+_SYSTEMS_DIR = pathlib.Path(__file__).resolve().parent.parent / "systems"
+
+
+def _load_ui_manifest() -> str:
+    """Return the active campaign's system UI manifest as a JSON string for the template.
+
+    Resolves active campaign → system name → systems/<system>/ui.json. Returns
+    "null" when there is no campaign, no ui.json, or the file is unreadable/invalid;
+    the browser then falls back to its built-in default manifest (the D&D layout),
+    so the display renders identically with or without a manifest file.
+
+    Resolved at page render. Switching systems takes effect on the next display
+    load — and the display is force-restarted each session, so this is a non-issue
+    in normal use.
+    """
+    name = _active_campaign_name()
+    if not name:
+        return "null"
+    try:
+        system = _campaign_system(name)
+        path = _SYSTEMS_DIR / system / "ui.json"
+        if not path.exists():
+            return "null"
+        manifest = json.loads(path.read_text(errors="replace"))
+    except (OSError, ValueError):
+        return "null"
+    # Compact, and neutralize any "</script>" that could break the inline tag.
+    return json.dumps(manifest, separators=(",", ":")).replace("<", "\\u003c")
+
+
 @app.route("/")
 def index():
     # Pass LAN token to template so the browser can authenticate /help-request
@@ -1109,6 +1144,7 @@ def index():
         lan_token=_lan_token or "",
         narrator_voice=_read_narrator_voice(),
         tts_available=(_tts is not None),
+        ui_manifest=_load_ui_manifest(),
     )
 
 

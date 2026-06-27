@@ -3,87 +3,59 @@
   "system": "dnd5e",
   "label": "D&D 5e",
 
-  "_comment": "DRAFT reference manifest — reproduces the current hardcoded D&D display. Not yet read by the renderer; see systems/UI-MANIFEST.md. Every widget self-hides when its bound field is absent, so non-casters show no spell slots, etc.",
+  "_comment": "Reference manifest. Mirrors the renderer's built-in default exactly, so it reproduces the original hardcoded D&D 5e display. Widgets self-hide when their bound field is absent (a non-caster shows no spell slots, etc.). See systems/UI-MANIFEST.md for the widget catalog.",
 
   "sidebar": [
-    {
-      "type": "bar",
-      "label": "HP",
-      "bind": "hp",
-      "fields": { "current": "current", "max": "max", "temp": "temp" },
-      "color": "#b5524a"
-    },
-    {
-      "type": "counter",
-      "label": "XP",
-      "bind": "xp",
-      "fields": { "current": "current", "next": "next" }
-    },
-    {
-      "type": "pip_track",
-      "label": "Hit Dice",
-      "bind": "hit_dice",
-      "fields": { "current": "remaining", "max": "max" },
-      "pip_color": "#c9a24b"
-    },
-    {
-      "type": "pip_track",
-      "label": "Second Wind",
-      "bind": "second_wind",
-      "boolean": true,
-      "pip_color": "#c9a24b"
-    },
-    {
-      "type": "pip_levels",
-      "label": "Spell Slots",
-      "bind": "spell_slots",
-      "pip_color": "#a078dc"
-    },
-    {
-      "type": "tag_list",
-      "label": "Conditions",
-      "bind": "conditions"
-    },
-    {
-      "type": "tag_single",
-      "label": "Concentrating",
-      "bind": "concentration",
-      "color": "#a078dc"
-    },
-    {
-      "type": "badge_set",
-      "label": "Resources",
-      "bind": "milestones"
-    }
+    { "type": "bar", "label": "HP", "bind": "hp", "icon": "/icons/enemy.png",
+      "row_class": "sb-hp-row", "num_class": "sb-hp-nums", "fill_role": "hp-fill",
+      "cur": "current", "max": "max", "color": "hp", "temp": "temp" },
+
+    { "type": "bar", "label": "XP", "bind": "xp", "icon": "/icons/ability.png",
+      "row_class": "sb-xp-row", "num_class": "sb-xp-nums", "fill_role": "xp-fill",
+      "fill_class": "sb-xp-bar", "cur": "current", "max": "next", "require_cur": true },
+
+    { "type": "stat_lines", "lines": [
+      { "label": "AC", "bind": "ac" },
+      { "label": "Init", "bind": "initiative" },
+      { "label": "Spd", "bind": "speed" },
+      { "label": "HD", "bind": "hit_dice", "format": "hd" }
+    ] },
+
+    { "type": "tag_list", "bind": "conditions" },
+
+    { "type": "tag_single", "bind": "concentration", "prefix": "◈ " },
+
+    { "type": "effects", "bind": "effects" },
+
+    { "type": "badge_set", "bind": "milestones" },
+
+    { "type": "pip_levels", "bind": "spell_slots" },
+
+    { "type": "feature_flags", "flags": [ { "label": "2nd Wind", "bind": "second_wind" } ] },
+
+    { "type": "badge", "bind": "inspiration", "label": "✦ Inspiration" }
   ],
 
   "sheet": {
+    "combat_strip": [
+      { "label": "HP", "bind": "hp", "format": "ratio" },
+      { "label": "AC", "bind": "ac" },
+      { "label": "Init", "bind": "initiative" },
+      { "label": "Speed", "bind": "speed", "suffix": " ft" },
+      { "label": "Hit Dice", "bind": "hit_dice", "format": "hd" }
+    ],
     "stat_grid": {
       "label": "Ability Scores",
-      "bind": "sheet.abilities",
+      "bind": "ability_scores",
+      "show_modifier": true,
       "stats": [
-        { "key": "STR", "label": "STR", "show_modifier": true },
-        { "key": "DEX", "label": "DEX", "show_modifier": true },
-        { "key": "CON", "label": "CON", "show_modifier": true },
-        { "key": "INT", "label": "INT", "show_modifier": true },
-        { "key": "WIS", "label": "WIS", "show_modifier": true },
-        { "key": "CHA", "label": "CHA", "show_modifier": true }
+        { "key": "str", "label": "STR" },
+        { "key": "dex", "label": "DEX" },
+        { "key": "con", "label": "CON" },
+        { "key": "int", "label": "INT" },
+        { "key": "wis", "label": "WIS" },
+        { "key": "cha", "label": "CHA" }
       ]
-    },
-    "sections": [
-      { "type": "attacks",   "label": "Attacks",   "bind": "sheet.attacks" },
-      { "type": "spells",    "label": "Spells",    "bind": "sheet.spells" },
-      { "type": "features",  "label": "Features",  "bind": "sheet.features" },
-      { "type": "inventory", "label": "Inventory", "bind": "sheet.inventory" }
-    ]
-  },
-
-  "vocab": {
-    "conditions": [
-      "Blinded", "Charmed", "Deafened", "Frightened", "Grappled",
-      "Incapacitated", "Invisible", "Paralyzed", "Petrified", "Poisoned",
-      "Prone", "Restrained", "Stunned", "Unconscious", "Exhaustion"
-    ],
-    "sustained_term": "Concentration"
+    }
   }
 }

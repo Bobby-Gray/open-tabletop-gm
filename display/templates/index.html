@@ -9,6 +9,12 @@
 <meta name="narrator-voice" content="{{ narrator_voice }}">
 <meta name="tts-available" content="{{ '1' if tts_available else '0' }}">
 
+<!-- Active system's UI manifest (systems/<system>/ui.json), injected by Flask.
+     Drives the per-system character sidebar + sheet. `null` ⇒ the JS falls back
+     to its built-in D&D 5e default, so the display renders identically with or
+     without a manifest. See systems/UI-MANIFEST.md. -->
+<script>window.GM_UI_MANIFEST = {{ ui_manifest|safe }};</script>
+
 <!-- Theme anti-FOUC. Runs synchronously before the stylesheet parses so the
      correct data-theme attribute is on <html> before any rule resolves —
      prevents a dark→light or light→dark flash on every load. Three states:
@@ -4491,6 +4497,238 @@ function _hpColor(pct) {
   return '#a03030';
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// SYSTEM UI MANIFEST — per-system character sidebar + sheet rendering.
+//
+// The server injects the active system's systems/<system>/ui.json as
+// window.GM_UI_MANIFEST. When it's null/invalid we fall back to
+// DEFAULT_UI_MANIFEST below, which reproduces the original hardcoded D&D 5e
+// layout exactly — so the display renders identically with or without a
+// manifest file. A new game system ships its own ui.json to define its
+// sidebar widgets, combat strip, and attribute grid. See systems/UI-MANIFEST.md.
+//
+// Widgets are self-hiding: each renders nothing when its bound field is absent,
+// so a manifest declares the superset of what *can* show and the pushed stats
+// decide what actually renders.
+// ══════════════════════════════════════════════════════════════════════
+
+const _DEFAULT_CONDITION_CLASS = {
+  unconscious: 'danger', paralyzed: 'danger', petrified: 'danger', stunned: 'danger',
+  incapacitated: 'warn', frightened: 'warn', poisoned: 'warn', charmed: 'warn', exhausted: 'warn',
+  grappled: 'info', restrained: 'info', prone: 'info', blinded: 'info', deafened: 'info',
+  invisible: 'buff',
+};
+
+const DEFAULT_UI_MANIFEST = {
+  manifest_version: 1, system: 'dnd5e', label: 'D&D 5e',
+  sidebar: [
+    { type: 'bar', label: 'HP', bind: 'hp', icon: '/icons/enemy.png',
+      row_class: 'sb-hp-row', num_class: 'sb-hp-nums', fill_role: 'hp-fill',
+      cur: 'current', max: 'max', color: 'hp', temp: 'temp' },
+    { type: 'bar', label: 'XP', bind: 'xp', icon: '/icons/ability.png',
+      row_class: 'sb-xp-row', num_class: 'sb-xp-nums', fill_role: 'xp-fill',
+      fill_class: 'sb-xp-bar', cur: 'current', max: 'next', require_cur: true },
+    { type: 'stat_lines', lines: [
+      { label: 'AC', bind: 'ac' }, { label: 'Init', bind: 'initiative' },
+      { label: 'Spd', bind: 'speed' }, { label: 'HD', bind: 'hit_dice', format: 'hd' } ] },
+    { type: 'tag_list', bind: 'conditions' },
+    { type: 'tag_single', bind: 'concentration', prefix: '◈ ' },
+    { type: 'effects', bind: 'effects' },
+    { type: 'badge_set', bind: 'milestones' },
+    { type: 'pip_levels', bind: 'spell_slots' },
+    { type: 'feature_flags', flags: [ { label: '2nd Wind', bind: 'second_wind' } ] },
+    { type: 'badge', bind: 'inspiration', label: '✦ Inspiration' },
+  ],
+  sheet: {
+    combat_strip: [
+      { label: 'HP', bind: 'hp', format: 'ratio' },
+      { label: 'AC', bind: 'ac' },
+      { label: 'Init', bind: 'initiative' },
+      { label: 'Speed', bind: 'speed', suffix: ' ft' },
+      { label: 'Hit Dice', bind: 'hit_dice', format: 'hd' },
+    ],
+    stat_grid: { label: 'Ability Scores', bind: 'ability_scores', show_modifier: true,
+      stats: [ { key: 'str', label: 'STR' }, { key: 'dex', label: 'DEX' },
+        { key: 'con', label: 'CON' }, { key: 'int', label: 'INT' },
+        { key: 'wis', label: 'WIS' }, { key: 'cha', label: 'CHA' } ] },
+  },
+};
+
+function _gmManifest() {
+  const m = window.GM_UI_MANIFEST;
+  return (m && typeof m === 'object' && Array.isArray(m.sidebar)) ? m : DEFAULT_UI_MANIFEST;
+}
+
+// Resolve a dot-path ('hp', 'hp.current') against a player object.
+function _bind(p, path) {
+  if (!path) return undefined;
+  return String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), p);
+}
+
+// ── Sidebar widget renderers (DOM/classes match the original hardcoded card) ──
+
+function _wBar(card, p, w) {
+  const obj = _bind(p, w.bind) || {};
+  const cur = obj[w.cur || 'current'];
+  const max = obj[w.max || 'max'];
+  if (w.require_cur && cur == null) return;
+  const row = document.createElement('div');
+  row.className = w.row_class || 'sb-hp-row';
+  const maxLabel = (w.max === 'next') ? (max ?? '?') : (max ?? '—');
+  row.innerHTML =
+    `${w.icon ? `<img src="${w.icon}" class="sb-row-icon" alt="">` : ''}<span class="sb-label">${w.label || ''}</span>
+    <span class="${w.num_class || 'sb-hp-nums'}">${cur ?? '—'} / ${maxLabel}</span>`;
+  card.appendChild(row);
+  const track = document.createElement('div');
+  track.className = 'sb-bar-track';
+  const fill = document.createElement('div');
+  fill.className = 'sb-bar-fill' + (w.fill_class ? ' ' + w.fill_class : '');
+  if (w.fill_role) fill.dataset.role = w.fill_role;
+  const pct = (max && cur != null) ? Math.max(0, Math.min(100, (cur / max) * 100))
+                                   : (w.color === 'hp' ? 100 : 0);
+  fill.style.width = pct + '%';
+  if (w.color === 'hp') fill.style.backgroundColor = _hpColor(pct);
+  track.appendChild(fill);
+  card.appendChild(track);
+  if (w.temp && obj[w.temp]) {
+    const tempEl = document.createElement('div');
+    tempEl.className = 'sb-hp-temp-row';
+    tempEl.dataset.role = 'hp-temp';
+    tempEl.textContent = '+' + obj[w.temp] + ' temp';
+    card.appendChild(tempEl);
+  }
+}
+
+function _wStatLines(card, p, w) {
+  const out = [];
+  (w.lines || []).forEach(ln => {
+    const v = _bind(p, ln.bind);
+    if (ln.format === 'hd') {
+      if (v) out.push(`${ln.label} <span class="val">${v.remaining ?? '?'}/${v.max ?? '?'} ${v.die || ''}</span>`);
+    } else if (v != null) {
+      out.push(`${ln.label} <span class="val">${v}</span>`);
+    }
+  });
+  if (!out.length) return;
+  const qs = document.createElement('div');
+  qs.className = 'sb-quick-stats';
+  qs.innerHTML = out.join('<br>');
+  card.appendChild(qs);
+}
+
+function _wTagList(card, p, w) {
+  const items = _bind(p, w.bind) || [];
+  const map = w.class_map || _DEFAULT_CONDITION_CLASS;
+  const el = document.createElement('div');
+  el.className = 'sb-conditions';
+  el.dataset.role = w.role || 'conditions';   // always appended (placeholder lets merges clear it)
+  items.forEach(c => {
+    const pill = document.createElement('span');
+    pill.className = `sb-condition-pill ${map[String(c).toLowerCase()] || 'info'}`;
+    pill.textContent = c;
+    el.appendChild(pill);
+  });
+  card.appendChild(el);
+}
+
+function _wTagSingle(card, p, w) {
+  const v = _bind(p, w.bind);
+  if (!v) return;
+  const el = document.createElement('div');
+  el.className = w.cls || 'sb-concentrate';
+  el.dataset.role = w.role || 'concentration';
+  el.textContent = (w.prefix || '') + v;
+  card.appendChild(el);
+}
+
+function _wEffects(card, p, w) {
+  const effects = _bind(p, w.bind) || [];
+  const el = document.createElement('div');
+  el.className = 'sb-effects';
+  el.dataset.role = 'effects';
+  effects.forEach(eff => el.appendChild(_makeEffectPill(eff, p.name)));
+  card.appendChild(el);
+}
+
+function _wBadgeSet(card, p, w) {
+  const ms = _bind(p, w.bind);
+  if (!ms || !Object.keys(ms).length) return;
+  const el = document.createElement('div');
+  el.className = 'sb-milestones';
+  el.dataset.role = w.role || 'milestones';
+  Object.entries(ms)
+    .filter(([_, count]) => count > 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([label, count]) => {
+      const row = document.createElement('div'); row.className = 'sb-milestone-row';
+      const lbl = document.createElement('span'); lbl.className = 'sb-milestone-label'; lbl.textContent = label;
+      const pill = document.createElement('span'); pill.className = 'sb-milestone-count'; pill.textContent = count;
+      row.appendChild(lbl); row.appendChild(pill); el.appendChild(row);
+    });
+  if (el.children.length) card.appendChild(el);
+}
+
+function _wPipLevels(card, p, w) {
+  const slots = _bind(p, w.bind);
+  if (!slots || !Object.keys(slots).length) return;
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  const el = document.createElement('div');
+  el.className = 'sb-slots';
+  el.dataset.role = w.role || 'spell_slots';
+  Object.entries(slots).sort(([a], [b]) => +a - +b).forEach(([lvl, s]) => {
+    const max = s.max || 0;
+    if (!max) return;
+    const avail = max - (s.used || 0);
+    const row = document.createElement('div'); row.className = 'sb-slot-row';
+    const lbl = document.createElement('span'); lbl.className = 'sb-slot-level';
+    lbl.textContent = ROMAN[+lvl] || lvl; row.appendChild(lbl);
+    for (let i = 0; i < max; i++) {
+      const pip = document.createElement('span');
+      pip.className = 'sb-slot-pip ' + (i < avail ? 'avail' : 'spent');
+      row.appendChild(pip);
+    }
+    el.appendChild(row);
+  });
+  if (el.children.length) card.appendChild(el);
+}
+
+function _wFeatureFlags(card, p, w) {
+  const feats = [];
+  (w.flags || []).forEach(f => {
+    const v = _bind(p, f.bind);
+    if (v != null) feats.push(v ? `${f.label} ✓` : `${f.label} ✗`);
+  });
+  if (!feats.length) return;
+  const el = document.createElement('div');
+  el.className = 'sb-features';
+  el.dataset.role = 'features';
+  el.innerHTML = feats.map(f => {
+    const dim = f.endsWith('✗');
+    return `<span style="color:${dim ? 'rgba(200,185,150,0.25)' : 'rgba(140,190,140,0.6)'}">${f}</span>`;
+  }).join('<br>');
+  card.appendChild(el);
+}
+
+function _wBadge(card, p, w) {
+  if (!_bind(p, w.bind)) return;
+  const el = document.createElement('div');
+  el.className = w.cls || 'sb-inspiration';
+  el.dataset.role = w.role || 'inspiration';
+  el.textContent = w.label || '';
+  card.appendChild(el);
+}
+
+const _SIDEBAR_WIDGETS = {
+  bar: _wBar, stat_lines: _wStatLines, tag_list: _wTagList, tag_single: _wTagSingle,
+  effects: _wEffects, badge_set: _wBadgeSet, pip_levels: _wPipLevels,
+  feature_flags: _wFeatureFlags, badge: _wBadge,
+};
+
+function _renderSidebarWidget(card, p, w) {
+  const fn = w && _SIDEBAR_WIDGETS[w.type];
+  if (fn) { try { fn(card, p, w); } catch (e) { console.warn('[GM] widget render failed:', w && w.type, e); } }
+}
+
 function _buildPlayerCard(p, solo) {
   const card = document.createElement('div');
   card.className = 'sb-player';
@@ -4530,195 +4768,10 @@ function _buildPlayerCard(p, solo) {
     (subLine ? `<br><span style="opacity:0.7">${subLine}</span>` : '');
   card.appendChild(identEl);
 
-  // HP
-  const hp = p.hp || {};
-  const hpRow = document.createElement('div');
-  hpRow.className = 'sb-hp-row';
-  hpRow.innerHTML = `<img src="/icons/enemy.png" class="sb-row-icon" alt=""><span class="sb-label">HP</span>
-    <span class="sb-hp-nums">${hp.current ?? '—'} / ${hp.max ?? '—'}</span>`;
-  card.appendChild(hpRow);
-
-  const hpTrack = document.createElement('div');
-  hpTrack.className = 'sb-bar-track';
-  const hpFill = document.createElement('div');
-  hpFill.className = 'sb-bar-fill';
-  hpFill.dataset.role = 'hp-fill';
-  const hpPct = (hp.max && hp.current != null) ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 100;
-  hpFill.style.width = hpPct + '%';
-  hpFill.style.backgroundColor = _hpColor(hpPct);
-  hpTrack.appendChild(hpFill);
-  card.appendChild(hpTrack);
-
-  if (hp.temp) {
-    const tempEl = document.createElement('div');
-    tempEl.className = 'sb-hp-temp-row';
-    tempEl.dataset.role = 'hp-temp';
-    tempEl.textContent = '+' + hp.temp + ' temp';
-    card.appendChild(tempEl);
-  }
-
-  // XP
-  const xp = p.xp || {};
-  if (xp.current != null) {
-    const xpRow = document.createElement('div');
-    xpRow.className = 'sb-xp-row';
-    xpRow.innerHTML = `<img src="/icons/ability.png" class="sb-row-icon" alt=""><span class="sb-label">XP</span>
-      <span class="sb-xp-nums">${xp.current} / ${xp.next ?? '?'}</span>`;
-    card.appendChild(xpRow);
-    const xpTrack = document.createElement('div');
-    xpTrack.className = 'sb-bar-track';
-    const xpFill = document.createElement('div');
-    xpFill.className = 'sb-bar-fill sb-xp-bar';
-    xpFill.dataset.role = 'xp-fill';
-    const xpPct = (xp.next && xp.current != null) ? Math.max(0, Math.min(100, (xp.current / xp.next) * 100)) : 0;
-    xpFill.style.width = xpPct + '%';
-    xpTrack.appendChild(xpFill);
-    card.appendChild(xpTrack);
-  }
-
-  // Quick combat stats
-  const quickLines = [];
-  if (p.ac        != null) quickLines.push(`AC <span class="val">${p.ac}</span>`);
-  if (p.initiative != null) quickLines.push(`Init <span class="val">${p.initiative}</span>`);
-  if (p.speed     != null) quickLines.push(`Spd <span class="val">${p.speed}</span>`);
-  if (p.hit_dice) {
-    const hd = p.hit_dice;
-    quickLines.push(`HD <span class="val">${hd.remaining ?? '?'}/${hd.max ?? '?'} ${hd.die || ''}</span>`);
-  }
-  if (quickLines.length) {
-    const qs = document.createElement('div');
-    qs.className = 'sb-quick-stats';
-    qs.innerHTML = quickLines.join('<br>');
-    card.appendChild(qs);
-  }
-
-  // Conditions
-  const CONDITION_CLASS = {
-    unconscious: 'danger', paralyzed: 'danger', petrified: 'danger', stunned: 'danger',
-    incapacitated: 'warn', frightened: 'warn', poisoned: 'warn', charmed: 'warn', exhausted: 'warn',
-    grappled: 'info', restrained: 'info', prone: 'info', blinded: 'info', deafened: 'info',
-    invisible: 'buff',
-  };
-  const conditions = p.conditions || [];
-  if (conditions.length) {
-    const condEl = document.createElement('div');
-    condEl.className = 'sb-conditions';
-    condEl.dataset.role = 'conditions';
-    conditions.forEach(c => {
-      const pill = document.createElement('span');
-      const cls  = CONDITION_CLASS[c.toLowerCase()] || 'info';
-      pill.className   = `sb-condition-pill ${cls}`;
-      pill.textContent = c;
-      condEl.appendChild(pill);
-    });
-    card.appendChild(condEl);
-  } else {
-    // Placeholder so merges can clear it
-    const condEl = document.createElement('div');
-    condEl.className = 'sb-conditions';
-    condEl.dataset.role = 'conditions';
-    card.appendChild(condEl);
-  }
-
-  // Concentration
-  if (p.concentration) {
-    const concEl = document.createElement('div');
-    concEl.className = 'sb-concentrate';
-    concEl.dataset.role = 'concentration';
-    concEl.textContent = `◈ ${p.concentration}`;
-    card.appendChild(concEl);
-  }
-
-  // Timed effects
-  {
-    const effects = p.effects || [];
-    const effEl = document.createElement('div');
-    effEl.className = 'sb-effects';
-    effEl.dataset.role = 'effects';
-    effects.forEach(eff => {
-      const pill = _makeEffectPill(eff, p.name);
-      effEl.appendChild(pill);
-    });
-    card.appendChild(effEl);
-  }
-
-  // Milestones (stack-based reward — Bardic Inspiration / Hero Coin / etc.).
-  // Distinct from the binary `inspiration` boolean badge handled elsewhere.
-  if (p.milestones && Object.keys(p.milestones).length) {
-    const msEl = document.createElement('div');
-    msEl.className = 'sb-milestones';
-    msEl.dataset.role = 'milestones';
-    Object.entries(p.milestones)
-      .filter(([_, count]) => count > 0)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([label, count]) => {
-        const row = document.createElement('div');
-        row.className = 'sb-milestone-row';
-        const lbl = document.createElement('span');
-        lbl.className = 'sb-milestone-label';
-        lbl.textContent = label;
-        const pill = document.createElement('span');
-        pill.className = 'sb-milestone-count';
-        pill.textContent = count;
-        row.appendChild(lbl);
-        row.appendChild(pill);
-        msEl.appendChild(row);
-      });
-    if (msEl.children.length) card.appendChild(msEl);
-  }
-
-  // Spell slots
-  if (p.spell_slots && Object.keys(p.spell_slots).length) {
-    const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX'];
-    const slotsEl = document.createElement('div');
-    slotsEl.className = 'sb-slots';
-    slotsEl.dataset.role = 'spell_slots';
-    Object.entries(p.spell_slots)
-      .sort(([a],[b]) => +a - +b)
-      .forEach(([lvl, s]) => {
-        const max = s.max || 0;
-        if (!max) return;
-        const avail = max - (s.used || 0);
-        const row = document.createElement('div');
-        row.className = 'sb-slot-row';
-        const lbl = document.createElement('span');
-        lbl.className = 'sb-slot-level';
-        lbl.textContent = ROMAN[+lvl] || lvl;
-        row.appendChild(lbl);
-        for (let i = 0; i < max; i++) {
-          const pip = document.createElement('span');
-          pip.className = 'sb-slot-pip ' + (i < avail ? 'avail' : 'spent');
-          row.appendChild(pip);
-        }
-        slotsEl.appendChild(row);
-      });
-    if (slotsEl.children.length) card.appendChild(slotsEl);
-  }
-
-  // Features (Second Wind etc)
-  const feats = [];
-  if (p.second_wind != null) {
-    feats.push(p.second_wind ? '2nd Wind ✓' : '2nd Wind ✗');
-  }
-  if (feats.length) {
-    const featEl = document.createElement('div');
-    featEl.className = 'sb-features';
-    featEl.dataset.role = 'features';
-    featEl.innerHTML = feats.map(f => {
-      const dim = f.endsWith('✗');
-      return `<span style="color:${dim ? 'rgba(200,185,150,0.25)' : 'rgba(140,190,140,0.6)'}">${f}</span>`;
-    }).join('<br>');
-    card.appendChild(featEl);
-  }
-
-  // Inspiration badge
-  if (p.inspiration) {
-    const badge = document.createElement('div');
-    badge.className = 'sb-inspiration';
-    badge.dataset.role = 'inspiration';
-    badge.textContent = '✦ Inspiration';
-    card.appendChild(badge);
-  }
+  // Stat widgets — driven by the active system's UI manifest (systems/<system>/ui.json
+  // -> window.GM_UI_MANIFEST), falling back to the built-in D&D 5e default.
+  // See systems/UI-MANIFEST.md. Each widget self-hides when its bound field is absent.
+  (_gmManifest().sidebar || []).forEach(w => _renderSidebarWidget(card, p, w));
 
   // Direct listener — belt-and-suspenders alongside the delegated sidebar listener
   card.addEventListener('click', function(e) {
@@ -4780,24 +4833,33 @@ function openSheet(name) {
   identEl.textContent = identParts.join('  ·  ') || '—';
   content.appendChild(identEl);
 
-  // Combat stats strip
-  const hp = p.hp || {};
-  const hd = p.hit_dice || {};
-  const stripData = [
-    ['HP',       hp.current != null ? `${hp.current}/${hp.max}` : '—'],
-    ['AC',       p.ac       ?? '—'],
-    ['Init',     p.initiative ?? '—'],
-    ['Speed',    p.speed    != null ? p.speed + ' ft' : '—'],
-    ['Hit Dice', hd.die     ? `${hd.remaining ?? '?'}/${hd.max ?? '?'} ${hd.die}` : '—'],
-  ];
-  if (hp.temp) stripData.splice(1, 0, ['Temp HP', '+' + hp.temp]);
+  // Combat stats strip — driven by the active system's manifest (sheet.combat_strip).
+  const _sheetMan = _gmManifest();
+  const _stripDef = (_sheetMan.sheet && _sheetMan.sheet.combat_strip)
+    || DEFAULT_UI_MANIFEST.sheet.combat_strip;
   const strip = document.createElement('div');
   strip.className = 'sm-combat-strip';
-  stripData.forEach(([label, val]) => {
+  const _stripCell = (label, val) => {
     const cell = document.createElement('div');
     cell.className = 'sm-stat-cell';
     cell.innerHTML = `<span class="sm-stat-label">${label}</span><span class="sm-stat-val">${val}</span>`;
     strip.appendChild(cell);
+  };
+  _stripDef.forEach(entry => {
+    const v = _bind(p, entry.bind);
+    let val = '—';
+    if (entry.format === 'ratio') {
+      val = (v && v.current != null) ? `${v.current}/${v.max}` : '—';
+    } else if (entry.format === 'hd') {
+      val = (v && v.die) ? `${v.remaining ?? '?'}/${v.max ?? '?'} ${v.die}` : '—';
+    } else if (v != null) {
+      val = v + (entry.suffix || '');
+    }
+    _stripCell(entry.label, val);
+    // Temp HP rides alongside the HP ratio cell, matching the original layout.
+    if (entry.format === 'ratio' && entry.bind === 'hp' && v && v.temp) {
+      _stripCell('Temp HP', '+' + v.temp);
+    }
   });
   content.appendChild(strip);
 
@@ -4808,22 +4870,30 @@ function openSheet(name) {
     content.appendChild(xpEl);
   }
 
-  // Ability scores (always shown in modal)
-  if (p.ability_scores) {
+  // Attribute grid — driven by the manifest (sheet.stat_grid). Handles both
+  // D&D-style {score, mod} entries (show_modifier) and pool-system raw ratings.
+  const _gridDef = (_sheetMan.sheet && _sheetMan.sheet.stat_grid)
+    || DEFAULT_UI_MANIFEST.sheet.stat_grid;
+  const _abils = _bind(p, _gridDef.bind || 'ability_scores');
+  if (_abils) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Ability Scores';
+    title.textContent = _gridDef.label || 'Ability Scores';
     content.appendChild(title);
     const grid = document.createElement('div');
     grid.className = 'sm-ab-grid';
-    ['str','dex','con','int','wis','cha'].forEach(key => {
-      const d = p.ability_scores[key] || {};
+    (_gridDef.stats || []).forEach(st => {
+      const raw = _abils[st.key];
+      const showMod = (st.show_modifier !== undefined) ? st.show_modifier : _gridDef.show_modifier;
+      let score, mod;
+      if (raw && typeof raw === 'object') { score = raw.score; mod = raw.mod; }
+      else { score = raw; }
       const cell = document.createElement('div');
       cell.className = 'sm-ab-cell';
-      cell.innerHTML = `<div class="sm-ab-name">${key.toUpperCase()}</div>
-        <div class="sm-ab-score">${d.score ?? '—'}</div>
-        <div class="sm-ab-mod">${d.mod ?? '—'}</div>`;
+      cell.innerHTML = `<div class="sm-ab-name">${st.label || String(st.key).toUpperCase()}</div>
+        <div class="sm-ab-score">${score ?? '—'}</div>` +
+        (showMod ? `<div class="sm-ab-mod">${mod ?? '—'}</div>` : '');
       grid.appendChild(cell);
     });
     content.appendChild(grid);

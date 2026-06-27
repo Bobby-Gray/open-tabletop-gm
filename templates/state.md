@@ -1,5 +1,5 @@
 # Campaign: <name>
-**Created:** <date>  **Last session:** —  **Session count:** 0  **System Version:** <version>
+**Created:** <date>  **Last session:** —  **Session count:** 0  **System Module:** dnd5e  **System Version:** <version>
 
 ## Current Situation
 - **Location:**
