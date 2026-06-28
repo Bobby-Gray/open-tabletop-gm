@@ -1130,7 +1130,7 @@ def _load_ui_manifest() -> str:
         path = _SYSTEMS_DIR / system / "ui.json"
         if not path.exists():
             return "null"
-        manifest = json.loads(path.read_text(errors="replace"))
+        manifest = json.loads(path.read_text(encoding="utf-8", errors="replace"))
     except (OSError, ValueError):
         return "null"
     # Compact, and neutralize any "</script>" that could break the inline tag.
