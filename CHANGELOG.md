@@ -12,6 +12,35 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-07-24 — GM-side discipline sync from claude-dnd-skill v2.4.0
+
+Ports the GM-discipline and quality-of-life work from claude-dnd-skill **v2.4.0**, generalized to OTGM's system-agnostic core where the upstream version was D&D-flavored. What's genuinely 5e-only stays in `systems/dnd5e/`; mechanical rendering is driven by the system's UI manifest, not a hardcoded list.
+
+### GM discipline (core — SKILL.md)
+
+- **New Standard 13 — Never Play the Player's Side.** A hard constraint separating the GM's authority from the player's: never speak a PC's dialogue, narrate their private thoughts, or decide their actions; adjudicate each *declared* action on its own terms and let it resolve rather than skipping it, swapping it, or narrating past it; and treat the party as exactly the named player characters, never inventing a companion or putting words in a real player's mouth. Faster/weaker models drift into acting for the player without an explicit rule — this is that rule. (Numbered 13 in OTGM, which does not carry the upstream "Open Each Scene With a Bang" standard.)
+- **Table Dials — optional per-campaign tuning.** Three neutral-by-default settings in `state.md → ## Session Flags`: `difficulty` (stakes/lethality only — Standard 7 still governs rolls), `spotlight` (how much the GM drives vs. follows), and `pacing` (pressure vs. room for character scenes). An unset dial changes nothing; a set dial is honored every turn like `## GM Style Notes`.
+- **Narration hygiene.** Standard 4 now states plainly that narration is prose for the table, never a document — no markdown headings or bulleted lists inside the fiction, opening scenes included.
+- **Bold-play reward backstop (core hook + 5e binding).** Standard 12's generalized reward hook now says: don't rely on remembering — where the system module defines a hard, table-visible trigger, honor it every time. The concrete 5e binding lives in `systems/dnd5e/system.md → ## Bold Play Reward`: a natural 20 on any d20 test (or a nat-20 death-save stabilize) awards Inspiration on the spot unless the character already holds it.
+
+### Continuity & memory (core)
+
+- **Pinned Facts — the memory the GM always keeps.** A new `## Pinned Facts` section in `state.md`, read at every `/gm load` alongside `## GM Style Notes` and kept hot all session. It holds the small, stable set of soft facts a table never wants forgotten (a promise made, a dead sibling's name, a house rule, an in-joke). New command **`/gm pin`** adds/lists/removes them; unlike Live State Flags they are never rewritten wholesale at save.
+- **Keep the world clock honest.** SKILL-scripts.md now states the clock is continuity, not decoration: narrate consistently with the last pushed time, advance it deliberately by how much an action costs, and reconcile a drift with a fresh `--world-time` push — including *backward* to the correct time, which undoes nothing since timed effects run on their own tracker durations.
+- **Firmer arc-advance discipline + stale-pointer nudge.** `/gm arc advance` now states advancing the pointer is not optional bookkeeping (clearing the current beat's outstanding items, or the party moving into the next beat/chapter's situation, *is* an advance). `/gm load` now sanity-checks a stale pointer (current beat looks finished but never advanced) and offers to move it instead of opening another scene in a done beat.
+
+### Rules lookup & character creation
+
+- **Rules lookup no longer dead-ends on a typo.** `systems/dnd5e/lookup.py` gains a `suggest()` near-miss pass: when an exact/substring lookup misses, it fuzzy-matches the query against real dataset names and offers the closest ones (`poisonned` → Poisoned, `fireballl` → Fireball). The CLI prints a `Did you mean: …?` line; the display's lookup modal renders the misses as tappable chips that re-run the lookup. Suggestions honor the category when given and search all categories otherwise. Zero model calls — reads only the bundled dataset.
+- **Describe-it character creation (core flow, system-deferred legality).** `/gm character new` now opens with a build-path choice: the deliberate `Step by step` flow, or a new `Describe it` path where the player says who the character is in a sentence or two and the GM assembles a legal, level-appropriate sheet from it. The prose→concept flow and the single confirm-or-adjust pass are core; the sheet build and legality validation defer to the active system module (`systems/<system>/system.md`) and its lookup. Both paths converge into the same name-check, calc, and write steps.
+
+### Relationship graph & display
+
+- **Typed party disposition in the relationship graph.** `gm_graph.py` gains `set-disposition --to <npc-or-faction> --level <allied|friendly|neutral|suspicious|hostile>` — the party's stance toward an NPC (a `disposition` edge) or faction (a `standing` edge) on the same five-point scale the display's faction panel uses. Edges run from a shared, auto-created `party` node; setting a new stance closes the prior one at that session (arc stays queryable) and only the current stance surfaces in `scene-context`, rendered inline (`The Party --[disposition:suspicious]--> Aldric`). The `/gm save` sweep proposes these alongside NPC↔NPC edges. Covered by tests.
+- **Display: "New ↓" pill when you've scrolled up.** Fresh narration arriving while you're scrolled up now surfaces a small tap-to-jump pill at the bottom of the reading column, instead of landing silently below the fold. It retires itself the moment you catch up.
+- **Display: tappable conditions (manifest-driven).** Condition pills are now tappable — tap Poisoned, Prone, etc. to pull the rule text in the lookup modal. The tap is wired by a `srd_lookup` / `lookup_category` flag on the system's `tag_list` widget in `ui.json`, not a hardcoded condition list, so a system without a rules dataset simply omits the flag. A name with a suffix like "Exhaustion (2)" resolves to the base condition.
+- **Display: settings column no longer overlaps the narration, and folds away.** The reading column now reserves guaranteed right clearance (`max(340px, 18vw)`), and a new `Hide ▶ / ◀ Settings` toggle collapses the settings column (mirroring the left sidebar toggle) so the narration reclaims the space. The choice persists per browser.
+
 ### Cleared remaining Claude-coupling leftovers
 
 - **`wrapper.py` wraps any agent**, not just Claude — set `GM_AGENT_CMD` (default `claude`) to wrap `opencode`, `gemini`, etc. The PTY wrapper is a legacy/optional path anyway (the canonical setup runs the agent directly + `send.py`).
