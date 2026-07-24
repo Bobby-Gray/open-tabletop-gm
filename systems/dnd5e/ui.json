@@ -21,7 +21,7 @@
       { "label": "HD", "bind": "hit_dice", "format": "hd" }
     ] },
 
-    { "type": "tag_list", "bind": "conditions" },
+    { "type": "tag_list", "bind": "conditions", "srd_lookup": true, "lookup_category": "condition" },
 
     { "type": "tag_single", "bind": "concentration", "prefix": "◈ " },
 

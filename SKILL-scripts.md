@@ -251,6 +251,8 @@ python3 <skill-base>/display/push_stats.py --clear
 - Combat start — `--turn-order`; each turn — `--turn-current`; end — `--turn-clear`
 - Any rest or time advance — `--world-time`
 
+**Keep the clock honest.** The world clock is continuity, not decoration. Narrate consistently with the time you last pushed, and advance it *deliberately* when an action costs time — a brief exchange is a few minutes, a search or a shopping trip is longer, a rest or a journey longer still. Never let the time of day drift on its own or silently reset between scenes. If the clock and the fiction ever disagree, reconcile it to the truth with a fresh `--world-time` push rather than compounding the error; setting it *backward* to the correct time is fine and undoes nothing, since timed effects run on their own round/minute/hour durations in `tracker.py`, independent of the wall clock.
+
 ---
 
 ## Display Companion — `display/send.py`

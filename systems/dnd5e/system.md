@@ -167,3 +167,5 @@ python3 systems/dnd5e/build_srd.py --status # show current dataset metadata
 ## Bold Play Reward
 
 Award **Inspiration** — `push_stats.py --player <name> --inspiration true` if tracking on display.
+
+**Hard mechanical trigger (the table-visible backstop for SKILL.md Standard 12).** Alongside the judgment calls, keep one automatic reward so bold play never goes unrewarded because the GM forgot: when a player character rolls a **natural 20** on any d20 test — or a natural 20 to stabilize on a death save — award that character Inspiration on the spot, unless they already hold it (Inspiration does not stack). The natural 20 is a moment everyone at the table sees, which is exactly what makes it a reliable anchor for the reward. Name it in a single beat and move on.
