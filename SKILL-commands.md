@@ -24,6 +24,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 | `/gm combat start` | Start combat. Follow `/gm combat start` branch. |
 | `/gm rest <short\|long>` | Process a rest. Follow `/gm rest` branch. |
 | `/gm recap` | Read session-log.md; deliver 3-5 sentence in-character recap. |
+| `/gm pin [<fact> \| list \| remove <fact-or-number>]` | Manage `state.md → ## Pinned Facts` — the stable soft canon read at every `/gm load`. See `/gm pin` procedure below. |
 | `/gm world` | Read and display world.md for the current campaign. |
 | `/gm quests` | Read and display active quests from state.md. |
 | `/gm character new [campaign]` | Create a character. Follow `/gm character new` branch. |
@@ -38,7 +39,7 @@ Do NOT run `git init` or any git commands in campaign directories.
 | `/gm arc [status\|advance\|revise\|view]` | Manage the dynamic campaign arc. See `/gm arc` procedure below. |
 | `/gm path [<new-path>\|reset]` | View or configure where campaign data is stored (`GM_CAMPAIGN_ROOT`). Follow `/gm path` branch. |
 | `/gm update [--check]` | Pull the latest skill changes from origin/main. Follow `/gm update` branch. |
-| `/gm graph <subcommand>` | Campaign relationship graph: `init`, `add-node`, `add-edge`, `close-edge`, `supersede-edge`, `list`, `show`, `subgraph`, `scene-context`, `extract`, `extract-apply`. See `/gm graph` procedure below. |
+| `/gm graph <subcommand>` | Campaign relationship graph: `init`, `add-node`, `add-edge`, `set-disposition`, `close-edge`, `supersede-edge`, `list`, `show`, `subgraph`, `scene-context`, `extract`, `extract-apply`. See `/gm graph` procedure below. |
 
 ---
 
@@ -98,6 +99,19 @@ Do NOT run `git init` or any git commands in campaign directories.
 
 ---
 
+## `/gm pin [<fact> | list | remove <fact-or-number>]`
+
+Manage the campaign's **Pinned Facts** — the soft, stable canon the table never wants forgotten. Pinned facts live in `state.md → ## Pinned Facts` and are read at every `/gm load` alongside `## GM Style Notes`, then kept hot for the whole session. They are the GM's long-term memory: things that don't fit Live State Flags (which track shifting state) because they don't change — a promise made, a dead sibling's name, an in-joke, a house rule, a detail the player has said matters.
+
+- **`/gm pin <fact>`** — append `<fact>` as a new bullet under `## Pinned Facts` (replacing the *(none pinned yet)* placeholder if present). Confirm what was pinned. Keep each fact to one line; pin the fact, not a paragraph.
+- **`/gm pin`** *(no args, mid-scene)* — when the player says "remember this" / "don't forget X" / "pin that", capture the fact they mean in one line and pin it as above, then acknowledge briefly in the fiction and move on.
+- **`/gm pin list`** — read and print the current `## Pinned Facts` bullets.
+- **`/gm pin remove <fact-or-number>`** — remove the matching bullet (by its text or its position in the list). If it leaves the section empty, restore the *(none pinned yet)* placeholder. Confirm the removal.
+
+Pinned facts are never rewritten wholesale at `/gm save` the way Live State Flags are — they only change when the player pins or unpins one, or when one is corrected because it became wrong. A running account of *what happened* already lives in `session-log.md`, `## Recent Events`, and `## Continuity Archive` (queried via `/gm recap`); Pinned Facts is the separate, deliberately small set of things to always carry, not a second event log.
+
+---
+
 ## `/gm import <filepath> [campaign-name]`
 
 Import a pre-written campaign source and build a structured campaign from it.
@@ -153,6 +167,8 @@ Manage the dynamic campaign arc. Active only when `state.md → ## Campaign Arc`
 
 - **`/gm arc advance [beat-id]`** — mark the named beat complete (current beat if omitted). Remove from `outstanding_beats`. Advance `current_beat` to the next pending beat. If all beats in an act are complete, advance `current_act`. Update `steering_notes` to describe how to reach the newly current beat without forcing it.
 
+  **Advancing the pointer is not optional bookkeeping** — it is what keeps the campaign on its own rails, and a pointer that never moves is how a structured story quietly becomes an improvised one. Before deciding a session changed nothing, check honestly: if the session cleared the last of the current beat's `outstanding_beats`, or the party has plainly moved into the next beat's (or chapter's) location or situation, the beat advanced — treat it as such and move the pointer now, don't wait for a clean scene boundary.
+
   **When the final beat (3b) is marked complete — arc continuation:**
   `outstanding_beats` is now empty. Ask: *"The arc is complete. Continue the campaign with a new arc? [y/n]"*
   - **Yes** → run `/gm arc new` (see below).
@@ -205,6 +221,13 @@ Add a single node. Type is open vocab; suggested: `npc`, `faction`, `place`, `it
 
 ### `/gm graph add-edge --from <id> --to <id> --type T [--since N] [--note ...]`
 Add a typed edge between two existing nodes. Edge type is open vocab; common: `loyal_to`, `opposes`, `allied_with`, `member_of`, `lives_in`, `controls`, `knows_about`, `friends_with`, `lover_of`, `owes`, `rules`, `related_by_blood`, `advances_thread`, `blocks_thread`. Always supply `--since` (the current session number from state.md) so historical replay works.
+
+### `/gm graph set-disposition --to <npc-or-faction> --level <L> [--since N] [--note ...]`
+Type how the **party** stands toward an NPC or faction on the normalized scale `allied | friendly | neutral | suspicious | hostile` — the same five values the display's faction panel uses, so the graph and the sidebar speak one language. The edge runs from the shared `party` node (auto-created on first use) to the target; its type is inferred from the target — `disposition` for an NPC, `standing` for a faction — and it carries the `level`.
+
+Single-valued and current: setting a new stance **closes** any prior active party→target stance edge at `--since` (its arc stays queryable with `--at-session <old N>`) and adds the new level, so `scene-context` only ever surfaces the party's *current* stance. `scene-context` renders it as `The Party --[disposition:suspicious]--> Aldric` so the stance reads at a glance. Always pass `--since <current-session-N>`.
+
+Use it whenever the fiction shifts the party's standing — an NPC turns on them, a faction they wronged goes hostile, an alliance is earned. It is the graph-side counterpart to the `standing` values pushed to the display and to the NPC-disposition lines in `state.md → ## Live State Flags`; keep the three consistent when a stance changes.
 
 ### `/gm graph close-edge --id <edge-id> --at-session N [--anchor "..."]`
 Mark an edge as ended at session N (e.g. when an alliance breaks). Original edge is preserved with `until_session` set; it remains visible in historical queries but is excluded from "active at session ≥ N" results. The optional `--anchor "..."` records the verbatim phrase that justifies the closure as a `closed_anchor` field on the edge.

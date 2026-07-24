@@ -58,6 +58,10 @@ Skip this step if exit 0 or if the system declares no versions.
 
 After reading `state.md`, check `## Session Flags` for `roll_mode:`. If the field is missing (legacy campaign predating the flag), ask once: *"Dice rolls — `players` (default: players roll their own PCs and you wait) or `auto` (you roll everything openly)?"* Write the answer as `roll_mode: players|auto` to `## Session Flags`. Default to `players` if no answer. See SKILL.md → Dice convention for the in-session behaviour.
 
+Also read `state.md → ## Pinned Facts` and keep it hot for the whole session. These are stable soft facts the table has chosen never to forget (a promise made, a dead relative's name, a house rule, a running joke, a detail the player flagged as mattering). Unlike Live State Flags, they don't change turn-to-turn — they are standing canon. Weave them in when relevant and never contradict one; if a pinned fact is now wrong, correct it via `/gm pin` rather than silently overriding it. If the section reads *(none pinned yet)*, there's nothing to load.
+
+**Sanity-check the arc pointer at load.** Look at `state.md → ## Campaign Arc`: if the current pointer's `outstanding_beats` are already cleared, or the last session plainly ended in the *next* beat's or chapter's location or situation, the pointer never advanced — surface it (*"the current beat/chapter looks finished; pick up in `<next>`?"*) instead of opening another scene in a beat that's already done. A pointer that never moves is exactly how a campaign quietly drifts off its own arc and starts improvising. (No-op for `type: sandbox` campaigns, which have no arc pointer.)
+
 **Step 5 — Pull scene-context from the campaign graph.** Always run, even if you suspect `graph.json` doesn't exist — the script exits cleanly with a notice when uninitialized.
 ```
 python3 <skill-base>/scripts/gm_graph.py scene-context \
@@ -196,6 +200,22 @@ Each turn in combat:
 
 ## `/gm character new`
 
+**First, offer the two build paths — call `AskUserQuestion`:** *"How do you want to build your character?"*
+- `Step by step` → the guided flow below (steps 1–4). Use this when the player wants to make each choice deliberately, or already knows the exact build.
+- `Describe it` → the prose path (step 0 below). Use this when the player would rather say who the character is in a sentence and let you assemble a legal sheet.
+
+Default to `Step by step` if the question is dismissed. Either path lands in the same sheet and runs the same validation, calc, and write steps — the only difference is how the choices are gathered.
+
+0. **Describe-it path.** Ask one open question: *"In a sentence or two, describe your character — who they are, how they fight or solve problems, where they come from. I'll build a legal, level-appropriate sheet from it and show you before anything's written."* Then:
+
+   a. **Derive the build from the prose, model-side, using the active system's rules.** Read `systems/<system>/system.md` for the system's character model (its equivalents of class/role, species/origin, background, the ability/attribute method, and how the chosen system grants proficiencies, features, or spells). Map the description onto a legal chassis for this campaign's system and version: read the description for what the player actually cares about, and where the prose is silent, choose the most concept-fitting legal option and note it as a choice, not a fact. Never invent a detail the prose contradicts.
+
+   b. **Validate against the system's legality before showing anything.** Everything derived must be legal for the campaign's system and version and its agreed starting level: every choice exists in the system (look up anything you're unsure of via the system's lookup, e.g. `systems/dnd5e/lookup.py`), the ability/attribute values come from a legal method, proficiencies/skills are actually granted by the chosen options (no double-dipping, no out-of-list picks), and any level-gated features or spells are available at this level. If the concept implies something illegal (a capstone feature at level 1, a specialization earlier than the system grants it), pick the closest legal equivalent and say so.
+
+   c. **Present the derived sheet for one confirmation.** Show the full build — the system's identity fields, the ability/attribute values with the concept's priorities assigned, proficiencies, starting kit — and ask: *"This is what I read from your description. Change anything, or shall I roll it up?"* Let the player adjust any field in prose; re-validate after any change.
+
+   d. **Converge into the shared flow.** On confirmation, run the name-uniqueness check (step 1), then continue at steps 2–4 (system creation procedure, calc, write). Do not re-ask questions the description already answered; only fill genuine gaps.
+
 1. Read `scripts/character.md`. Ask the player for the character's name.
 
    **Name uniqueness check:** run `python3 <skill-base>/scripts/name_registry.py check "<name>"`. Exit 1 (duplicate) prints which prior campaign / session used the name; surface as a non-blocking warning and ask the player to confirm or change. After write (step 4), call `name_registry.py add --name "<name>" --type pc --campaign <name> --session <current>`.
@@ -233,6 +253,7 @@ No script reads needed.
 
 4. **Campaign-graph relationship-shift sweep.** Skip if `graph.json` doesn't exist for this campaign. Otherwise scan this session's narration for relationship shifts that weren't captured live via `/gm graph add-edge` / `close-edge`. Look for moments matching:
    - New alliance, betrayal, or rivalry between named NPCs / factions
+   - A shift in how the **party** stands toward an NPC or faction ("the Pale Court now reads the party as hostile", "Aldric came around and trusts them"). Draft these as `set-disposition --to <npc-or-faction> --level <allied/friendly/neutral/suspicious/hostile>` calls, matching the `standing` you push to the display and the NPC-disposition lines in `## Live State Flags`.
    - An NPC moving into / out of a location
    - A faction taking control of (or losing) a place
    - A character learning a secret
