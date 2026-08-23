@@ -78,7 +78,7 @@ import urllib.request
 
 _DISPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 _SCHEME_FILE = os.path.join(_DISPLAY_DIR, ".scheme")
-_SCHEME = open(_SCHEME_FILE).read().strip() if os.path.exists(_SCHEME_FILE) else "http"
+_SCHEME = open(_SCHEME_FILE, encoding="utf-8").read().strip() if os.path.exists(_SCHEME_FILE) else "http"
 FLASK_URL  = f"{_SCHEME}://localhost:5001/stats"
 TOKEN_FILE = os.path.join(_DISPLAY_DIR, ".token")
 TIMEOUT    = 2.0
@@ -94,7 +94,7 @@ else:
 
 def _read_token() -> str:
     try:
-        return open(TOKEN_FILE).read().strip()
+        return open(TOKEN_FILE, encoding="utf-8").read().strip()
     except FileNotFoundError:
         return ""
 

@@ -47,7 +47,7 @@ def load_verb_table(path: Optional[pathlib.Path] = None) -> dict:
         candidates = _VERB_TABLE_CANDIDATES
     for p in candidates:
         if p.exists():
-            with open(p) as f:
+            with open(p, encoding="utf-8") as f:
                 return yaml.safe_load(f)
     tried = "\n  ".join(str(p) for p in candidates)
     raise FileNotFoundError(f"verb table not found. tried:\n  {tried}")

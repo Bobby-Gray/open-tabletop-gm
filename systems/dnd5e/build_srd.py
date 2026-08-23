@@ -494,7 +494,7 @@ def cmd_status() -> None:
     if not os.path.exists(OUT_FILE):
         print(f"Dataset not built. Run build_srd.py to create it.")
         return
-    with open(OUT_FILE) as f:
+    with open(OUT_FILE, encoding="utf-8") as f:
         data = json.load(f)
     meta   = data.get("_meta", {})
     counts = meta.get("record_counts", {})
@@ -553,7 +553,7 @@ def cmd_build(skip_fvtt: bool = False) -> None:
         **categories,
     }
 
-    with open(OUT_FILE, "w") as f:
+    with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(dataset, f, separators=(",", ":"))  # compact
 
     size_kb = os.path.getsize(OUT_FILE) // 1024

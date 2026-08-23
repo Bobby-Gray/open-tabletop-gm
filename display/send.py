@@ -93,7 +93,7 @@ else:
 
 def _read_token() -> str:
     try:
-        return open(TOKEN_FILE).read().strip()
+        return open(TOKEN_FILE, encoding="utf-8").read().strip()
     except FileNotFoundError:
         return ""
 

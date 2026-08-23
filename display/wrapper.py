@@ -71,7 +71,7 @@ POLL_INTERVAL  = 0.05   # 50ms trigger file poll
 
 def _read_token() -> str:
     try:
-        with open(TOKEN_FILE) as f:
+        with open(TOKEN_FILE, encoding="utf-8") as f:
             return f.read().strip()
     except Exception:
         return ""
@@ -130,7 +130,7 @@ _MAX_TOTAL    = 1500  # total payload cap
 def _known_chars() -> set:
     """Load party member names from stats.json. Empty set = bypass name check."""
     try:
-        with open(STATS_FILE) as f:
+        with open(STATS_FILE, encoding="utf-8") as f:
             stats = json.load(f)
         return {p["name"] for p in stats.get("players", [])}
     except Exception:
@@ -192,12 +192,12 @@ def _audit(text: str) -> None:
         entry = {"ts": round(time.time(), 3), "text": text}
         log: list = []
         try:
-            with open(AUDIT_LOG) as f:
+            with open(AUDIT_LOG, encoding="utf-8") as f:
                 log = json.load(f)
         except Exception:
             pass
         log.append(entry)
-        with open(AUDIT_LOG, "w") as f:
+        with open(AUDIT_LOG, "w", encoding="utf-8") as f:
             json.dump(log[-200:], f, indent=2)
     except Exception:
         pass
@@ -215,7 +215,7 @@ def _inject_queue(master_fd: int) -> None:
         return
     raw = ""
     try:
-        with open(QUEUE_FILE) as f:
+        with open(QUEUE_FILE, encoding="utf-8") as f:
             raw = f.read()
         os.unlink(QUEUE_FILE)
     except Exception:
@@ -250,7 +250,7 @@ def _check_trigger(master_fd: int) -> None:
 
     raw = ""
     try:
-        with open(TRIGGER_FILE) as f:
+        with open(TRIGGER_FILE, encoding="utf-8") as f:
             raw = f.read()
         os.unlink(TRIGGER_FILE)
     except Exception:

@@ -71,7 +71,7 @@ def _load(campaign: str) -> dict:
     p = _graph_path(campaign)
     if not p.exists():
         return {"version": 1, "nodes": [], "edges": []}
-    with open(p) as f:
+    with open(p, encoding="utf-8") as f:
         data = json.load(f)
     data.setdefault("version", 1)
     data.setdefault("nodes", [])
@@ -82,7 +82,7 @@ def _load(campaign: str) -> dict:
 def _save(campaign: str, data: dict) -> None:
     p = _graph_path(campaign)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w") as f:
+    with open(p, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 

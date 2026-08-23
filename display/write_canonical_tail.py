@@ -50,7 +50,7 @@ def main() -> int:
     src.add_argument("--file", help="Path to a file containing the JSON list")
     args = p.parse_args()
 
-    raw = args.json if args.json is not None else open(args.file).read()
+    raw = args.json if args.json is not None else open(args.file, encoding="utf-8").read()
     try:
         entries = json.loads(raw)
     except json.JSONDecodeError as e:
@@ -82,7 +82,7 @@ def main() -> int:
     target = target_dir / "session_tail.json"
 
     tmp = target.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cleaned, f, indent=2)
         f.flush()
         try:

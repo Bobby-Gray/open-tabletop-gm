@@ -19,6 +19,24 @@ import pathlib
 import shutil
 import sys
 
+# ── Non-English console safety ───────────────────────────────────────────────
+# On Windows, Python encodes stdout/stderr with the system ANSI code page
+# (cp1251 for Russian, cp936/GBK for Chinese), not UTF-8. Printing a campaign's
+# own text through that raises UnicodeEncodeError on the first non-ASCII
+# character, or silently mojibakes it when piped — which is how a Russian
+# calendar came back as "18 РЎРµСЂРїР°РЅСЊ" instead of "18 Серпань" (#36).
+#
+# Every script that touches campaign data imports this module, so forcing the
+# streams here covers them all rather than relying on each one remembering.
+# .reconfigure() exists from 3.7 and is a no-op where the stream is already
+# UTF-8, so this costs nothing on macOS and Linux.
+for _stream in (sys.stdin, sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:      # not a TextIOWrapper (pytest capture, a pipe, ...)
+        pass
+
+
 _DEFAULT_ROOT = pathlib.Path("~/open-tabletop-gm").expanduser()
 
 

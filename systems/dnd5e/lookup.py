@@ -69,7 +69,7 @@ def _load() -> None:
 
     # Load primary SRD
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE) as f:
+        with open(DATA_FILE, encoding="utf-8") as f:
             raw = json.load(f)
         for k, v in raw.items():
             if k != "_meta":
@@ -77,7 +77,7 @@ def _load() -> None:
 
     # Merge supplemental (non-SRD content) — adds without overwriting SRD entries
     if os.path.exists(SUPPLEMENTAL_FILE):
-        with open(SUPPLEMENTAL_FILE) as f:
+        with open(SUPPLEMENTAL_FILE, encoding="utf-8") as f:
             supp = json.load(f)
         for k, v in supp.items():
             if k == "_meta":

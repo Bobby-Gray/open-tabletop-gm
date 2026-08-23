@@ -87,7 +87,7 @@ def _apply_campaign_sfx_languages() -> None:
     if _audio is None:
         return
     try:
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
         if not camp:
             return
         state_md = _find_campaign(camp) / "state.md"
@@ -133,13 +133,13 @@ if _TLS_MODE:
 def _get_or_create_token() -> str:
     """Load or generate the LAN token. Upgrades short legacy tokens to 64-char."""
     try:
-        token = open(TOKEN_FILE).read().strip()
+        token = open(TOKEN_FILE, encoding="utf-8").read().strip()
         if len(token) >= 48:   # 48+ chars = already long enough
             return token
     except FileNotFoundError:
         pass
     token = secrets.token_hex(32)   # 64-char hex — brute force infeasible
-    with open(TOKEN_FILE, "w") as f:
+    with open(TOKEN_FILE, "w", encoding="utf-8") as f:
         f.write(token)
     os.chmod(TOKEN_FILE, 0o600)
     return token
@@ -241,7 +241,7 @@ def _load_approved_devices() -> None:
     """Load persisted approved device IDs from disk at startup."""
     global _approved_devices
     try:
-        with open(DEVICES_FILE) as f:
+        with open(DEVICES_FILE, encoding="utf-8") as f:
             ids = json.load(f)
         if isinstance(ids, list):
             with _devices_lock:
@@ -257,7 +257,7 @@ def _persist_approved_devices() -> None:
     with _devices_lock:
         ids = list(_approved_devices)
     try:
-        with open(DEVICES_FILE, "w") as f:
+        with open(DEVICES_FILE, "w", encoding="utf-8") as f:
             json.dump(ids, f)
     except Exception as e:
         print(f"[display] warning: could not persist approved devices: {e}", file=sys.stderr)
@@ -369,7 +369,7 @@ def _check_auto_trigger() -> None:
         _staged.clear()
 
     try:
-        with open(QUEUE_FILE, "w") as f:
+        with open(QUEUE_FILE, "w", encoding="utf-8") as f:
             f.write(content)
     except Exception:
         char_names = []
@@ -847,7 +847,7 @@ _text_log_lock = threading.Lock()
 def _get_log_file() -> str:
     """Return the campaign-specific log path, or the fallback display-dir path."""
     try:
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
         if camp:
             return str(_campaign_dir(camp) / "text_log.json")
     except Exception:
@@ -860,7 +860,7 @@ def _persist_log() -> None:
     try:
         with _text_log_lock:
             data = list(_text_log)
-        with open(_get_log_file(), "w") as f:
+        with open(_get_log_file(), "w", encoding="utf-8") as f:
             json.dump(data, f)
     except Exception:
         pass
@@ -870,7 +870,7 @@ def _load_log() -> None:
     """Load a previously persisted text log. Called at startup and on campaign switch.
     Handles both old string format and new dict format."""
     try:
-        with open(_get_log_file()) as f:
+        with open(_get_log_file(), encoding="utf-8") as f:
             data = json.load(f)
         with _text_log_lock:
             _text_log.clear()
@@ -921,7 +921,7 @@ def _get_tail_file() -> "str | None":
     much harder to diagnose. New contract: campaign-specific or nothing.
     """
     try:
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
         if camp:
             return str(_campaign_dir(camp) / "session_tail.json")
     except Exception:
@@ -953,7 +953,7 @@ def _persist_tail() -> None:
             except OSError:
                 pass
         tmp = path + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f)
             f.flush()
             try:
@@ -980,7 +980,7 @@ def _load_tail() -> None:
     if not path:
         return
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError:
         return  # No file yet — keep in-memory state
@@ -993,7 +993,7 @@ def _load_tail() -> None:
         return
 
     try:
-        current_camp = open(CAMP_FILE).read().strip()
+        current_camp = open(CAMP_FILE, encoding="utf-8").read().strip()
     except Exception:
         current_camp = ""
 
@@ -1034,7 +1034,7 @@ def _persist_stats() -> None:
     try:
         with _stats_lock:
             data = dict(_current_stats)
-        with open(STATS_FILE, "w") as f:
+        with open(STATS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f)
     except Exception:
         pass
@@ -1042,7 +1042,7 @@ def _persist_stats() -> None:
 
 def _load_stats() -> None:
     try:
-        with open(STATS_FILE) as f:
+        with open(STATS_FILE, encoding="utf-8") as f:
             data = json.load(f)
         with _stats_lock:
             _current_stats.update(data)
@@ -1078,7 +1078,7 @@ def _dice_pending_snapshot() -> list:
 def _load_input_queue() -> None:
     global _input_queue
     try:
-        with open(INPUT_FILE) as f:
+        with open(INPUT_FILE, encoding="utf-8") as f:
             _input_queue = json.load(f)
     except Exception:
         _input_queue = []
@@ -1086,7 +1086,7 @@ def _load_input_queue() -> None:
 
 def _persist_input_queue() -> None:
     try:
-        with open(INPUT_FILE, "w") as f:
+        with open(INPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(_input_queue, f)
     except Exception:
         pass
@@ -1231,7 +1231,7 @@ def health():
     is exposed.
     """
     try:
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
     except Exception:
         camp = ""
     tail_path = _get_tail_file()
@@ -1267,7 +1267,7 @@ def chunk():
     # or without text.
     if "campaign" in data:
         try:
-            with open(CAMP_FILE, "w") as f:
+            with open(CAMP_FILE, "w", encoding="utf-8") as f:
                 f.write(str(data["campaign"]).strip())
             _load_log()
             _load_tail()
@@ -1368,7 +1368,7 @@ def chunk():
     # Stamp campaign onto the tail entry so cross-campaign replay can filter
     # and a stale shared file does not bleed into the active session.
     try:
-        _camp_stamp = open(CAMP_FILE).read().strip()
+        _camp_stamp = open(CAMP_FILE, encoding="utf-8").read().strip()
         if _camp_stamp:
             log_entry["_camp"] = _camp_stamp
     except Exception:
@@ -1707,7 +1707,7 @@ def narration_pref():
     n = max(0, min(5000, n))
     try:
         if n:
-            with open(NARRATION_TARGET, "w") as f:
+            with open(NARRATION_TARGET, "w", encoding="utf-8") as f:
                 f.write(str(n))
         elif os.path.exists(NARRATION_TARGET):
             os.remove(NARRATION_TARGET)
@@ -1744,10 +1744,10 @@ def roll_pref():
     try:
         prefs = {}
         if os.path.exists(ROLL_PREFS_FILE):
-            with open(ROLL_PREFS_FILE) as f:
+            with open(ROLL_PREFS_FILE, encoding="utf-8") as f:
                 prefs = json.load(f)
         prefs[char] = mode
-        with open(ROLL_PREFS_FILE, "w") as f:
+        with open(ROLL_PREFS_FILE, "w", encoding="utf-8") as f:
             json.dump(prefs, f)
     except (OSError, ValueError):
         pass
@@ -1763,7 +1763,7 @@ _VOICE_PAT = re.compile(r"^\s*tts_voice:\s*([A-Za-z]+)\s*$", re.MULTILINE)
 
 def _active_campaign_name() -> Optional[str]:
     try:
-        return open(CAMP_FILE).read().strip() or None
+        return open(CAMP_FILE, encoding="utf-8").read().strip() or None
     except OSError:
         return None
 
@@ -1934,7 +1934,7 @@ def help_request():
 
     # Read active campaign name
     try:
-        campaign = open(CAMP_FILE).read().strip()
+        campaign = open(CAMP_FILE, encoding="utf-8").read().strip()
     except FileNotFoundError:
         os.unlink(HELP_LOCK)
         return "No active campaign", 400
@@ -2048,7 +2048,7 @@ def player_dice():
     payload   = {"text": text, "dice": True}
     log_entry = {"text": text, "dice": True}
     try:
-        _camp_stamp = open(CAMP_FILE).read().strip()
+        _camp_stamp = open(CAMP_FILE, encoding="utf-8").read().strip()
         if _camp_stamp:
             log_entry["_camp"] = _camp_stamp
     except Exception:
@@ -2227,7 +2227,7 @@ def get_character_sheet(character):
         return "Bad character name", 400
 
     try:
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
     except Exception:
         camp = ""
     # Sanitise the campaign name with the same allowlist + length cap as the
@@ -2451,14 +2451,14 @@ def submit_now():
     if not _token_ok():
         return "Forbidden", 403
     try:
-        content = open(QUEUE_FILE).read()
+        content = open(QUEUE_FILE, encoding="utf-8").read()
         os.unlink(QUEUE_FILE)
     except FileNotFoundError:
         return "No queue", 204
     except Exception:
         return "Error", 500
     try:
-        with open(TRIGGER_FILE, "w") as f:
+        with open(TRIGGER_FILE, "w", encoding="utf-8") as f:
             f.write(content)
     except Exception:
         return "Error", 500
@@ -2614,7 +2614,7 @@ if __name__ == "__main__":
 
     # Write .scheme so push_stats.py / send.py / autorun_wait.py know which to use
     try:
-        with open(os.path.join(_display_dir, ".scheme"), "w") as _sf:
+        with open(os.path.join(_display_dir, ".scheme"), "w", encoding="utf-8") as _sf:
             _sf.write(scheme)
     except OSError:
         pass

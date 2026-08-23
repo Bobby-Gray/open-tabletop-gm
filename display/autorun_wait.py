@@ -38,7 +38,7 @@ SCHEME_FILE = os.path.join(DISPLAY_DIR, ".scheme")
 
 # Invalidate any previous wait loop by writing a new session id (python write — TCC-ok)
 my_session = secrets.token_hex(8)
-with open(SESSION_FILE, "w") as f:
+with open(SESSION_FILE, "w", encoding="utf-8") as f:
     f.write(my_session)
 
 # Resolve autorun interval from the active campaign's state.md (default 60s)
@@ -46,7 +46,7 @@ interval = 60
 if find_campaign is not None:
     try:
         import re
-        camp = open(CAMP_FILE).read().strip()
+        camp = open(CAMP_FILE, encoding="utf-8").read().strip()
         txt = (find_campaign(camp) / "state.md").read_text(errors="replace")
         m = re.search(r"autorun_interval:\s*(\d+)", txt)
         if m:
@@ -75,7 +75,7 @@ content = ""
 for _ in range(1800):  # 0.3s * 1800 = 9 min
     if os.path.exists(QFILE):
         try:
-            raw = open(QFILE).read()
+            raw = open(QFILE, encoding="utf-8").read()
             os.unlink(QFILE)
         except Exception:
             raw = ""
@@ -87,7 +87,7 @@ for _ in range(1800):  # 0.3s * 1800 = 9 min
                 content = raw
         break
     try:
-        if open(SESSION_FILE).read().strip() != my_session:
+        if open(SESSION_FILE, encoding="utf-8").read().strip() != my_session:
             break
     except Exception:
         break
@@ -95,7 +95,7 @@ for _ in range(1800):  # 0.3s * 1800 = 9 min
 
 # Clean up our session file if it's still ours
 try:
-    if open(SESSION_FILE).read().strip() == my_session:
+    if open(SESSION_FILE, encoding="utf-8").read().strip() == my_session:
         os.unlink(SESSION_FILE)
 except Exception:
     pass
@@ -105,8 +105,8 @@ subprocess.run([sys.executable, PUSH, "--autorun-waiting", "false"], capture_out
 # Clear the display queue indicator on success
 if content:
     try:
-        scheme = open(SCHEME_FILE).read().strip() if os.path.exists(SCHEME_FILE) else "http"
-        token = open(TOKEN_FILE).read().strip() if os.path.exists(TOKEN_FILE) else ""
+        scheme = open(SCHEME_FILE, encoding="utf-8").read().strip() if os.path.exists(SCHEME_FILE) else "http"
+        token = open(TOKEN_FILE, encoding="utf-8").read().strip() if os.path.exists(TOKEN_FILE) else ""
         ctx = None
         if scheme == "https":
             ctx = ssl.create_default_context()

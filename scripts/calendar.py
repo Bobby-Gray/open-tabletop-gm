@@ -85,14 +85,14 @@ def _cal_path(campaign: str) -> str:
 
 def _load(campaign: str) -> dict:
     try:
-        with open(_cal_path(campaign)) as f:
+        with open(_cal_path(campaign), encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
 def _save(campaign: str, cal: dict) -> None:
-    with open(_cal_path(campaign), "w") as f:
+    with open(_cal_path(campaign), "w", encoding="utf-8") as f:
         json.dump(cal, f, indent=2)
 
 

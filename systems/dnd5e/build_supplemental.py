@@ -131,13 +131,13 @@ def _slug(name: str) -> str:
 
 def _load_supplemental() -> dict:
     if os.path.exists(SUPPLEMENTAL_FILE):
-        with open(SUPPLEMENTAL_FILE) as f:
+        with open(SUPPLEMENTAL_FILE, encoding="utf-8") as f:
             return json.load(f)
     return {"_meta": {"description": "Supplemental entries for non-SRD content", "sources": []}, "spells": [], "features": []}
 
 
 def _save_supplemental(data: dict) -> None:
-    with open(SUPPLEMENTAL_FILE, "w") as f:
+    with open(SUPPLEMENTAL_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"Saved → {SUPPLEMENTAL_FILE}")
 
@@ -160,7 +160,7 @@ def _in_supplemental(supp: dict, name: str) -> bool:
 def _load_srd_names() -> set[str]:
     if not os.path.exists(DATA_FILE):
         return set()
-    with open(DATA_FILE) as f:
+    with open(DATA_FILE, encoding="utf-8") as f:
         raw = json.load(f)
     names: set[str] = set()
     for cat, records in raw.items():
@@ -181,7 +181,7 @@ def _extract_names_from_character(path: str) -> list[tuple[str, str]]:
         print(f"  [skip] not found: {path}", file=sys.stderr)
         return entries
 
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         content = f.read()
 
     # Spells section — lines like "- **Spell Name**" or "- Spell Name"

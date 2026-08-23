@@ -18,6 +18,14 @@ CERT_SERVER_PID="$DISPLAY_DIR/.cert-server.pid"
 LAN_FLAG=""
 TLS_MODE=false
 
+# UTF-8 mode for the server and anything it spawns. Unlike per-call-site
+# encoding= this also fixes open()'s DEFAULT, which is what bites on a
+# non-English Windows console (#36). Must be set before the interpreter
+# starts, so it belongs here rather than in Python.
+export PYTHONUTF8=1
+export PYTHONIOENCODING=utf-8
+
+
 for arg in "$@"; do
   case "$arg" in
     --lan) LAN_FLAG="--lan" ;;
