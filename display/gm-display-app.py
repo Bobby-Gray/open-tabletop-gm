@@ -32,7 +32,8 @@ import sys
 import threading
 from collections import deque
 from typing import Optional
-from flask import Flask, Response, request, render_template, jsonify
+from flask import (Flask, Response, request, render_template, jsonify,
+                   send_from_directory)
 from flask_cors import CORS
 
 _DISPLAY_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -387,6 +388,8 @@ def _token_ok() -> bool:
     provided = request.headers.get("X-DND-Token", "")
     return hmac.compare_digest(provided, _lan_token)
 
+
+_ICONS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -1147,6 +1150,26 @@ def index():
         tts_available=(_tts is not None),
         ui_manifest=_load_ui_manifest(),
     )
+
+
+@app.route("/icons/<path:filename>")
+def serve_icon(filename):
+    """Serve icons, favicon and brand assets out of display/icons/.
+
+    The templates reference /icons/<name>.png in ~20 places (class badges, dice
+    and block badges, the corner logo, the app icons in <head>). Flask serves
+    nothing at that prefix by default, so without this route every one of them
+    404s and the UI renders with blank squares, which is what it did until
+    2026-08-23. send_from_directory rejects traversal, so <path:filename>
+    cannot escape the icons directory.
+    """
+    return send_from_directory(_ICONS_DIR, filename)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(_ICONS_DIR, "favicon.ico",
+                               mimetype="image/vnd.microsoft.icon")
 
 
 @app.route("/srd-lookup")
