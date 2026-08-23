@@ -12,6 +12,20 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.14.1] — 2026-08-23 — Non-English display fixes
+
+Two bugs reported from a Russian-language install, both of which only appear outside an English, UTF-8 environment and neither of which fails loudly enough to notice from the developer's side.
+
+### Fixed
+
+- **Campaign text no longer corrupted on a non-English Windows install.** An in-world date was rendering as `18 РЎРµСЂРїР°РЅСЊ, 412 РѕС‚ РџР°РґРµРЅРёСЏ РЎРІРѕРґРѕРІ` instead of `18 Серпань, 412 от Падения Сводов` — UTF-8 bytes decoded as cp1251, the Windows ANSI code page for Russian. Python's `open()` falls back to the locale encoding when none is given, so every bare `open()` was a corruption site: 67 of them across 15 files. All now pin `encoding="utf-8"`, `start-display.sh` exports `PYTHONUTF8=1` so the *default* is UTF-8 rather than only the call sites that exist today, and `scripts/paths.py` reconfigures the standard streams so printing non-ASCII to a cp1251 or GBK console does not raise. The same bug reaches Chinese users as GBK/cp936. (#36)
+- **Display icons no longer 404.** This fork carried `display/templates/` without `display/icons/` or the Flask route that serves it, so all ~20 icon references in the UI — class badges, dice and block badges, the corner logo, the app icons — returned 404 and rendered as blank boxes. The 39-icon set and the `/icons/` and `/favicon.ico` routes are now in place. (#37)
+
+### Internal
+
+- `tests/test_encoding_utf8.py` and `tests/test_display_icons.py` are the detectors that were missing for both bugs. The encoding guard works two ways, since neither is sufficient alone: Python's own `-X warn_default_encoding` catches `read_text`/`write_text` as well as `open()` but only on code that runs, and an AST walk covers the paths no test executes. The icon guard reads names out of the template the way the browser does, including the three tables the JS assembles names from at runtime — the ones a search for a literal path never finds. Both were break-tested in each direction.
+
+
 ## [0.14.0] — 2026-07-24 — GM-side discipline sync from claude-dnd-skill v2.4.0
 
 Ports the GM-discipline and quality-of-life work from claude-dnd-skill **v2.4.0**, generalized to OTGM's system-agnostic core where the upstream version was D&D-flavored. What's genuinely 5e-only stays in `systems/dnd5e/`; mechanical rendering is driven by the system's UI manifest, not a hardcoded list.
