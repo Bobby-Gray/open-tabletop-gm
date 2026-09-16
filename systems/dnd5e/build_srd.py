@@ -252,6 +252,23 @@ def _norm_monster(r: dict) -> dict:
                ac_list if isinstance(ac_list, (int, float)) else "?")
     speed   = r.get("speed", {})
     speed_s = ", ".join(f"{k} {v}" for k, v in speed.items() if v) if isinstance(speed, dict) else ""
+
+    # Defenses. Upstream gives damage_* as lists of plain strings and
+    # condition_immunities as a list of {index,name,url} records, so they need
+    # different flattening. Dropping these was not a cosmetic omission: halving
+    # or zeroing damage changes what a fight IS, and a GM with no record to
+    # consult will apply a half-remembered resistance inconsistently.
+    def _flat(key: str) -> str:
+        vals = r.get(key) or []
+        if not isinstance(vals, list):
+            return str(vals or "")
+        out = []
+        for v in vals:
+            if isinstance(v, dict):
+                v = v.get("name", "")
+            if v:
+                out.append(str(v))
+        return ", ".join(out)
     # Flatten special abilities + actions into description
     parts = []
     for sa in r.get("special_abilities", []):
@@ -280,6 +297,10 @@ def _norm_monster(r: dict) -> dict:
         "cha":   r.get("charisma", 10),
         "alignment": r.get("alignment", ""),
         "languages": r.get("languages", ""),
+        "resistances":   _flat("damage_resistances"),
+        "immunities":    _flat("damage_immunities"),
+        "vulnerabilities": _flat("damage_vulnerabilities"),
+        "condition_immunities": _flat("condition_immunities"),
     }
 
 
