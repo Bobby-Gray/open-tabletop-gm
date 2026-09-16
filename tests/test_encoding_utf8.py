@@ -37,6 +37,8 @@ from __future__ import annotations
 import ast
 import json
 import pathlib
+import os
+import pytest
 import subprocess
 import sys
 import tempfile
@@ -93,6 +95,32 @@ def test_no_bare_text_mode_open_anywhere():
     )
 
 
+def _argv_can_carry(text: str) -> bool:
+    """Can this interpreter pass `text` to a child process as an argument?
+
+    Python encodes argv with the filesystem encoding. Under a genuine C locale
+    on Linux that is ASCII, and Cyrillic simply cannot cross the boundary —
+    an OS-level constraint, not a defect in this tree. macOS pins the
+    filesystem encoding to UTF-8 regardless of locale, which is why this is
+    invisible on a developer machine and only appears on a Linux runner.
+    """
+    try:
+        text.encode(sys.getfilesystemencoding())
+        return True
+    except (UnicodeEncodeError, LookupError):
+        return False
+
+
+@pytest.mark.skipif(
+    not _argv_can_carry(RU_MONTHS),
+    reason=(
+        "filesystem encoding is "
+        f"{sys.getfilesystemencoding()!r}, which cannot represent Cyrillic in "
+        "argv — the subprocess cannot be launched at all. The STATIC guards in "
+        "this file still run under this locale and are the coverage that "
+        "matters here."
+    ),
+)
 def test_a_russian_calendar_round_trips_with_the_default_encoding_armed():
     """The live half.
 
@@ -103,8 +131,14 @@ def test_a_russian_calendar_round_trips_with_the_default_encoding_armed():
     root = Path(tempfile.mkdtemp())
     env = {
         "GM_CAMPAIGN_ROOT": str(root),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
+        "PATH": os.environ.get("PATH", "/usr/bin:/bin:/usr/local/bin"),
         "HOME": str(root),
+        # Windows resolves the home directory from USERPROFILE, not HOME. A
+        # stripped env without it used to crash any import of scripts/paths.py
+        # before the lazy-default fix, and preserving it keeps this test about
+        # encoding rather than about homelessness.
+        "USERPROFILE": os.environ.get("USERPROFILE", str(root)),
+        "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
     }
     cal = ROOT / "scripts" / "calendar.py"
     base = [sys.executable, "-X", "warn_default_encoding",
