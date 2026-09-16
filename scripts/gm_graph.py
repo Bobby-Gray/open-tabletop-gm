@@ -558,7 +558,7 @@ def cmd_extract(args) -> int:
     print(f"# Deterministic extraction — {len(proposals)} proposals from "
           f"{campaign_dir.name}", file=sys.stderr)
     if getattr(args, "write", None):
-        pathlib.Path(args.write).write_text(out_json)
+        pathlib.Path(args.write).write_text(out_json, encoding="utf-8")
         print(f"# wrote proposals to {args.write}", file=sys.stderr)
     else:
         print(out_json)
@@ -571,7 +571,7 @@ def cmd_extract_apply(args) -> int:
     if not proposals_path.exists():
         print(f"proposals file not found: {proposals_path}", file=sys.stderr)
         return 1
-    proposals = json.loads(proposals_path.read_text())
+    proposals = json.loads(proposals_path.read_text(encoding="utf-8"))
     pick = None
     if args.pick:
         pick = set(int(x.strip()) for x in args.pick.split(",") if x.strip())

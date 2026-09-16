@@ -23,7 +23,7 @@ SKILL_DIR = pathlib.Path(__file__).resolve().parent.parent
 def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "-C", str(SKILL_DIR), *args],
-        capture_output=True, text=True, check=check,
+        capture_output=True, text=True, check=check, encoding="utf-8",
     )
 
 
@@ -31,7 +31,7 @@ def _read_local_version() -> str:
     f = SKILL_DIR / "VERSION"
     if not f.exists():
         return "(no VERSION file — pre-versioning baseline)"
-    return f.read_text().strip()
+    return f.read_text(encoding="utf-8").strip()
 
 
 def _read_remote_version(branch: str) -> str:

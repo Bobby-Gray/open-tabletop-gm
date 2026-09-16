@@ -129,7 +129,7 @@ def campaign_system_version(name: str, default: str = "") -> str:
     if not state.exists():
         return default
     try:
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except OSError:
         return default
     m = _SYSTEM_VERSION_PAT.search(text)
@@ -160,7 +160,7 @@ def campaign_system(name: str, default: str = "dnd5e") -> str:
     if not state.exists():
         return default
     try:
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except OSError:
         return default
     m = _SYSTEM_MODULE_PAT.search(text)

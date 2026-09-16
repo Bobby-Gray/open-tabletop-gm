@@ -93,7 +93,7 @@ def _apply_campaign_sfx_languages() -> None:
         state_md = _find_campaign(camp) / "state.md"
         if not state_md.exists():
             return
-        text = state_md.read_text(errors="replace")
+        text = state_md.read_text(errors="replace", encoding="utf-8")
     except (OSError, ValueError):
         return
     m = re.search(r"^\s*sfx_languages:\s*([\w,\s\-]+)$", text, re.MULTILINE)
@@ -1779,7 +1779,7 @@ def _read_narrator_voice() -> str:
         state = _find_campaign(name) / "state.md"
         if not state.exists():
             return _tts.DEFAULT_VOICE
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except (OSError, ValueError):
         return _tts.DEFAULT_VOICE
     m = _VOICE_PAT.search(text)
@@ -1798,7 +1798,7 @@ def _write_narrator_voice(voice: str) -> bool:
         return False
     try:
         state = _find_campaign(name) / "state.md"
-        text = state.read_text(errors="replace") if state.exists() else ""
+        text = state.read_text(errors="replace", encoding="utf-8") if state.exists() else ""
     except (OSError, ValueError):
         return False
 
@@ -1818,7 +1818,7 @@ def _write_narrator_voice(voice: str) -> bool:
             text = f"{text}{sep}\n## Session Flags\n{new_line}\n"
 
     try:
-        state.write_text(text)
+        state.write_text(text, encoding="utf-8")
         return True
     except OSError:
         return False
@@ -1927,7 +1927,7 @@ def help_request():
 
     # Atomic lock: O_EXCL fails if file already exists — no race condition
     try:
-        fd = os.open(HELP_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        fd = os.open(HELP_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, encoding="utf-8")
         os.close(fd)
     except FileExistsError:
         return "Already running", 409

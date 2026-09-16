@@ -104,7 +104,7 @@ def cmd_check(campaign: str) -> int:
     if not state.exists():
         print(f"[migrate_system_version] No state.md at {state}", file=sys.stderr)
         return 2
-    text = state.read_text(errors="replace")
+    text = state.read_text(errors="replace", encoding="utf-8")
     if not _has_header_line(text):
         # state.md uses a non-standard header — not eligible for this migrator.
         # Treat as already-migrated to avoid blocking /gm load.
@@ -130,7 +130,7 @@ def cmd_migrate(campaign: str, version: str, assume_yes: bool) -> int:
         print(f"[migrate_system_version] No state.md at {state}", file=sys.stderr)
         return 2
 
-    text = state.read_text(errors="replace")
+    text = state.read_text(errors="replace", encoding="utf-8")
     if not _has_header_line(text):
         print(
             "[migrate_system_version] state.md uses a non-standard header "
@@ -163,7 +163,7 @@ def cmd_migrate(campaign: str, version: str, assume_yes: bool) -> int:
 
     bak = _backup(state)
     new_text = _inject_field(text, version.strip())
-    state.write_text(new_text)
+    state.write_text(new_text, encoding="utf-8")
     print(
         f"[migrate_system_version] OK — '{campaign}' stamped as version "
         f"{version.strip()}.\n"

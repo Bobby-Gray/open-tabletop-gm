@@ -985,7 +985,7 @@ def run_narrative_probe(model: str, url: str, api_key: str, timeout: int,
             "inter_rater_agreement": ira,
             "cases": results,
         }
-        Path(output_file).write_text(json.dumps(out, indent=2))
+        Path(output_file).write_text(json.dumps(out, indent=2), encoding="utf-8")
         print(f"Results written to {output_file}")
 
     return results

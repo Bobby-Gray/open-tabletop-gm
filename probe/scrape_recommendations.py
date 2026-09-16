@@ -276,7 +276,7 @@ def main():
     if args.output:
         # Write just the OpenRouter IDs that we know about
         ids = [or_id for _, _, or_id in results if or_id]
-        Path(args.output).write_text("\n".join(ids) + "\n")
+        Path(args.output).write_text("\n".join(ids) + "\n", encoding="utf-8")
         print(f"\nWrote {len(ids)} OpenRouter IDs to {args.output}", file=sys.stderr)
 
 
