@@ -204,7 +204,25 @@ def _write_xp(path: pathlib.Path, new_xp: int, current_level: int) -> bool:
     else:
         replacement = f"**XP:** {new_xp} / {next_lvl}"
 
-    updated = re.sub(r"\*\*XP:\*\*\s*\d+\s*/\s*\d+[^\n|]*", replacement, text, count=1)
+    # subn, not sub. `updated == text` cannot tell "the regex did not match"
+    # from "it matched and the rendered value did not change", and the second
+    # is every award that leaves the total where it was. The substitution COUNT
+    # is the only thing that answers "did the field exist", which is what a
+    # warning here is actually about.
+    #
+    # The digits before the slash are optional because a fresh template sheet
+    # holds "**XP:** / 2700". Requiring them meant the very first award against
+    # a new character silently did nothing: re.sub returned the text unchanged,
+    # it was written straight back, and the award was gone with no signal.
+    updated, hits = re.subn(
+        r"\*\*XP:\*\*\s*(?:\d+)?\s*/\s*\d+[^\n|]*", replacement, text, count=1
+    )
+    if hits == 0:
+        print(
+            f"xp.py: warning — no XP field found in {path.name}; "
+            f"{new_xp} XP was NOT written",
+            file=sys.stderr,
+        )
     path.write_text(updated, encoding="utf-8")
     return leveled
 
