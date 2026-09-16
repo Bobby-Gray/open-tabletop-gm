@@ -34,7 +34,11 @@ except ImportError:
 DATA_DIR  = str(pathlib.Path(__file__).parent / "data")
 OUT_FILE  = os.path.join(DATA_DIR, "dnd5e_srd.json")
 
-RAW_5EBITS   = "https://raw.githubusercontent.com/5e-bits/5e-database/main/src/2014"
+# 5e-bits added a language directory (src/<ruleset>/<lang>/) — the files are
+# NOT at src/2014/ any more, and every one of them 404s there. A fetch
+# failure here used to be soft, so the old path produced an empty dataset
+# and a build that still reported success.
+RAW_5EBITS   = "https://raw.githubusercontent.com/5e-bits/5e-database/main/src/2014/en"
 RAW_FVTT     = "https://raw.githubusercontent.com/foundryvtt/dnd5e/master"
 FVTT_TREE    = "https://api.github.com/repos/foundryvtt/dnd5e/git/trees/master?recursive=1"
 BITS_COMMITS = "https://api.github.com/repos/5e-bits/5e-database/commits/main?per_page=1"
@@ -360,8 +364,19 @@ def _norm_feature(doc: dict, path: str, scale_tables=None):
 
 # ─── Fetch 5e-bits datasets ───────────────────────────────────────────────────
 
+class SourceUnavailable(RuntimeError):
+    """A configured upstream source could not be fetched.
+
+    Distinct from "fetched, and it was empty". Conflating the two is what let
+    an upstream path change write an empty dataset over a good one and exit 0.
+    """
+
+
 def _load_bits_records(filename: str) -> list:
-    raw = json.loads(_fetch(f"{RAW_5EBITS}/{filename}") or "null")
+    body = _fetch(f"{RAW_5EBITS}/{filename}")
+    if body is None:
+        raise SourceUnavailable(f"{RAW_5EBITS}/{filename}")
+    raw = json.loads(body or "null")
     if raw is None:
         return []
     if isinstance(raw, list):
@@ -375,7 +390,18 @@ def _build_5ebits() -> dict:
     categories = {}
     for key, filename in BITS_FILES.items():
         print(f"  5e-bits  {key} …", end="", flush=True)
-        records = _load_bits_records(filename)
+        try:
+            records = _load_bits_records(filename)
+        except SourceUnavailable as e:
+            # Exit rather than continue with []. The old behaviour was to carry
+            # on, and the result was a dataset that looked built and held
+            # nothing.
+            sys.exit(
+                f"\n✗ SRD source unavailable: {e}\n"
+                "  Nothing was written. If this is a 404 rather than a network\n"
+                "  failure, the upstream layout has changed and RAW_5EBITS needs\n"
+                "  updating."
+            )
         NORM = {
             "spells":      _norm_spell,
             "equipment":   _norm_equipment,
@@ -552,6 +578,20 @@ def cmd_build(skip_fvtt: bool = False) -> None:
         },
         **categories,
     }
+
+    # A category that fetched successfully and is empty is a real answer. Every
+    # category empty means the sources moved or the network is gone, and
+    # writing that over a good dataset is how a working install silently loses
+    # its SRD. Refuse, loudly, and leave whatever is on disk alone.
+    empty = [k for k, n in counts.items() if n == 0]
+    if len(empty) == len(counts):
+        sys.exit(
+            "✗ every category came back empty — refusing to overwrite "
+            f"{OUT_FILE}.\n"
+            "  Nothing was written. Check the source URLs above for 404s."
+        )
+    if empty:
+        print(f"  ! empty categories: {', '.join(empty)}", file=sys.stderr)
 
     with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(dataset, f, separators=(",", ":"))  # compact
