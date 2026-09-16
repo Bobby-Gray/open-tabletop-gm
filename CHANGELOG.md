@@ -12,6 +12,110 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-09-16 — SRD build, defenses, and three features that never ran
+
+The largest single release this project has had, and most of it is things that
+were already supposed to work. Four of the ten fixes are features that existed
+in the source and had never once executed for anyone.
+
+### Fixed — the SRD dataset could not be built at all
+
+- **Every SRD source returned 404.** `build_srd.py` fetched from
+  `5e-bits/5e-database/main/src/2014/`; upstream added a language directory and
+  the files are at `src/2014/en/` now. Because the generated dataset is
+  gitignored, an existing checkout kept running on data built before the move
+  and nothing degraded — it broke only a fresh clone, which is the case nobody
+  runs. Verified against a control (the repo's README returned 200, so the
+  404s were the path and not the network). The corrected path builds 1,267
+  records: 319 spells, 237 equipment, 362 magic items, 15 conditions, 334
+  monsters. (#42)
+- **A build that fetched nothing reported success.** A failed fetch printed to
+  stderr, became an empty list, and the build carried on and wrote a dataset
+  containing nothing over a good one. Fetch failure and "fetched, and it was
+  empty" are now different values, and the writer refuses to overwrite when
+  every category came back empty. (#42)
+
+### Added
+
+- **Creature defenses.** Damage resistances, immunities, vulnerabilities and
+  condition immunities were in the SRD all along and were dropped by the
+  normaliser, so nothing could show them and the GM had no record to consult.
+  They are now kept and shown in the creature block — immunities on 136 of 334
+  creatures, condition immunities on 92, resistances on 70, vulnerabilities on
+  15. Nothing applies them to damage automatically; the GM reads and
+  adjudicates, as before. (#43)
+- **An XP award ledger.** An award left no trace except a number on a sheet, so
+  an award that never happened was invisible until a player noticed weeks later
+  that their total had not moved. `campaigns/<name>/xp-ledger.jsonl` records
+  each one, and `xp.py check --campaign <name>` reconciles it against the
+  sheets and exits non-zero when a sheet holds less than the ledger recorded.
+  It detects gaps; it does not fill them. (#46)
+
+### Fixed — features that existed and never ran
+
+- **Narration block badges.** A keyword table, a function that built the image,
+  and a CSS class — and the function was never called from anywhere while the
+  class had no style rule at all. Nobody had ever seen a badge. It is now wired
+  and styled, and it no longer depends on English: block KIND (NPC, dice,
+  tutor) is badged with no word list, so that path works in every language, and
+  the semantic word list moved into the system's `ui.json` where a campaign in
+  another language can override it. (#45)
+- **A block arriving mid-narration no longer dumps the paragraph.** An NPC
+  line, dice result or tutor note used to snap the rest of the prose to its end
+  so it could land underneath — the reveal thrown away to deliver the thing
+  that usually explains the sentence you were reading. Blocks are now held
+  until the typewriter genuinely drains, with a re-arming check so continuing
+  narration does not get cut mid-paragraph, and an 8-second valve so a stalled
+  reveal can never swallow a dice roll the table is waiting on. (#41)
+- **Text Size scaled the type but not the column.** `#text-content` held a
+  fixed 820px measure while the control multiplies the font up to 2.0, so the
+  largest setting gave roughly half the words per line — a ribbon, chosen by
+  the person who found the text hard to read. The measure now scales with the
+  same variable, clamped against the viewport. (#44)
+
+### Fixed — non-English installs
+
+- **93 text-I/O call sites still took the locale encoding.** The 0.14.1 sweep
+  fixed bare `open()` and added a guard; the guard measured that one property
+  and `read_text`, `write_text` and every `subprocess` call that decodes child
+  output were never checked, with `probe/` excluded outright. Run under a
+  non-UTF-8 locale the suite went 15 failed / 12 errors before this and passes
+  after. Adds `scripts/utf8io.py` for reading a file a pre-sweep install wrote
+  in a legacy codepage, which refuses rather than returning replacement
+  characters a write-back would make permanent. (#38)
+
+### Fixed — XP
+
+- **An award against a sheet with no XP field was discarded in silence.**
+  `re.sub` was written back without checking whether it matched, so a
+  mismatched sheet kept its old XP with no error. Worse, the pattern required
+  digits before the slash while a fresh template sheet holds `**XP:** / 2700` —
+  so the first award against a new character was exactly that case. Now uses
+  `re.subn` and warns when the field is genuinely missing. (#40)
+
+### Changed
+
+- **The "not in the dataset" link is no longer a guess.** It slugified a name
+  and constructed a URL that nothing checked, so a name that did not match the
+  target site's convention dead-ended, and an unknown category degraded to a
+  bare slug at the site root. Constructed links now point at an SRD reference
+  verified per category against a control, and it is the same SRD content
+  without the ads. A supplemental record still links to the page it was fetched
+  from, because that is where non-SRD content lives. A category with no
+  verified mapping now produces no link at all. (#47)
+
+### Internal
+
+- **CI exists.** There was no `.github/workflows/` directory; 9 test files and
+  nothing ran them. Adds a matrix across ubuntu/macos/windows on Python 3.10
+  and 3.13, plus a non-UTF-8 locale job — with `PYTHONCOERCECLOCALE=0` and an
+  assertion that the locale really is non-UTF-8, because PEP 538 coerces C to
+  C.UTF-8 on Linux and would otherwise make that job pass without testing
+  anything. Actions pinned by SHA. (#39)
+- 146 tests, up from 105, all passing under both a UTF-8 and an ASCII locale.
+  Every new guard was break-tested and fails for its own reason.
+
+
 ## [0.14.1] — 2026-08-23 — Non-English display fixes
 
 Two bugs reported from a Russian-language install, both of which only appear outside an English, UTF-8 environment and neither of which fails loudly enough to notice from the developer's side.
