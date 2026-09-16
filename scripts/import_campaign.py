@@ -31,14 +31,14 @@ def extract_pdf(path: str) -> str:
     result = subprocess.run(
         ["pdftotext", "-layout", path, "-"],
         capture_output=True, text=True, timeout=60
-    )
+    , encoding="utf-8")
     if result.returncode == 0 and result.stdout.strip():
         return result.stdout
 
     # Fallback: try PyMuPDF if installed
     try:
         import fitz  # PyMuPDF
-        doc = fitz.open(path)
+        doc = fitz.open(path, encoding="utf-8")
         return "\n\n".join(page.get_text() for page in doc)
     except ImportError:
         pass

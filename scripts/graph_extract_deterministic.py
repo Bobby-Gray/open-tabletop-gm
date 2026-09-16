@@ -88,7 +88,7 @@ def build_entity_set(campaign_dir: pathlib.Path) -> set:
     # npcs.md table
     npcs = campaign_dir / "npcs.md"
     if npcs.exists():
-        for line in npcs.read_text().splitlines():
+        for line in npcs.read_text(encoding="utf-8").splitlines():
             m = _NPC_TABLE_ROW_RE.match(line)
             if m and _is_likely_name(m.group(1)):
                 entities.add(m.group(1).strip())
@@ -96,7 +96,7 @@ def build_entity_set(campaign_dir: pathlib.Path) -> set:
     # npcs-full.md headings
     full = campaign_dir / "npcs-full.md"
     if full.exists():
-        for line in full.read_text().splitlines():
+        for line in full.read_text(encoding="utf-8").splitlines():
             m = _NPC_FULL_HEADING_RE.match(line)
             if m and _is_likely_name(m.group(1)):
                 entities.add(m.group(1).strip())
@@ -106,7 +106,7 @@ def build_entity_set(campaign_dir: pathlib.Path) -> set:
     if world.exists():
         in_factions = False
         in_places = False
-        for line in world.read_text().splitlines():
+        for line in world.read_text(encoding="utf-8").splitlines():
             if line.startswith("## "):
                 in_factions = "faction" in line.lower()
                 in_places = ("place" in line.lower() or "location" in line.lower()
@@ -317,17 +317,17 @@ def extract_proposals(campaign_dir: pathlib.Path,
     archive = campaign_dir / "session-log-archive.md"
     log = campaign_dir / "session-log.md"
     if not last_session_only and archive.exists():
-        sources.append((archive.name, archive.read_text()))
+        sources.append((archive.name, archive.read_text(encoding="utf-8")))
     if log.exists():
         if last_session_only:
             # Trim to the last "## Session N" block only
-            text = log.read_text()
+            text = log.read_text(encoding="utf-8")
             heads = list(re.finditer(r"^##\s*Session\s+\d+", text, re.MULTILINE | re.IGNORECASE))
             if heads:
                 text = text[heads[-1].start():]
             sources.append((log.name, text))
         else:
-            sources.append((log.name, log.read_text()))
+            sources.append((log.name, log.read_text(encoding="utf-8")))
 
     # Process inclusion (high-confidence auto-emit) AND borderline (lower-
     # confidence; the extractor still emits them but the confidence field
@@ -433,7 +433,7 @@ def main() -> int:
     proposals = extract_proposals(args.campaign_dir, args.last_session_only)
     out = json.dumps(proposals, indent=2, ensure_ascii=False)
     if args.write:
-        pathlib.Path(args.write).write_text(out)
+        pathlib.Path(args.write).write_text(out, encoding="utf-8")
         print(f"# wrote {len(proposals)} proposals to {args.write}", file=sys.stderr)
     else:
         print(out)

@@ -2,60 +2,286 @@
   "manifest_version": 1,
   "system": "dnd5e",
   "label": "D&D 5e",
-
   "_comment": "Reference manifest. Mirrors the renderer's built-in default exactly, so it reproduces the original hardcoded D&D 5e display. Widgets self-hide when their bound field is absent (a non-caster shows no spell slots, etc.). See systems/UI-MANIFEST.md for the widget catalog.",
-
   "sidebar": [
-    { "type": "bar", "label": "HP", "bind": "hp", "icon": "/icons/enemy.png",
-      "row_class": "sb-hp-row", "num_class": "sb-hp-nums", "fill_role": "hp-fill",
-      "cur": "current", "max": "max", "color": "hp", "temp": "temp" },
-
-    { "type": "bar", "label": "XP", "bind": "xp", "icon": "/icons/ability.png",
-      "row_class": "sb-xp-row", "num_class": "sb-xp-nums", "fill_role": "xp-fill",
-      "fill_class": "sb-xp-bar", "cur": "current", "max": "next", "require_cur": true },
-
-    { "type": "stat_lines", "lines": [
-      { "label": "AC", "bind": "ac" },
-      { "label": "Init", "bind": "initiative" },
-      { "label": "Spd", "bind": "speed" },
-      { "label": "HD", "bind": "hit_dice", "format": "hd" }
-    ] },
-
-    { "type": "tag_list", "bind": "conditions", "srd_lookup": true, "lookup_category": "condition" },
-
-    { "type": "tag_single", "bind": "concentration", "prefix": "◈ " },
-
-    { "type": "effects", "bind": "effects" },
-
-    { "type": "badge_set", "bind": "milestones" },
-
-    { "type": "pip_levels", "bind": "spell_slots" },
-
-    { "type": "feature_flags", "flags": [ { "label": "2nd Wind", "bind": "second_wind" } ] },
-
-    { "type": "badge", "bind": "inspiration", "label": "✦ Inspiration" }
+    {
+      "type": "bar",
+      "label": "HP",
+      "bind": "hp",
+      "icon": "/icons/enemy.png",
+      "row_class": "sb-hp-row",
+      "num_class": "sb-hp-nums",
+      "fill_role": "hp-fill",
+      "cur": "current",
+      "max": "max",
+      "color": "hp",
+      "temp": "temp"
+    },
+    {
+      "type": "bar",
+      "label": "XP",
+      "bind": "xp",
+      "icon": "/icons/ability.png",
+      "row_class": "sb-xp-row",
+      "num_class": "sb-xp-nums",
+      "fill_role": "xp-fill",
+      "fill_class": "sb-xp-bar",
+      "cur": "current",
+      "max": "next",
+      "require_cur": true
+    },
+    {
+      "type": "stat_lines",
+      "lines": [
+        {
+          "label": "AC",
+          "bind": "ac"
+        },
+        {
+          "label": "Init",
+          "bind": "initiative"
+        },
+        {
+          "label": "Spd",
+          "bind": "speed"
+        },
+        {
+          "label": "HD",
+          "bind": "hit_dice",
+          "format": "hd"
+        }
+      ]
+    },
+    {
+      "type": "tag_list",
+      "bind": "conditions",
+      "srd_lookup": true,
+      "lookup_category": "condition"
+    },
+    {
+      "type": "tag_single",
+      "bind": "concentration",
+      "prefix": "◈ "
+    },
+    {
+      "type": "effects",
+      "bind": "effects"
+    },
+    {
+      "type": "badge_set",
+      "bind": "milestones"
+    },
+    {
+      "type": "pip_levels",
+      "bind": "spell_slots"
+    },
+    {
+      "type": "feature_flags",
+      "flags": [
+        {
+          "label": "2nd Wind",
+          "bind": "second_wind"
+        }
+      ]
+    },
+    {
+      "type": "badge",
+      "bind": "inspiration",
+      "label": "✦ Inspiration"
+    }
   ],
-
   "sheet": {
     "combat_strip": [
-      { "label": "HP", "bind": "hp", "format": "ratio" },
-      { "label": "AC", "bind": "ac" },
-      { "label": "Init", "bind": "initiative" },
-      { "label": "Speed", "bind": "speed", "suffix": " ft" },
-      { "label": "Hit Dice", "bind": "hit_dice", "format": "hd" }
+      {
+        "label": "HP",
+        "bind": "hp",
+        "format": "ratio"
+      },
+      {
+        "label": "AC",
+        "bind": "ac"
+      },
+      {
+        "label": "Init",
+        "bind": "initiative"
+      },
+      {
+        "label": "Speed",
+        "bind": "speed",
+        "suffix": " ft"
+      },
+      {
+        "label": "Hit Dice",
+        "bind": "hit_dice",
+        "format": "hd"
+      }
     ],
     "stat_grid": {
       "label": "Ability Scores",
       "bind": "ability_scores",
       "show_modifier": true,
       "stats": [
-        { "key": "str", "label": "STR" },
-        { "key": "dex", "label": "DEX" },
-        { "key": "con", "label": "CON" },
-        { "key": "int", "label": "INT" },
-        { "key": "wis", "label": "WIS" },
-        { "key": "cha", "label": "CHA" }
+        {
+          "key": "str",
+          "label": "STR"
+        },
+        {
+          "key": "dex",
+          "label": "DEX"
+        },
+        {
+          "key": "con",
+          "label": "CON"
+        },
+        {
+          "key": "int",
+          "label": "INT"
+        },
+        {
+          "key": "wis",
+          "label": "WIS"
+        },
+        {
+          "key": "cha",
+          "label": "CHA"
+        }
       ]
     }
-  }
+  },
+  "block_badges": [
+    {
+      "icon": "attack",
+      "words": [
+        "attack",
+        "strikes",
+        "slash",
+        "stab",
+        "sword",
+        "blade",
+        "combat",
+        "initiative",
+        "damage",
+        "hit",
+        "miss",
+        "roll",
+        "saving throw",
+        "critical",
+        "fumble"
+      ]
+    },
+    {
+      "icon": "chat",
+      "words": [
+        "says",
+        "replies",
+        "whispers",
+        "mutters",
+        "speaks",
+        "voice",
+        "asks",
+        "answers",
+        "dialogue",
+        "turns to you"
+      ]
+    },
+    {
+      "icon": "crystal_ball",
+      "words": [
+        "arcane",
+        "ritual",
+        "spell",
+        "magic",
+        "incantation",
+        "rune",
+        "sigil",
+        "cast",
+        "magical",
+        "energy crackles",
+        "glows",
+        "aura"
+      ]
+    },
+    {
+      "icon": "treasure",
+      "words": [
+        "gold",
+        "coin",
+        "loot",
+        "reward",
+        "chest",
+        "pouch",
+        "found",
+        "grants",
+        "gives you",
+        "item",
+        "platinum",
+        "silver"
+      ]
+    },
+    {
+      "icon": "location",
+      "words": [
+        "travel",
+        "road",
+        "path",
+        "arrive",
+        "enter",
+        "city",
+        "town",
+        "village",
+        "dungeon",
+        "forest",
+        "mountain",
+        "shore",
+        "coast",
+        "door",
+        "gate"
+      ]
+    },
+    {
+      "icon": "heal",
+      "words": [
+        "heal",
+        "rest",
+        "recover",
+        "restore",
+        "health",
+        "potion",
+        "bandage",
+        "mend",
+        "wounds close",
+        "regain"
+      ]
+    },
+    {
+      "icon": "scroll",
+      "words": [
+        "quest",
+        "mission",
+        "task",
+        "objective",
+        "assignment",
+        "letter",
+        "note",
+        "parchment",
+        "message",
+        "contract"
+      ]
+    },
+    {
+      "icon": "faction",
+      "words": [
+        "faction",
+        "guild",
+        "order",
+        "council",
+        "alliance",
+        "sworn",
+        "allegiance",
+        "representative",
+        "envoy"
+      ]
+    }
+  ],
+  "_comment_block_badges": "Keyword -> icon for the small mark on a narration block. English here because the bundled system is English; a system or campaign in another language overrides this list rather than editing the display. Matching is substring-based, so it only works for the language these words are in — block KIND (npc/dice/tutor) is badged without any word list and works everywhere."
 }

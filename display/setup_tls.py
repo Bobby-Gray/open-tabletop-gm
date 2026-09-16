@@ -35,7 +35,7 @@ def _lan_ip() -> Optional[str]:
             out = subprocess.check_output(
                 ["ipconfig", "getifaddr", iface],
                 stderr=subprocess.DEVNULL,
-                text=True,
+                text=True, encoding="utf-8",
             ).strip()
             if out:
                 return out
@@ -47,7 +47,7 @@ def _lan_ip() -> Optional[str]:
         out = subprocess.check_output(
             ["hostname", "-I"],
             stderr=subprocess.DEVNULL,
-            text=True,
+            text=True, encoding="utf-8",
         ).strip()
         first = out.split()[0] if out.split() else ""
         if first:

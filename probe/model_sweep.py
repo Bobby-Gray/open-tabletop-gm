@@ -329,7 +329,7 @@ def main():
     output = format_output(filtered, verbose=args.verbose)
 
     if args.output:
-        Path(args.output).write_text("\n".join(m["id"] for m in filtered) + "\n")
+        Path(args.output).write_text("\n".join(m["id"] for m in filtered) + "\n", encoding="utf-8")
         print(f"Wrote {len(filtered)} model IDs to {args.output}", file=sys.stderr)
     elif args.output_json:
         print(json.dumps([m["id"] for m in filtered], indent=2))

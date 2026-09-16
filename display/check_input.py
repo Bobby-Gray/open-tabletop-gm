@@ -30,7 +30,7 @@ import urllib.request
 
 _DIR         = pathlib.Path(__file__).parent
 _SCHEME_FILE = _DIR / ".scheme"
-_SCHEME      = _SCHEME_FILE.read_text().strip() if _SCHEME_FILE.exists() else "http"
+_SCHEME      = _SCHEME_FILE.read_text(encoding="utf-8").strip() if _SCHEME_FILE.exists() else "http"
 DRAIN_URL    = f"{_SCHEME}://localhost:5001/player-input/drain"
 TOKEN_FILE   = _DIR / ".token"
 QUEUE_FILE   = _DIR / ".input_queue"
@@ -48,7 +48,7 @@ def _narration_directive() -> str:
     """A bracketed length directive the GM honors this turn, or '' if unset."""
     try:
         if NARRATION_TARGET.exists():
-            n = NARRATION_TARGET.read_text().strip()
+            n = NARRATION_TARGET.read_text(encoding="utf-8").strip()
             if n.isdigit() and int(n) > 0:
                 return (f"[[Narration length for this turn: aim for ~{n} words. "
                         f"The table set this — keep it concise; do not pad.]]")
@@ -61,7 +61,7 @@ def _roll_directives() -> str:
     """One [[<Char> roll mode: …]] line per per-character override, or '' if none."""
     try:
         if ROLL_PREFS.exists():
-            prefs = json.loads(ROLL_PREFS.read_text())
+            prefs = json.loads(ROLL_PREFS.read_text(encoding="utf-8"))
             lines = [f"[[{c} roll mode: {m}]]" for c, m in prefs.items()
                      if m in ("auto", "players")]
             return "\n".join(lines)
@@ -85,7 +85,7 @@ def _print_entries(entries: list) -> None:
 
 # Primary: HTTP drain — clears memory and file atomically
 try:
-    token = TOKEN_FILE.read_text().strip() if TOKEN_FILE.exists() else ""
+    token = TOKEN_FILE.read_text(encoding="utf-8").strip() if TOKEN_FILE.exists() else ""
     req = urllib.request.Request(
         DRAIN_URL, method="POST",
         headers={"X-Token": token, "Content-Length": "0"},
@@ -100,8 +100,8 @@ except Exception:
 # Fallback: read queue file directly (display not running or unreachable)
 try:
     if QUEUE_FILE.exists():
-        entries = json.loads(QUEUE_FILE.read_text())
-        QUEUE_FILE.write_text("[]")   # clear without deleting — app sees empty queue on next persist
+        entries = json.loads(QUEUE_FILE.read_text(encoding="utf-8"))
+        QUEUE_FILE.write_text("[]", encoding="utf-8")   # clear without deleting — app sees empty queue on next persist
         _print_entries(entries)
 except Exception:
     pass

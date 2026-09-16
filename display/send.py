@@ -66,7 +66,7 @@ import urllib.request
 
 _DIR        = pathlib.Path(__file__).parent
 _SCHEME_FILE = _DIR / ".scheme"
-_SCHEME = _SCHEME_FILE.read_text().strip() if _SCHEME_FILE.exists() else "http"
+_SCHEME = _SCHEME_FILE.read_text(encoding="utf-8").strip() if _SCHEME_FILE.exists() else "http"
 BASE_URL    = f"{_SCHEME}://localhost:5001"
 FLASK_URL   = f"{BASE_URL}/chunk"
 STATS_URL   = f"{BASE_URL}/stats"

@@ -47,7 +47,7 @@ if find_campaign is not None:
     try:
         import re
         camp = open(CAMP_FILE, encoding="utf-8").read().strip()
-        txt = (find_campaign(camp) / "state.md").read_text(errors="replace")
+        txt = (find_campaign(camp) / "state.md").read_text(errors="replace", encoding="utf-8")
         m = re.search(r"autorun_interval:\s*(\d+)", txt)
         if m:
             interval = int(m.group(1))

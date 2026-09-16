@@ -37,7 +37,22 @@ for _stream in (sys.stdin, sys.stdout, sys.stderr):
         pass
 
 
-_DEFAULT_ROOT = pathlib.Path("~/open-tabletop-gm").expanduser()
+def _default_root() -> pathlib.Path:
+    """Where campaigns live when GM_CAMPAIGN_ROOT is unset.
+
+    Resolved lazily and defensively. `expanduser()` raises RuntimeError when no
+    home directory can be determined — which happens on Windows whenever
+    USERPROFILE is absent, including under a stripped subprocess environment.
+    Computing it eagerly at import meant this module could not be IMPORTED on
+    such a machine, even when GM_CAMPAIGN_ROOT was set and this value would
+    never have been used.
+    """
+    try:
+        return pathlib.Path("~/open-tabletop-gm").expanduser()
+    except RuntimeError:
+        return pathlib.Path.cwd() / "open-tabletop-gm"
+
+
 
 
 def _root() -> pathlib.Path:
@@ -45,7 +60,7 @@ def _root() -> pathlib.Path:
     raw = os.environ.get("GM_CAMPAIGN_ROOT", "")
     if raw.strip():
         return pathlib.Path(raw.strip()).expanduser().resolve()
-    return _DEFAULT_ROOT
+    return _default_root()
 
 
 def campaigns_dir() -> pathlib.Path:
@@ -85,7 +100,7 @@ def find_campaign(name: str) -> pathlib.Path:
     if not custom_root:
         return configured
 
-    legacy = _DEFAULT_ROOT / "campaigns" / name
+    legacy = _default_root() / "campaigns" / name
     if not legacy.exists():
         return configured
 
@@ -129,7 +144,7 @@ def campaign_system_version(name: str, default: str = "") -> str:
     if not state.exists():
         return default
     try:
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except OSError:
         return default
     m = _SYSTEM_VERSION_PAT.search(text)
@@ -160,7 +175,7 @@ def campaign_system(name: str, default: str = "dnd5e") -> str:
     if not state.exists():
         return default
     try:
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except OSError:
         return default
     m = _SYSTEM_MODULE_PAT.search(text)
