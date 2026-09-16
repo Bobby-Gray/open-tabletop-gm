@@ -201,7 +201,14 @@
 
   /* ── Text content ── */
   #text-content {
-    max-width: 820px;
+    /* The measure scales WITH the type. A fixed column plus a font multiplier
+       that reaches 2.0 means the line holds roughly half the characters it did
+       at 1.0 — so the setting someone picks BECAUSE the prose is hard to read
+       hands them a ribbon of four-word lines and much more scrolling. Browser
+       zoom reflows the measure; a text-size control has to do it explicitly.
+       Clamped against the viewport so a large scale on a narrow window cannot
+       push the column under the sidebar. */
+    max-width: min(calc(820px * var(--text-scale, 1)), 92vw);
     margin: 0 auto;
     transition: opacity 0.35s ease;
     /* Reading text-size control — a font-size multiplier (NOT page zoom). The
