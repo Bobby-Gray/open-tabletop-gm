@@ -71,7 +71,22 @@ in the source and had never once executed for anyone.
   fixed 820px measure while the control multiplies the font up to 2.0, so the
   largest setting gave roughly half the words per line — a ribbon, chosen by
   the person who found the text hard to read. The measure now scales with the
-  same variable, clamped against the viewport. (#44)
+  same variable, clamped against the viewport.
+
+  Measured across window widths, in characters per line:
+
+  | viewport | 1.0 | 1.4 | 2.0 |
+  |---|---|---|---|
+  | 1440px | 82 | 62 | 44 |
+  | 1920px | 82 | 82 | 67 |
+  | 2560px | 82 | 82 | 82 |
+
+  The measure is fully preserved where there is room for it. On a 1440px
+  window it is not: the sidebar and settings gutters reserve 570px between
+  them, so the column cannot exceed 870px no matter what the setting says, and
+  the type keeps growing past the point the line can hold it. Collapsing either
+  column gives the space back. Fixing that properly means the gutters shrinking
+  with the scale, which is a layout change rather than a one-line one. (#44)
 
 ### Fixed — non-English installs
 
