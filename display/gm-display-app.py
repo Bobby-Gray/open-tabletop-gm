@@ -93,7 +93,7 @@ def _apply_campaign_sfx_languages() -> None:
         state_md = _find_campaign(camp) / "state.md"
         if not state_md.exists():
             return
-        text = state_md.read_text(errors="replace")
+        text = state_md.read_text(errors="replace", encoding="utf-8")
     except (OSError, ValueError):
         return
     m = re.search(r"^\s*sfx_languages:\s*([\w,\s\-]+)$", text, re.MULTILINE)
@@ -1198,8 +1198,11 @@ def srd_lookup():
         resolved_cat = (rec or {}).get("_cat", category or "")
         return jsonify({"found": True, "name": name, "category": resolved_cat, "text": text})
     # Not found — offer near-miss "did you mean?" suggestions (typo recovery)
-    # plus the wikidot fallback URL so the frontend can still link out.
-    wurl = _lookup.wikidot_url(name, category=category)
+    # plus a reference link so the frontend can still link out. `ref` is {} when
+    # there is no VERIFIED destination for this category, and the frontend
+    # renders no link at all in that case: a guessed URL reads as an answer and
+    # dead-ends, which is worse than saying nothing.
+    ref = _lookup.reference_url(name, category=category)
     suggestions = []
     try:
         for sg_name, sg_cat in _lookup.suggest(name, category=category, n=3):
@@ -1207,7 +1210,11 @@ def srd_lookup():
     except Exception:
         pass  # suggestion is best-effort; never fail the lookup over it
     return jsonify({"found": False, "name": name,
-                    "wikidot_url": wurl, "suggestions": suggestions})
+                    "reference_url": ref.get("url", ""),
+                    "reference_label": ref.get("label", ""),
+                    # kept so an older cached frontend still gets a link
+                    "wikidot_url": ref.get("url", ""),
+                    "suggestions": suggestions})
 
 
 @app.route("/ping")
@@ -1779,7 +1786,7 @@ def _read_narrator_voice() -> str:
         state = _find_campaign(name) / "state.md"
         if not state.exists():
             return _tts.DEFAULT_VOICE
-        text = state.read_text(errors="replace")
+        text = state.read_text(errors="replace", encoding="utf-8")
     except (OSError, ValueError):
         return _tts.DEFAULT_VOICE
     m = _VOICE_PAT.search(text)
@@ -1798,7 +1805,7 @@ def _write_narrator_voice(voice: str) -> bool:
         return False
     try:
         state = _find_campaign(name) / "state.md"
-        text = state.read_text(errors="replace") if state.exists() else ""
+        text = state.read_text(errors="replace", encoding="utf-8") if state.exists() else ""
     except (OSError, ValueError):
         return False
 
@@ -1818,7 +1825,7 @@ def _write_narrator_voice(voice: str) -> bool:
             text = f"{text}{sep}\n## Session Flags\n{new_line}\n"
 
     try:
-        state.write_text(text)
+        state.write_text(text, encoding="utf-8")
         return True
     except OSError:
         return False
@@ -1927,7 +1934,7 @@ def help_request():
 
     # Atomic lock: O_EXCL fails if file already exists — no race condition
     try:
-        fd = os.open(HELP_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        fd = os.open(HELP_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, encoding="utf-8")
         os.close(fd)
     except FileExistsError:
         return "Already running", 409

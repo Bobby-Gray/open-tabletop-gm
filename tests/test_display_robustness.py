@@ -136,7 +136,7 @@ class TailLogicTest(unittest.TestCase):
         (self.campaign_root / "test-camp").mkdir()
         self.tail_file = self.campaign_root / "test-camp" / "session_tail.json"
         self.camp_file = self.tmp_path / ".campaign"
-        self.camp_file.write_text("test-camp")
+        self.camp_file.write_text("test-camp", encoding="utf-8")
 
         self._namespace = self._build_tail_namespace()
 
@@ -145,7 +145,7 @@ class TailLogicTest(unittest.TestCase):
 
     def _build_tail_namespace(self) -> dict:
         """Extract just the tail block from gm-display-app.py and exec it."""
-        src = (DISPLAY / "gm-display-app.py").read_text()
+        src = (DISPLAY / "gm-display-app.py").read_text(encoding="utf-8")
         start = src.index("# The text_log buffer above")
         end = src.index("\n_load_tail()\n", start) + len("\n_load_tail()\n")
         block = src[start:end]
@@ -169,7 +169,7 @@ class TailLogicTest(unittest.TestCase):
 
     def test_load_with_empty_file_does_not_clear_buffer(self):
         self._buffer.append({"text": "preexisting", "_camp": "test-camp"})
-        self.tail_file.write_text("[]")
+        self.tail_file.write_text("[]", encoding="utf-8")
         self._load()
         self.assertEqual(len(self._buffer), 1)
         self.assertEqual(self._buffer[0]["text"], "preexisting")
@@ -180,7 +180,7 @@ class TailLogicTest(unittest.TestCase):
         self.tail_file.write_text(json.dumps([
             {"text": "from-other-campaign", "_camp": "other-camp"},
             {"text": "also-other", "_camp": "another-camp"},
-        ]))
+        ]), encoding="utf-8")
         self._load()
         self.assertEqual(len(self._buffer), 1)
         self.assertEqual(self._buffer[0]["text"], "preexisting")
@@ -190,7 +190,7 @@ class TailLogicTest(unittest.TestCase):
         self.tail_file.write_text(json.dumps([
             {"text": "fresh-1", "_camp": "test-camp"},
             {"text": "fresh-2", "_camp": "test-camp"},
-        ]))
+        ]), encoding="utf-8")
         self._load()
         self.assertEqual(len(self._buffer), 2)
         self.assertEqual([e["text"] for e in self._buffer], ["fresh-1", "fresh-2"])
@@ -198,17 +198,17 @@ class TailLogicTest(unittest.TestCase):
     def test_persist_skips_empty_over_content(self):
         self.tail_file.write_text(json.dumps([
             {"text": "important", "_camp": "test-camp"},
-        ]))
+        ]), encoding="utf-8")
         self._buffer.clear()
         self._persist()
-        on_disk = json.loads(self.tail_file.read_text())
+        on_disk = json.loads(self.tail_file.read_text(encoding="utf-8"))
         self.assertEqual(len(on_disk), 1)
         self.assertEqual(on_disk[0]["text"], "important")
 
     def test_persist_writes_when_buffer_has_content(self):
         self._buffer.append({"text": "new", "_camp": "test-camp"})
         self._persist()
-        on_disk = json.loads(self.tail_file.read_text())
+        on_disk = json.loads(self.tail_file.read_text(encoding="utf-8"))
         self.assertEqual(on_disk[0]["text"], "new")
 
     def test_persist_atomic_no_tmp_leftover(self):
@@ -225,7 +225,7 @@ class TailLogicTest(unittest.TestCase):
 
     def test_load_corrupt_json_leaves_buffer_alone(self):
         self._buffer.append({"text": "preexisting", "_camp": "test-camp"})
-        self.tail_file.write_text("{not json")
+        self.tail_file.write_text("{not json", encoding="utf-8")
         self._load()
         self.assertEqual(len(self._buffer), 1)
 

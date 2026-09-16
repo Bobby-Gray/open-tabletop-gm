@@ -45,7 +45,7 @@ def build_system_prompt(include_skill_md: bool = True) -> str:
     parts = []
     for f in files:
         if f.exists():
-            parts.append(f.read_text())
+            parts.append(f.read_text(encoding="utf-8"))
         else:
             print(f"[WARN] Missing system prompt file: {f}", file=sys.stderr)
     return "\n\n".join(parts)
@@ -329,7 +329,7 @@ def run_probe(model: str, url: str, skip_skill_md: bool, output_json: bool, time
     tools_path = PROBE_DIR / "tools.json"
     tools = []
     if tools_path.exists():
-        raw = json.loads(tools_path.read_text())
+        raw = json.loads(tools_path.read_text(encoding="utf-8"))
         tools = raw.get("tools", [])
         if not tools:
             print("[INFO] tools.json has no tool definitions — tool-call tests will be limited\n")
@@ -467,5 +467,5 @@ if __name__ == "__main__":
                         for s in ["PASS", "FAIL", "WARN", "SKIP", "ERROR"]},
             "token_summary": token_summary,
         }
-        Path(args.output_file).write_text(json.dumps(out, indent=2))
+        Path(args.output_file).write_text(json.dumps(out, indent=2), encoding="utf-8")
         print(f"Results written to {args.output_file}")

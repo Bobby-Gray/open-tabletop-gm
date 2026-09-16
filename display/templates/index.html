@@ -201,7 +201,14 @@
 
   /* ── Text content ── */
   #text-content {
-    max-width: 820px;
+    /* The measure scales WITH the type. A fixed column plus a font multiplier
+       that reaches 2.0 means the line holds roughly half the characters it did
+       at 1.0 — so the setting someone picks BECAUSE the prose is hard to read
+       hands them a ribbon of four-word lines and much more scrolling. Browser
+       zoom reflows the measure; a text-size control has to do it explicitly.
+       Clamped against the viewport so a large scale on a narrow window cannot
+       push the column under the sidebar. */
+    max-width: min(calc(820px * var(--text-scale, 1)), 92vw);
     margin: 0 auto;
     transition: opacity 0.35s ease;
     /* Reading text-size control — a font-size multiplier (NOT page zoom). The
@@ -218,6 +225,30 @@
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Block badge — a small, dim mark in the block's top corner. It had no rule
+     at all while the code that creates it was never called; both halves are
+     needed for the feature to exist. */
+  .block-badge {
+    position: absolute;
+    top: 0.2em;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    opacity: 0.30;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .dm-block:hover .block-badge,
+  .npc-block:hover .block-badge,
+  .dice-block:hover .block-badge,
+  .tutor-block:hover .block-badge { opacity: 0.55; }
+
+  .dm-block, .npc-block, .dice-block, .tutor-block { position: relative; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .block-badge { transition: none; }
   }
 
   .dm-block p {
@@ -4028,18 +4059,112 @@ const _BLOCK_BADGES = [
   { icon: 'faction',      words: ['faction','guild','order','council','alliance','sworn','allegiance','representative','envoy'] },
 ];
 
+// Block KIND is language-agnostic — the display already knows an NPC block is
+// an NPC block regardless of what language it is written in. Deriving what can
+// be derived means these badges work in every locale, and only the semantic
+// ones below have to fall back to reading words.
+const _KIND_BADGES = {
+  'npc-block':    'chat',
+  'dice-block':   'attack',
+  'tutor-block':  'scroll',
+  'player-block': null,          // the player's own line needs no badge
+};
+
+// Semantic badges still need to read the prose. The word lists live in the
+// active system's ui.json (`block_badges`) rather than in this file, so a
+// system or a campaign in another language can supply its own without editing
+// 7,000 lines of HTML. The English table below is the fallback, NOT the
+// definition.
+function _badgeTable() {
+  const fromManifest = (window.GM_UI_MANIFEST || {}).block_badges;
+  return Array.isArray(fromManifest) && fromManifest.length
+    ? fromManifest
+    : _BLOCK_BADGES;
+}
+
 function _addBlockBadge(el) {
-  const text = (el.textContent || '').toLowerCase();
-  for (const { icon, words } of _BLOCK_BADGES) {
-    if (words.some(w => text.includes(w))) {
-      const img = document.createElement('img');
-      img.src = '/icons/' + icon + '.png';
-      img.className = 'block-badge';
-      img.alt = icon;
-      el.appendChild(img);
-      return;
+  if (el.querySelector('.block-badge')) return;      // idempotent
+
+  // 1. Kind first. Works in every language, no word list involved.
+  let icon = null;
+  for (const cls of Object.keys(_KIND_BADGES)) {
+    if (el.classList.contains(cls)) {
+      icon = _KIND_BADGES[cls];
+      if (icon === null) return;                     // deliberately no badge
+      break;
     }
   }
+
+  // 2. Only DM narration falls through to reading words, and only then does
+  //    the language of the table matter.
+  //
+  //    Read the PROSE, not el.textContent. A finalised block also contains the
+  //    TTS bar, whose own labels are "Voices / Male / Charon / ..." — and
+  //    "voice" is a keyword in the chat list, so every narration block matched
+  //    chat regardless of what it said. The badge must describe the story, not
+  //    the controls sitting next to it.
+  if (!icon) {
+    const paras = el.querySelectorAll('p');
+    const text = (paras.length
+      ? [...paras].map(n => n.textContent || '').join(' ')
+      : (el.textContent || '')).toLowerCase();
+    for (const entry of _badgeTable()) {
+      const words = entry && entry.words;
+      if (Array.isArray(words) && words.some(w => w && text.includes(String(w).toLowerCase()))) {
+        icon = entry.icon;
+        break;
+      }
+    }
+  }
+  if (!icon) return;                                 // no guess is better than a wrong one
+
+  const img = document.createElement('img');
+  img.src = '/icons/' + icon + '.png';
+  img.className = 'block-badge';
+  img.alt = '';                                      // decorative; the prose says it
+  el.appendChild(img);
+}
+
+// Blocks are appended from sixteen different places, and only DM narration
+// goes through flushNewBlock(). Adding the badge call at each site was how the
+// first attempt at this missed dice and tutor blocks entirely — they are the
+// two that never get a TTS bar, so they were not on the hook I had picked.
+//
+// One observer instead. Every block that appears in the feed passes through
+// here regardless of which renderer built it, including any added later.
+//
+// DM blocks are the exception and are badged in flushNewBlock() rather than
+// here: they are appended EMPTY and filled character by character, so a
+// semantic match at append time would read an empty string.
+// dm-block is included even though a LIVE one is appended empty. _addBlockBadge
+// is idempotent and adds nothing when no keyword matches, so an empty block
+// simply gets no badge here and is badged later by flushNewBlock() once its
+// text has been typed. A REPLAYED dm-block arrives with its full text and is
+// badged immediately — which is the path that matters on page load, and the
+// one the first fix broke by removing the call from renderReplayBatch.
+const _BADGE_ON_APPEND = new Set([
+  'dm-block', 'npc-block', 'dice-block', 'tutor-block', 'player-block',
+  'action-block', 'milestone-block', 'inspiration-block',
+]);
+
+function _watchBlocksForBadges() {
+  const feed = document.getElementById('text-content');
+  if (!feed || typeof MutationObserver === 'undefined') return;
+  new MutationObserver(records => {
+    for (const rec of records) {
+      for (const node of rec.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        const cls = (node.className || '').split(' ');
+        if (cls.some(c => _BADGE_ON_APPEND.has(c))) _addBlockBadge(node);
+      }
+    }
+  }).observe(feed, { childList: true });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _watchBlocksForBadges);
+} else {
+  _watchBlocksForBadges();
 }
 
 function flushNewBlock() {
@@ -4050,6 +4175,7 @@ function flushNewBlock() {
   }
   // Add a soft divider if there was content
   if (currentEl) {
+    _addBlockBadge(currentEl);
     _addTtsBar(currentEl);
     const div = document.createElement('div');
     div.className = 'divider';
@@ -4108,6 +4234,69 @@ function _flushForBlock() {
   clearTimeout(idleTimer);
 }
 
+// ── Deferring a block until the reveal actually finishes ─────────────
+//
+// A non-DM block arriving mid-narration used to call instantFlush(): the rest
+// of the paragraph snapped to its end and the block dropped in underneath.
+// That guarantees the block never lands mid-word, but it resolves the
+// collision by throwing the reveal away — and the thing that arrived is
+// usually the consequence of the sentence being read.
+//
+// So hold the block instead. The part that is easy to get wrong is that the
+// check must RE-ARM: narration often continues after the block arrives, so a
+// single "wait N ms then flush" lands in the middle of the next paragraph. It
+// has to keep asking whether the typewriter is idle and release only when it
+// really is.
+const PENDING_BLOCK_GAP = 320;    // ms of DRAINED typewriter before releasing
+const PENDING_BLOCK_MAX = 8000;   // ms before releasing regardless
+
+let _pendingBlocks = [];
+let _pendingTimer  = null;
+let _pendingSince  = 0;
+
+function _typewriterActive() {
+  return isTyping || charQueue.length > 0;
+}
+
+function _releasePending() {
+  const items = _pendingBlocks;
+  _pendingBlocks = [];
+  _pendingSince = 0;
+  for (const fn of items) {
+    try { fn(); } catch (e) { console.error('deferred block failed', e); }
+  }
+}
+
+function _schedulePendingFlush() {
+  if (_pendingTimer) return;
+  const tick = () => {
+    _pendingTimer = null;
+    // A stalled reveal must not swallow the queue. Without this valve a
+    // typewriter that never drains means a dice result the table is waiting
+    // on never appears at all, which is worse than the snap it replaced.
+    const waited = _pendingSince ? (Date.now() - _pendingSince) : 0;
+    if (_typewriterActive() && waited < PENDING_BLOCK_MAX) {
+      _pendingTimer = setTimeout(tick, PENDING_BLOCK_GAP);   // re-arm
+      return;
+    }
+    if (_typewriterActive()) instantFlush();   // valve fired: old behaviour
+    _releasePending();
+  };
+  _pendingTimer = setTimeout(tick, PENDING_BLOCK_GAP);
+}
+
+function _deferBlock(fn, isReplay) {
+  // A replay dumps history with no live reveal to protect, so deferring it
+  // would only delay the whole transcript.
+  if (isReplay || (!_typewriterActive() && _pendingBlocks.length === 0)) {
+    fn();
+    return;
+  }
+  if (!_pendingSince) _pendingSince = Date.now();
+  _pendingBlocks.push(fn);
+  _schedulePendingFlush();
+}
+
 // ── Shared: after inserting a non-DM block, re-establish cursor below it ──
 // If typing is still in progress, immediately open the next DM block so the
 // cursor appears below the inserted block rather than going invisible.
@@ -4122,6 +4311,10 @@ function _reanchorCursor() {
 
 // ── Player action block ──────────────────────────────────────────────
 function renderPlayerBlock(name, text, isReplay) {
+  _deferBlock(() => _renderPlayerBlockNow(name, text, isReplay), isReplay);
+}
+
+function _renderPlayerBlockNow(name, text, isReplay) {
   _flushForBlock();
 
   const block = document.createElement('div');
@@ -4153,6 +4346,10 @@ function renderPlayerBlock(name, text, isReplay) {
 
 // ── Player action intent block ───────────────────────────────────────
 function renderActionBlock(name, text, isReplay) {
+  _deferBlock(() => _renderActionBlockNow(name, text, isReplay), isReplay);
+}
+
+function _renderActionBlockNow(name, text, isReplay) {
   _flushForBlock();
 
   const block = document.createElement('div');
@@ -4179,6 +4376,10 @@ function renderActionBlock(name, text, isReplay) {
 
 // ── NPC dialogue block ───────────────────────────────────────────────
 function renderNPCBlock(name, text, isReplay) {
+  _deferBlock(() => _renderNPCBlockNow(name, text, isReplay), isReplay);
+}
+
+function _renderNPCBlockNow(name, text, isReplay) {
   _flushForBlock();
 
   const block = document.createElement('div');
@@ -4203,7 +4404,6 @@ function renderNPCBlock(name, text, isReplay) {
     p.textContent = trimmed;
     block.appendChild(p);
   });
-
   _addTtsBar(block);
   textContent.appendChild(block);
   _reanchorCursor();
@@ -4237,6 +4437,10 @@ function _diceRollIcon(text) {
 
 // ── Dice result block ─────────────────────────────────────────────────
 function renderDiceBlock(text, isReplay) {
+  _deferBlock(() => _renderDiceBlockNow(text, isReplay), isReplay);
+}
+
+function _renderDiceBlockNow(text, isReplay) {
   _flushForBlock();
 
   const block = document.createElement('div');
@@ -4283,6 +4487,10 @@ function renderDiceBlock(text, isReplay) {
 
 // ── Tutor / learning hint block ──────────────────────────────────────
 function renderTutorBlock(text, isReplay) {
+  _deferBlock(() => _renderTutorBlockNow(text, isReplay), isReplay);
+}
+
+function _renderTutorBlockNow(text, isReplay) {
   _flushForBlock();
 
   // Detect warning prefix (lines starting with ⚠ or WARNING:)
@@ -4329,6 +4537,10 @@ function renderTutorBlock(text, isReplay) {
 
 // ── Inspiration award block ────────────────────────────────────────────────
 function renderInspirationBlock(name, reason) {
+  _deferBlock(() => _renderInspirationBlockNow(name, reason), false);
+}
+
+function _renderInspirationBlockNow(name, reason) {
   _flushForBlock();
   const block = document.createElement('div');
   block.className = 'inspiration-block';
@@ -4357,6 +4569,10 @@ function renderInspirationBlock(name, reason) {
 // Distinct from the binary D&D 5e Inspiration block above. Use the label arg to name what
 // kind of reward was earned.
 function renderMilestoneBlock(name, label, reason, isReplay) {
+  _deferBlock(() => _renderMilestoneBlockNow(name, label, reason, isReplay), isReplay);
+}
+
+function _renderMilestoneBlockNow(name, label, reason, isReplay) {
   _flushForBlock();
   const block = document.createElement('div');
   block.className = 'milestone-block';
@@ -5212,8 +5428,13 @@ function openSrdModal(name, category, level) {
     .then(r => r.json())
     .then(data => {
       if (!data.found) {
-        const linkHtml = data.wikidot_url
-          ? `<br><a href="${data.wikidot_url}" target="_blank" rel="noopener" style="color:#c9a84c;font-size:11px;opacity:0.85;text-decoration:none;">View on D&D 5e Wiki ↗</a>`
+        // The label travels with the URL, because the destination is not always
+        // the same reference and a link should say where it goes before it is
+        // clicked. No verified destination for this category means no link.
+        const refUrl   = data.reference_url || data.wikidot_url || '';
+        const refLabel = data.reference_label || 'View on D&D 5e Wiki';
+        const linkHtml = refUrl
+          ? `<br><a href="${_esc(refUrl)}" target="_blank" rel="noopener" style="color:#c9a84c;font-size:11px;opacity:0.85;text-decoration:none;">${_esc(refLabel)} ↗</a>`
           : `<br><span style="font-size:10px;opacity:0.6">May be from a supplement (Xanathar's, Tasha's, etc.)</span>`;
         // Near-miss "did you mean?" chips — tap one to re-run the lookup on the
         // closest matching name. Recovers a mistyped spell/condition/monster
