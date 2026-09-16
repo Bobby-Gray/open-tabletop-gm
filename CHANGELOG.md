@@ -12,11 +12,19 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
-## [0.15.0] — 2026-09-16 — SRD build, defenses, and three features that never ran
+## [0.15.0] — 2026-09-16 — Creature defenses, narration badges, and a working SRD build
 
-The largest single release this project has had, and most of it is things that
-were already supposed to work. Four of the ten fixes are features that existed
-in the source and had never once executed for anyone.
+Ten fixes in one release, so an existing install updates once and receives all
+of them. The SRD dataset builds again from a fresh clone. Creatures carry their
+resistances and immunities into play. Narration blocks are marked with a scene
+badge. XP awards are recorded and can be reconciled against a character sheet.
+A dice result no longer cuts off the sentence you were reading, and the reading
+column grows with the text size instead of narrowing. The test suite runs in CI
+for the first time.
+
+Several of these existed in the source already and had never reached a player.
+Where that is the case the entry says so, and the commit history has the full
+account.
 
 ### Fixed — the SRD dataset could not be built at all
 
