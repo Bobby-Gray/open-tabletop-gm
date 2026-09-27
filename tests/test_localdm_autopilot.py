@@ -90,6 +90,14 @@ def test_kill_miss_move_and_hints():
     assert not autopilot.big_moment("Kairos Dagger -> Giant Frog 2: 5 vs AC 11, miss.")
 
 
+def test_opportunity_attack_multiword_name():
+    raw = ("Opportunity attack: Giant Frog 1 Bite -> Kairos: 14 vs AC 12, hit. "
+           "4 piercing damage; Kairos 8/12 HP.")
+    s = autopilot.narrate(raw, seed="1", names=["Giant Frog 1", "Kairos"])
+    assert "Giant Frog 1" in s and "Bite" in s and "Opportunity attack:" in s
+    assert "Opportunity's attack" not in s
+
+
 # ── the session, on the real engine ─────────────────────────────────────────
 
 def test_engine_combat_needs_no_model_for_actions_or_enemies(tmp_path, monkeypatch):

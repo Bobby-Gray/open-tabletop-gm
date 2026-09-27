@@ -242,11 +242,15 @@ _NBSP = "\u00a0"
 def _line(raw: str, rng, names=()) -> str:
     # The attacker is the start of the line; a multi-word name ("Giant Frog 2") is held together
     # so the regex does not split it into attacker "Giant" and weapon "Frog 2 Bite".
+    prefix = ""
+    if raw.startswith("Opportunity attack: "):
+        prefix = "Opportunity attack: "
+        raw = raw[len(prefix):]
     for n in sorted(names, key=len, reverse=True):
         if " " in n and raw.startswith(n + " "):
             raw = n.replace(" ", _NBSP) + raw[len(n):]
             break
-    return _prose(raw, rng).replace(_NBSP, " ")
+    return prefix + _prose(raw, rng).replace(_NBSP, " ")
 
 
 def _prose(raw: str, rng) -> str:
