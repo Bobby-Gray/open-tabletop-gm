@@ -13,7 +13,7 @@ import pytest
 
 from tests.tactics_fixtures import (RULES, ROOT, _build, _RAW, encounter, frog, goblin,
                                     kairos, roller, start)
-from tactics import ai, cli, maps
+from tactics import ai, cli, maps, sync
 
 rules_mod = sys.modules[type(RULES).__module__]
 sheet_mod = rules_mod._sheet_module()
@@ -194,6 +194,40 @@ def test_a_player_roll_is_asked_for_and_nothing_changes_meanwhile(camp, capsys):
     assert code == 0 and "hit" in out and "7 fire damage" in out
     rolls = json.loads(path.read_text(encoding="utf-8"))["log"][-1]["rolls"]
     assert [r["source"] for r in rolls] == ["verbal", "verbal"]
+
+
+def test_a_paused_roll_is_mirrored_to_the_display(camp, capsys, monkeypatch):
+    pushed = []
+    monkeypatch.setattr(sync, "push_display",
+                        lambda enc, meta=None: pushed.append(sync.snapshot(enc, meta)))
+    begin(capsys, "--roll-mode", "players")
+    path = camp / "combat" / "encounter.json"
+    enc = json.loads(path.read_text(encoding="utf-8"))
+    enc["order"] = ["kairos", "frog-1", "frog-2"]               # Kairos first, for the test
+    enc["turn_index"] = 0
+    enc["turn"]["actor"] = "kairos"
+    enc["turn"]["movement_budget"] = 30
+    path.write_text(json.dumps(enc), encoding="utf-8")
+    before = path.read_text(encoding="utf-8")
+
+    code, out = run(capsys, "attack", "kairos", "frog-1", "fire", "bolt")
+    assert code == 2 and "Kairos rolls 1d20+5" in out
+    assert [p["turn"]["pending"] for p in pushed] == ["", "roll:1d20+5"]
+    assert path.read_text(encoding="utf-8") == before           # paused: pushed, not saved
+
+
+def test_a_reaction_ask_is_mirrored_to_the_display(camp, capsys, monkeypatch):
+    import random as _random
+    pushed = []
+    monkeypatch.setattr(sync, "push_display",
+                        lambda enc, meta=None: pushed.append(sync.snapshot(enc, meta)))
+    begin(capsys)
+    _edit(camp, actor="frog-1", pos={"frog-1": (2, 6)})
+    hit = next(s for s in range(500) if 9 <= _random.Random(s).randint(1, 20) <= 16)
+    monkeypatch.setattr(cli.random, "randrange", lambda n: hit)
+    code, out = run(capsys, "attack", "frog-1", "kairos")
+    assert code == 2 and "Silvery Barbs" in out
+    assert any(p["turn"]["pending"] == "react:kairos:silvery barbs" for p in pushed)
 
 
 def test_enemy_turn_through_options_and_choose(camp, capsys):

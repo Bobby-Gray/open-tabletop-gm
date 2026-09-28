@@ -684,6 +684,7 @@ def main(argv=None) -> int:
     except PendingRoll as e:
         if camp_dir is not None:
             _save_pending(camp_dir, canon, args._seed, args._decisions)
+            _push_pending(camp_dir, f"roll:{e.notation}")
         what = "the d20 face" if e.notation.startswith("1d20") else "the dice total"
         adv = f" with {e.advantage}" if e.advantage != "normal" else ""
         prior = _prior(args)
@@ -698,6 +699,7 @@ def main(argv=None) -> int:
                 keys = [OLD_FORM] * len(args.react)
             keys += [e.key] if e.key not in keys else []
             _save_pending(camp_dir, canon, args._seed, keys)
+            _push_pending(camp_dir, f"react:{e.key}")
         print(f"{e.prompt} Nothing has happened yet.\n"
               f"Re-run the same command with {_prior(args)}--react yes or --react no.")
         return 2
@@ -708,3 +710,25 @@ def _prior(args) -> str:
     out = "".join(f"--roll {v} " for v in (args.roll or []))
     out += "".join(f"--react {v} " for v in (args.react or []))
     return out
+
+
+def _push_pending(camp_dir, pending: str) -> None:
+    """Mirror a roll/reaction wait to the display via turn.pending (B2).
+
+    The encounter file is deliberately NOT saved: the command is paused and
+    saving a half-applied encounter would corrupt the seeded re-run. The
+    pending marker lives only in the pushed snapshot, and the next successful
+    command overwrites it with turn.pending "". Pushes are best-effort
+    (sync.push_display no-ops with TACTICS_NO_DISPLAY=1).
+    """
+    try:
+        enc = state.load(state.encounter_path(camp_dir))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return
+    if enc.status != "active":
+        return
+    enc.turn.pending = pending
+    try:
+        sync.push_display(enc, enc.meta)
+    except Exception:
+        return

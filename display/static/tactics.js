@@ -173,9 +173,18 @@
     const before = prev && (prev.log || []).slice(-1)[0];
     if (!last || !(last.rolls || []).length) return;
     if (before && before.text === last.text && before.round === last.round) return;
-    toast(last.rolls.map(r =>
-      `${r.label}: ${r.notation}${r.dice.length > 1 && r.advantage !== 'normal' ? ' [' + r.dice.join(', ') + ']' : ''} = ${r.total}` +
-      (r.source !== 'engine' ? ` (${r.source})` : '')).join(' · '));
+    toast(last.rolls.map(r => {
+      // Show the natural on d20 rolls (crits/fumbles were invisible in the toast).
+      const isD20 = /d20/.test(r.notation || '');
+      let shown = `${r.label}: ${r.notation}`;
+      if (r.dice.length > 1 && r.advantage !== 'normal') shown += ' [' + r.dice.join(', ') + ']';
+      else if (isD20 && r.natural !== undefined && r.natural !== null) shown += ` [${r.natural}]`;
+      shown += ` = ${r.total}`;
+      if (isD20 && r.natural === 20) shown += ' — CRIT';
+      else if (isD20 && r.natural === 1) shown += ' — fumble';
+      if (r.source !== 'engine') shown += ` (${r.source})`;
+      return shown;
+    }).join(' · '));
   }
 
   // ── rendering ────────────────────────────────────────────────────────────
@@ -202,15 +211,30 @@
       const t = tokenById(id); if (!t) continue;
       const pct = Math.max(0, Math.round(100 * t.hp / Math.max(1, t.max_hp)));
       const tg = tags(t);
+      const ac = (t.ac === undefined || t.ac === null) ? '?' : t.ac;
+      const pips = slotPips(t);
       const c = document.createElement('div');
       c.className = 'tx-chip' + (id === snap.current ? ' tx-now' : '') + (t.dead ? ' tx-dead' : '');
       c.setAttribute('role', 'listitem');
       if (id === snap.current) c.setAttribute('aria-current', 'true');
       if (tg.length) c.title = tg.join(', ');
-      c.innerHTML = `<span>${esc(t.name)}</span><span class="tx-hpbar" role="img" aria-label="${t.hp} of ${t.max_hp} HP"><i class="${pct <= 25 ? 'tx-low' : ''}" style="width:${pct}%"></i></span>` +
-        `<span>${t.dead ? 'dead' : t.hp + '/' + t.max_hp + ' HP'}${tg.length ? ' · ' + esc(tg.join(', ')) : ''}</span>`;
+      c.innerHTML = `<span>${esc(t.name)} <span class="tx-ac" title="Armor Class">AC ${ac}</span></span><span class="tx-hpbar" role="img" aria-label="${t.hp} of ${t.max_hp} HP"><i class="${pct <= 25 ? 'tx-low' : ''}" style="width:${pct}%"></i></span>` +
+        `<span>${t.dead ? 'dead' : t.hp + '/' + t.max_hp + ' HP'}${tg.length ? ' · ' + esc(tg.join(', ')) : ''}</span>${pips}`;
       el.strip.appendChild(c);
     }
+  }
+
+  function slotPips(t) {
+    // Spell slots left per level, e.g. "1st ●●": filled = left, hollow = spent.
+    const sl = t.slots || {};
+    const bits = [];
+    for (const lv of Object.keys(sl).map(Number).sort((a, b) => a - b)) {
+      const s = sl[String(lv)]; if (!s || !s.total) continue;
+      const left = Math.max(0, s.total - (s.used || 0));
+      const ord = lv === 1 ? 'st' : lv === 2 ? 'nd' : lv === 3 ? 'rd' : 'th';
+      bits.push(`${lv}${ord} ${'●'.repeat(left)}${'○'.repeat(s.total - left)}`);
+    }
+    return bits.length ? `<span class="tx-slots" title="Spell slots left">${bits.join(' · ')}</span>` : '';
   }
 
   function terrainOf(ch) {
@@ -341,8 +365,9 @@
     const mark = markFor(t);
     if (mark && mark.cls) cls.push(...mark.cls.split(' '));
     const tg = tags(t);
+    const ac = (t.ac === undefined || t.ac === null) ? '?' : t.ac;
     const g = svg('g', { class: cls.join(' '), 'data-id': t.id, role: 'button',
-      'aria-label': `${t.name}, ${t.dead ? 'dead' : t.hp + ' of ' + t.max_hp + ' HP'}, ${label(t.x, t.y)}` +
+      'aria-label': `${t.name}, ${t.dead ? 'dead' : t.hp + ' of ' + t.max_hp + ' HP, AC ' + ac}, ${label(t.x, t.y)}` +
         (tg.length ? ', ' + tg.join(', ') : '') + (mark && mark.say ? ', ' + mark.say : '') }, ui.tokenLayer);
     const col = t.side === 'enemy' ? 'var(--tx-danger)' : t.side === 'pc' ? 'var(--tx-quan)' : 'var(--tx-lore)';
     svg('circle', { cx, cy, r: C / 2 - 1, class: 'tx-ring' }, g);
@@ -361,7 +386,7 @@
       conditionBadges(g, t);
     }
     if (mark && mark.badge) badge(g, t, mark.badge, mark.ally ? 'tx-ally' : '');
-    const title = svg('title', {}, g); title.textContent = t.name + (tg.length ? ' (' + tg.join(', ') + ')' : '');
+    const title = svg('title', {}, g); title.textContent = t.name + ` (AC ${ac})` + (tg.length ? ' (' + tg.join(', ') + ')' : '');
     g.addEventListener('click', e => { e.stopPropagation(); onToken(t, e); });
     t._g = g;
   }
@@ -692,7 +717,23 @@
     if (!t) { el.info.innerHTML = snap.unseen_turn ? 'A creature you cannot see is acting. The GM narrates.' : ''; return; }
     if (!myTurn()) { el.info.innerHTML = `<strong>${esc(t.name)}</strong> is acting. The GM narrates their turn.` + statusLine(t) + sightLine(); return; }
     if (snap.turn && snap.turn.pending === 'death_save') { el.info.innerHTML = `<strong>${esc(t.name)}</strong> is dying: roll a death save.`; return; }
-    el.info.innerHTML = infoText(t) + (ui.mode ? '' : sightLine());
+    el.info.innerHTML = infoText(t) + pendingLine() + (ui.mode ? '' : sightLine());
+  }
+
+  function pendingLine() {
+    // A roll or reaction the engine is waiting on (cli.py mirrors it into
+    // turn.pending): spectators otherwise see only "Kairos's turn".
+    const p = snap.turn && snap.turn.pending;
+    if (!p) return '';
+    const name = id => { const t = tokenById(id); return t ? t.name : id; };
+    let text;
+    if (p.startsWith('roll:')) text = `Waiting on a roll (${p.slice(5)}).`;
+    else if (p.startsWith('react:')) {
+      const rest = p.slice(6).split(':');
+      const who = rest.length > 1 ? `${name(rest[0])} — ` : '';
+      text = `Waiting on a reaction: ${who}${rest[rest.length - 1]} (yes / no).`;
+    } else text = `Waiting: ${p}.`;
+    return `<br><span class="tx-warn">${esc(text)}</span>`;
   }
 
   function economy() {

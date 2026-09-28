@@ -35,6 +35,11 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 - The display writes `.input_queue` to a temp file and renames it, so `check_input.py` can never take a half-written action.
 - `docs/FIRST-SESSION.md`: how to start the display and a new campaign, and how to check the display without a GM.
 - A spell cast from the grid (Cast menu, or `cast`) used a 5 ft range when the SRD data was built by an older `build_srd.py`: Fire Bolt could not reach anything. Stale spell records, including ones cached in an encounter, are now looked up again.
+- The battle display never showed Armor Class anywhere, although `/combat/state` carries it. The turn strip now has an `AC n` chip and board tokens carry AC in their title and aria-label.
+- A roll or reaction the engine waits on (`--roll` / `--react`) never reached the display: spectators saw only "Kairos's turn" with no idea a roll was awaited. A paused command now pushes a snapshot with `turn.pending` (`roll:1d20+6`, `react:kairos:silvery barbs`), and the side panel shows a waiting line. The encounter file is not saved mid-pause.
+- Spell slots were visible only inside the Cast submenu. The turn strip now shows pips per level (`1st ●● ○`).
+- The dice toast hid the natural roll (`Bite 1d20+3 = 19`). d20 toasts now show it (`Bite 1d20+3 [16] = 19`), with CRIT / fumble flags on natural 20 / 1.
+- Shared-screen type scale: turn strip 12→13px, side info 13→14px, spell meta 11→12px, combat log 12→13px, legend 11→12px, dice toast 13→14px.
 
 ### Added: a playable tutorial for grid combat
 - `scripts/tactics/play.py`: play a grid fight yourself in the terminal. You type your turns (`move D4`, `attack 1`, `cast magic missile 1 1 2`); the game runs the enemies as the GM would. An ASCII battle map with numbered enemies, a `reach` overlay, dice you roll yourself (or Enter to roll for you), and y/n prompts for Shield, Silvery Barbs and opportunity attacks.
