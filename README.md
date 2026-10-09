@@ -8,7 +8,7 @@ An LLM-agnostic Game Master framework for persistent tabletop RPG campaigns. Bui
 
 D&D 5e is included as the reference system. Any other tabletop RPG can be added by writing a system module — see [SYSTEM-PORTING.md](SYSTEM-PORTING.md).
 
-> **Using Claude?** This framework was extracted from [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill), a Claude Code-specific version with deeper integration. If you're running Claude Code, that repo will give you a more optimised experience.
+> **Using Claude?** This framework was extracted from [`claude-dnd-skill`](https://github.com/neuralinitiative/claude-dnd-skill), a Claude Code-specific version with deeper integration. If you're running Claude Code, that repo will give you a more optimised experience.
 
 ![open-tabletop-gm demo](docs/screenshots/demo-v3.gif)
 
@@ -21,7 +21,7 @@ A GM framework that offloads everything mechanical to Python so the LLM can focu
 - <img src="docs/icons/scroll.png" height="18"> **Persistent campaigns** — state, world, NPCs, and character sheets survive across sessions in plain Markdown files
 - <img src="docs/icons/dagger.png" height="18"> **Python toolchain** — dice, combat initiative, HP tracking, timed effects, conditions, calendar, campaign search; all run locally with zero LLM involvement
 - <img src="docs/icons/crystal_ball.png" height="18"> **Cinematic display companion** — optional Flask web app that renders your session as a live display on any browser or TV, with a real-time stat sidebar, effect pills, and player input panel
-- <img src="docs/icons/dragon.png" height="18"> **System plugin architecture** — D&D 5e ships as the reference implementation; swap in any TTRPG by writing a system module
+- <img src="docs/icons/dragon.png" height="18"> **Three game systems in the box** — D&D 5e, a PF2e-compatible module and Basic Roleplaying, each with its own rules layer and its own character sidebar; swap in any other TTRPG by writing a system module
 - <img src="docs/icons/spellbook.png" height="18"> **Campaign relationship graph** — typed-edge graph alongside the markdown campaign files, with verbatim source-anchors on every edge; `scene-context` query auto-pulled at `/gm load` to surface who-knows-whom in the current scene without re-reading full NPC files; designed to hold long-session continuity when context compaction strips files out of scope. Manual + query-only in this fork (no LLM dependency); see [`CHANGELOG.md`](CHANGELOG.md) for the why
 
 ---
@@ -37,11 +37,13 @@ SKILL.md                    ← GM core: pacing, NPCs, improvisation, world craf
 systems/<your-system>/
   system.md                 ← Your game's rules: dice, stats, health, resources
                                Loaded alongside SKILL.md at session start.
+  ui.json                   ← Optional. Which stats the display sidebar shows.
+                               Without one, the D&D layout is used as-is.
 ```
 
 `SKILL.md` contains everything about *being a good GM*. `system.md` contains everything about *your specific game*. The GM model reads both at session start — it brings the craft, your system module brings the rules.
 
-**D&D 5e ships as the reference implementation.** It demonstrates what a complete system module looks like: dice conventions, ability scores, spell slots, conditions, death saves, SRD lookup, and character scripts.
+**D&D 5e is the reference implementation.** It demonstrates what a complete system module looks like: dice conventions, ability scores, spell slots, conditions, death saves, SRD lookup, and character scripts. Two more ship alongside it — a PF2e-compatible module and Basic Roleplaying — and between them they show what actually varies: PF2e sheets store attribute *modifiers* with no scores to derive from, and BRP has no levels, so it has no XP bar and tracks Power Points and Sanity instead. None of that needed a line of display code; each system declares its own `ui.json`.
 
 **Building a new system module** takes one file to start — a filled-in `systems/TEMPLATE.md` for your game. You can start with just dice resolution and health, play a session, then iterate. Full porting guide: [SYSTEM-PORTING.md](SYSTEM-PORTING.md).
 
@@ -52,8 +54,20 @@ systems/<your-system>/
 | System | Module | Notes |
 |--------|--------|-------|
 | D&D 5e | `systems/dnd5e/` | Full support — scripts, SRD dataset, character tools |
+| PF2e-compatible (ORC) | `systems/pf2e/` | Three-action economy, four degrees of success, hero points, focus spells. Rules module + display manifest |
+| Basic Roleplaying (BRP) | `systems/brp/` | d100 roll-under, Power Points, optional Sanity. Rules module + display manifest |
 
-**Adding your own:** Copy `systems/TEMPLATE.md` to `systems/<your-system>/system.md` and fill it in. See [SYSTEM-PORTING.md](SYSTEM-PORTING.md) for a compatibility breakdown of popular systems (Pathfinder 2e, Vampire: The Masquerade, Cyberpunk RED, Warhammer 40k).
+All three are rules modules the GM model reads, each with a display manifest so
+the character sidebar shows that system's own statistics — PF2e sheets store
+attribute *modifiers* with no scores to derive from, and BRP has no XP bar
+because it has no levels. None of them needs a line of display code.
+
+The two non-D&D modules carry ORC-licensed rules content with attribution in
+their `NOTICE` files. The *Pathfinder* wordmark is Paizo's and is not licensed
+by the ORC License, so that module is named and labelled "PF2e-compatible
+(ORC)" — see `systems/pf2e/NOTICE` before renaming it.
+
+**Adding your own:** Copy `systems/TEMPLATE.md` to `systems/<your-system>/system.md` and fill it in, then optionally add a `ui.json` for the sidebar ([systems/UI-MANIFEST.md](systems/UI-MANIFEST.md)). See [SYSTEM-PORTING.md](SYSTEM-PORTING.md) for a compatibility breakdown of popular systems (Vampire: The Masquerade, Cyberpunk RED, Warhammer 40k, Call of Cthulhu).
 
 ---
 
@@ -140,7 +154,7 @@ Releases are tracked in [`CHANGELOG.md`](CHANGELOG.md) and the current version i
 
 The `--check` output includes both sides' version strings so you can see at a glance whether you've fallen behind. After pulling, restart your GM session so new skill files load.
 
-This project tracks behind [claude-dnd-skill](https://github.com/Bobby-Gray/claude-dnd-skill) on Claude-specific features and runs ahead on LLM-agnostic concerns. Where the upstream version uses Haiku-backed extraction or Claude API tool calls, this fork either ports a deterministic equivalent or defers until one exists.
+This project tracks behind [claude-dnd-skill](https://github.com/neuralinitiative/claude-dnd-skill) on Claude-specific features and runs ahead on LLM-agnostic concerns. Where the upstream version uses Haiku-backed extraction or Claude API tool calls, this fork either ports a deterministic equivalent or defers until one exists.
 
 ---
 
@@ -148,7 +162,7 @@ This project tracks behind [claude-dnd-skill](https://github.com/Bobby-Gray/clau
 
 Two sibling projects share this framework's design DNA, in case neither this nor the Claude-specific version fit how you want to set up:
 
-- [claude-dnd-skill](https://github.com/Bobby-Gray/claude-dnd-skill) — Claude Code-specific version with deeper tool-call integration. The right home if you're running Claude.
+- [claude-dnd-skill](https://github.com/neuralinitiative/claude-dnd-skill) — Claude Code-specific version with deeper tool-call integration. The right home if you're running Claude.
 - [neuralinitiative.ai](https://neuralinitiative.ai) — hosted browser version. Sign in with Google, top up a balance, play. Same model-picker philosophy, refined web GUI, no install. Costs more per session than running your own keys, in exchange for zero setup.
 
 All three share the same maintainer and design DNA — pick the one that matches how you want to set up.
@@ -319,7 +333,7 @@ The server scans narration text for keywords and crossfades the background gradi
 | City / Town | market, cobble, district, crowd | rain |
 | + 7 more | mine, castle, ruins, desert, fire, temple, swamp | — |
 
-Scene transitions crossfade over ~2.5 seconds. The server maintains a 20-chunk rolling window so scenes don't flicker on single matches.
+Scene transitions crossfade over ~2.5 seconds. Detection runs over a 20-chunk rolling window, and a challenger has to beat the scene already on screen by 2 points to take the room, with the incumbent carrying a bonus of 1 so it can hold its ground once its own keywords scroll out of the window. Before that margin existed a single keyword was enough to change the background, and two plausible scenes would trade it back and forth on a one-point edge. Keywords are matched as whole words, so `ward` no longer fires inside "deputy warden".
 
 ### Dynamic sky canvas
 
@@ -440,7 +454,7 @@ See [SYSTEM-PORTING.md — What to expect from smaller/local models](SYSTEM-PORT
 
 ## Looking for the Claude-optimised version?
 
-If you're running Claude Code, [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill) is the dedicated version with model routing, deeper tool integration, and features built specifically for Claude's capabilities.
+If you're running Claude Code, [`claude-dnd-skill`](https://github.com/neuralinitiative/claude-dnd-skill) is the dedicated version with model routing, deeper tool integration, and features built specifically for Claude's capabilities.
 
 ---
 

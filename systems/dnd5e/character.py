@@ -10,6 +10,12 @@ Usage:
         STR=15 DEX=10 CON=15 INT=9 WIS=11 CHA=14 \\
         --proficient STR CON Athletics Intimidation Perception Survival
 
+    python3 character.py calc --class cleric --level 1 --race dwarf \\
+        --subrace hill-dwarf STR=15 DEX=10 CON=14 INT=9 WIS=13 CHA=11
+        Scores given are the BASE array; racial bonuses are applied here and
+        shown as base / race / final. An unknown race exits non-zero rather
+        than applying nothing.
+
     python3 character.py levelup --class fighter --from 1 --to 2 \\
         --hp-roll 6 --con-mod 2
 
@@ -19,6 +25,105 @@ Usage:
 
 import sys
 import re
+
+
+# ─── Racial ability bonuses (SRD, 2014 rules) ────────────────────────────────
+#
+# THESE ARE APPLIED HERE, NOT REMEMBERED. The character-creation flow used to
+# say "Apply racial bonuses" and then "run character.py calc" -- but calc had no
+# `--race` parameter at all, so it never saw the race and could not check the
+# step had happened. A Dwarf and an Elf built the same way came out with the
+# same Constitution, and nothing in the toolchain could notice.
+#
+# Keyed by SRD index (lower-case, hyphenated), which is what `lookup.py race`
+# reports, so the two agree by construction. Reconciled against the built SRD
+# dataset by tests/test_racial_bonuses.py -- a drifted value fails there rather
+# than silently producing a wrong sheet.
+RACE_BONUSES = {
+    "dwarf":      {"CON": 2},
+    "elf":        {"DEX": 2},
+    "halfling":   {"DEX": 2},
+    "human":      {"STR": 1, "DEX": 1, "CON": 1, "INT": 1, "WIS": 1, "CHA": 1},
+    "dragonborn": {"STR": 2, "CHA": 1},
+    "gnome":      {"INT": 2},
+    "half-elf":   {"CHA": 2},
+    "half-orc":   {"STR": 2, "CON": 1},
+    "tiefling":   {"INT": 1, "CHA": 2},
+}
+
+#: Subrace bonuses STACK on top of the parent race's. Half-Elf is the SRD's
+#: one irregular case -- it grants +1 to two abilities of the player's choice
+#: on top of its +2 CHA, which no table can express, so it is passed through
+#: as a prompt rather than a number (see apply_racial_bonuses).
+SUBRACE_BONUSES = {
+    "hill-dwarf":         {"WIS": 1},
+    "high-elf":           {"INT": 1},
+    "lightfoot-halfling": {"CHA": 1},
+    "rock-gnome":         {"CON": 1},
+}
+
+SUBRACE_PARENT = {
+    "hill-dwarf": "dwarf", "high-elf": "elf",
+    "lightfoot-halfling": "halfling", "rock-gnome": "gnome",
+}
+
+#: Races whose SRD entry grants a player CHOICE the tables above cannot hold.
+#: Reported so the sheet writer is told to resolve it, instead of the choice
+#: being silently dropped.
+RACE_CHOICES = {
+    "half-elf": "+1 to two abilities of your choice (SRD Half-Elf)",
+}
+
+
+def _race_key(name: str) -> str:
+    """Normalise a race or subrace name to its SRD index."""
+    return re.sub(r"[^a-z0-9]+", "-", (name or "").strip().lower()).strip("-")
+
+
+def apply_racial_bonuses(scores: dict, race: str = "", subrace: str = "") -> tuple:
+    """Return (final_scores, applied, notes).
+
+    `applied` maps stat -> total bonus added, so the caller can show base,
+    racial and final rather than only the result. An unknown race RAISES: a
+    typo that silently applied nothing is the whole defect this exists to
+    stop, and a sheet that is quietly wrong is worse than a command that
+    refuses.
+    """
+    out = dict(scores)
+    applied: dict = {}
+    notes: list = []
+    if not race and not subrace:
+        return out, applied, notes
+
+    rkey = _race_key(race)
+    skey = _race_key(subrace)
+
+    if skey:
+        if skey not in SUBRACE_BONUSES:
+            raise ValueError(
+                f"Unknown subrace {subrace!r}. Known: "
+                f"{', '.join(sorted(SUBRACE_BONUSES))}")
+        parent = SUBRACE_PARENT[skey]
+        if rkey and rkey != parent:
+            raise ValueError(
+                f"Subrace {subrace!r} belongs to {parent!r}, not {race!r}")
+        rkey = parent
+
+    if rkey not in RACE_BONUSES:
+        raise ValueError(
+            f"Unknown race {race!r}. Known: {', '.join(sorted(RACE_BONUSES))}")
+
+    for stat, bonus in RACE_BONUSES[rkey].items():
+        applied[stat] = applied.get(stat, 0) + bonus
+    if skey:
+        for stat, bonus in SUBRACE_BONUSES[skey].items():
+            applied[stat] = applied.get(stat, 0) + bonus
+
+    for stat, bonus in applied.items():
+        out[stat] = out.get(stat, 10) + bonus
+    if rkey in RACE_CHOICES:
+        notes.append(RACE_CHOICES[rkey])
+    return out, applied, notes
 
 
 # ─── Proficiency bonus by level ──────────────────────────────────────────────
@@ -104,8 +209,19 @@ def parse_proficient(args: list[str]) -> list[str]:
 def do_calc(args: list[str]):
     cls = args[args.index("--class") + 1].lower() if "--class" in args else "fighter"
     lvl = int(args[args.index("--level") + 1]) if "--level" in args else 1
-    scores = parse_scores(args)
+    base_scores = parse_scores(args)
     proficient = parse_proficient(args)  # list of stat names + skill names
+    race = args[args.index("--race") + 1] if "--race" in args else ""
+    subrace = args[args.index("--subrace") + 1] if "--subrace" in args else ""
+
+    # The scores passed in are the BASE array, before racial bonuses. Applying
+    # them here is what makes the step verifiable: an unknown race raises
+    # rather than applying nothing.
+    try:
+        scores, racial, race_notes = apply_racial_bonuses(base_scores, race, subrace)
+    except ValueError as exc:
+        print(f"character.py: {exc}", file=sys.stderr)
+        sys.exit(2)
 
     prof = PROF_BONUS.get(lvl, 2)
     hd = HIT_DICE.get(cls, 8)
@@ -117,12 +233,26 @@ def do_calc(args: list[str]):
     print(f"  {cls.title()} Level {lvl}  |  Proficiency Bonus: +{prof}")
     print(f"{'='*50}")
 
-    print(f"\n  Ability Scores:")
-    print(f"  {'Stat':<6} {'Score':>6} {'Mod':>5}")
-    print(f"  {'-'*20}")
-    for s in STATS:
-        score = scores.get(s, 10)
-        print(f"  {s:<6} {score:>6} {fmt(mod(score)):>5}")
+    if racial:
+        label = (subrace or race).strip()
+        print(f"\n  Ability Scores  (base + {label} racial bonus):")
+        print(f"  {'Stat':<6} {'Base':>6} {'Race':>6} {'Score':>6} {'Mod':>5}")
+        print(f"  {'-'*33}")
+        for s in STATS:
+            base = base_scores.get(s, 10)
+            bonus = racial.get(s, 0)
+            score = scores.get(s, 10)
+            print(f"  {s:<6} {base:>6} {fmt(bonus) if bonus else '—':>6} "
+                  f"{score:>6} {fmt(mod(score)):>5}")
+        for note in race_notes:
+            print(f"\n  ! Still to assign: {note}")
+    else:
+        print(f"\n  Ability Scores:")
+        print(f"  {'Stat':<6} {'Score':>6} {'Mod':>5}")
+        print(f"  {'-'*20}")
+        for s in STATS:
+            score = scores.get(s, 10)
+            print(f"  {s:<6} {score:>6} {fmt(mod(score)):>5}")
 
     print(f"\n  Combat Stats:")
     print(f"  HP (level 1): {hp}  ({hd} + CON {fmt(con_mod)})")

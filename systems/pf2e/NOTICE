@@ -1,0 +1,26 @@
+This system module is derived from:
+
+  Pathfinder Player Core (remaster)
+  Copyright © 2023 by Paizo Inc.
+  Authors: Logan Bonner, Jason Bulmahn, Stephen Radney-MacFarland, Mark Seifter
+  Publisher: Paizo Inc., Redmond, WA — paizo.com
+
+Licensed under the ORC License.
+
+The ORC License grants permission to use, copy, modify, and distribute this
+material for any purpose. Attribution to Paizo Inc. and the original authors
+is required. See the full ORC License text at:
+  https://paizo.com/orclicense
+
+TRADEMARK. "Pathfinder" is a trademark of Paizo Inc. and is NOT licensed by
+the ORC License, which covers rules content only. This module is therefore
+named and labelled "PF2e-compatible (ORC)" rather than by the wordmark, and
+nothing here is published with Paizo's endorsement or affiliation. The
+separate (free) Pathfinder Compatibility License would be required before
+using the wordmark or the compatibility logo; it has not been signed for this
+project. Keep the label as shipped unless that changes.
+
+This module (systems/pf2e/) is part of open-tabletop-gm and is additionally
+licensed under the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later),
+consistent with the rest of the open-tabletop-gm project. The ORC License
+and AGPL-3.0-or-later apply concurrently to this module.

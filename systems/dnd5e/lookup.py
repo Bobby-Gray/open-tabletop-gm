@@ -44,6 +44,11 @@ CATEGORY_MAP = {
     "items":       None,
     "condition":   "conditions",
     "conditions":  "conditions",
+    "race":        "races",
+    "races":       "races",
+    "ancestry":    "races",
+    "subrace":     "subraces",
+    "subraces":    "subraces",
     "monster":     "monsters",
     "monsters":    "monsters",
     "feature":     "features",
@@ -51,7 +56,8 @@ CATEGORY_MAP = {
     "feat":        "features",
 }
 
-ALL_CATEGORIES = ["spells", "equipment", "magic_items", "conditions", "monsters", "features"]
+ALL_CATEGORIES = ["spells", "equipment", "magic_items", "conditions", "monsters",
+                  "races", "subraces", "features"]
 
 # ─── Data loading / index ─────────────────────────────────────────────────────
 

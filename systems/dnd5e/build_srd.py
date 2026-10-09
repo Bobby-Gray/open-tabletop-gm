@@ -50,6 +50,11 @@ BITS_FILES = {
     "magic_items": "5e-SRD-Magic-Items.json",
     "conditions":  "5e-SRD-Conditions.json",
     "monsters":    "5e-SRD-Monsters.json",
+    # Races carry the ability bonuses character creation has to apply.
+    # Absent until 2026-10-09, so there was no source for them at all:
+    # the flow said "apply racial bonuses" and nothing could check it.
+    "races":       "5e-SRD-Races.json",
+    "subraces":    "5e-SRD-Subraces.json",
 }
 
 
@@ -314,6 +319,12 @@ def _parse_scale_tables(class_doc: dict) -> dict:
     tables = {}
     system = class_doc.get("system", {}) if "system" in class_doc else class_doc
     for adv in system.get("advancement", []):
+        # Upstream advancement entries can be strings (UUID references) rather
+        # than dicts in the 2024-era class docs. Before this guard the whole
+        # build died on an AttributeError partway through the feature pass, so
+        # a fresh clone could not produce a dataset at all.
+        if not isinstance(adv, dict):
+            continue
         if adv.get("type") != "ScaleValue":
             continue
         title  = adv.get("title", "").strip()
@@ -407,6 +418,53 @@ def _load_bits_records(filename: str) -> list:
     return []
 
 
+def _norm_race(r: dict) -> dict:
+    """A race record, with its ability bonuses as a flat {STAT: n} map.
+
+    The upstream shape nests each bonus under
+    `ability_bonuses[].ability_score.index`, which is awkward to read at a
+    glance and awkward to compare against `character.py`'s table. Flattening
+    it here means `lookup.py race dwarf` prints the same thing the calculator
+    applies.
+    """
+    bonuses: dict = {}
+    for b in r.get("ability_bonuses") or []:
+        idx = ((b.get("ability_score") or {}).get("index") or "").upper()
+        if idx:
+            bonuses[idx] = bonuses.get(idx, 0) + int(b.get("bonus") or 0)
+    return {
+        "name":            r.get("name", ""),
+        "index":           r.get("index", _slugify(r.get("name", ""))),
+        "ability_bonuses": bonuses,
+        "speed":           r.get("speed", ""),
+        "size":            r.get("size", ""),
+        "size_description": r.get("size_description", ""),
+        "age":             r.get("age", ""),
+        "alignment":       r.get("alignment", ""),
+        "languages":       [l.get("name", "") for l in (r.get("languages") or [])],
+        "language_desc":   r.get("language_desc", ""),
+        "traits":          [t.get("name", "") for t in (r.get("traits") or [])],
+        "subraces":        [s.get("name", "") for s in (r.get("subraces") or [])],
+    }
+
+
+def _norm_subrace(r: dict) -> dict:
+    """A subrace, whose bonuses STACK on its parent race's."""
+    bonuses: dict = {}
+    for b in r.get("ability_bonuses") or []:
+        idx = ((b.get("ability_score") or {}).get("index") or "").upper()
+        if idx:
+            bonuses[idx] = bonuses.get(idx, 0) + int(b.get("bonus") or 0)
+    return {
+        "name":            r.get("name", ""),
+        "index":           r.get("index", _slugify(r.get("name", ""))),
+        "race":            (r.get("race") or {}).get("name", ""),
+        "ability_bonuses": bonuses,
+        "description":     _join_desc(r.get("desc", [])),
+        "traits":          [t.get("name", "") for t in (r.get("racial_traits") or [])],
+    }
+
+
 def _build_5ebits() -> dict:
     categories = {}
     for key, filename in BITS_FILES.items():
@@ -429,6 +487,8 @@ def _build_5ebits() -> dict:
             "magic_items": _norm_magic_item,
             "conditions":  _norm_condition,
             "monsters":    _norm_monster,
+            "races":       _norm_race,
+            "subraces":    _norm_subrace,
         }
         normed = [NORM[key](r) for r in records if isinstance(r, dict)]
         normed = [r for r in normed if r.get("name")]

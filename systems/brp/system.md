@@ -116,14 +116,14 @@ Characteristics are the core stats. Most rolled 3D6; INT and SIZ rolled 2D6+6.
 
 ## Status Effects / Conditions
 
-Standard BRP conditions — update `CONDITION_COLOURS` in `tracker.py`:
+Standard BRP conditions. Severity classes are the display's four (`danger`, `warn`, `info`, `buff`) and are declared in `systems/brp/ui.json` under the conditions widget's `class_map` — **not** in any script:
 
 | Condition      | Severity | Effect summary |
 |----------------|----------|----------------|
-| unconscious    | critical | Cannot act; CON roll each round or continue losing HP |
-| bleeding       | critical | Lose 1 HP/round until First Aid or Healing roll |
-| impaled        | critical | Weapon lodged; extra DB damage; STR contest to remove |
-| dying          | critical | Unconscious + losing HP; needs immediate First Aid |
+| unconscious    | danger   | Cannot act; CON roll each round or continue losing HP |
+| bleeding       | danger   | Lose 1 HP/round until First Aid or Healing roll |
+| impaled        | danger   | Weapon lodged; extra DB damage; STR contest to remove |
+| dying          | danger   | Unconscious + losing HP; needs immediate First Aid |
 | major wound    | warn     | CON roll passed but significant injury; GM discretion on penalties |
 | prone          | warn     | Dodge at Difficult; melee attacks against prone at Easy |
 | stunned        | warn     | Lose next action; defence rolls at Difficult |

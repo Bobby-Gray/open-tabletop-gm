@@ -1,0 +1,185 @@
+{
+  "manifest_version": 1,
+  "system": "pf2e",
+  "label": "PF2e-compatible (ORC)",
+  "_comment": "Widgets self-hide when their bound field is absent, so this declares the superset. Two deliberate differences from the dnd5e manifest: the attribute grid sets show_modifier:false because this system's sheets store the MODIFIER directly (there are no 3-18 scores to derive from), and there is no hit-dice cell because the system has no hit dice. Hero Points and Focus Points ride the generic milestones badge_set, which is the already-wired path (display/send.py --milestone-label \"Hero Point\"); no dedicated resource field is declared, because declaring one nothing can push gives a widget that can never draw. See systems/UI-MANIFEST.md for the widget catalog.",
+  "sidebar": [
+    {
+      "type": "bar",
+      "label": "HP",
+      "bind": "hp",
+      "icon": "/icons/enemy.png",
+      "row_class": "sb-hp-row",
+      "num_class": "sb-hp-nums",
+      "fill_role": "hp-fill",
+      "cur": "current",
+      "max": "max",
+      "color": "hp",
+      "temp": "temp"
+    },
+    {
+      "type": "bar",
+      "label": "XP",
+      "bind": "xp",
+      "icon": "/icons/ability.png",
+      "row_class": "sb-xp-row",
+      "num_class": "sb-xp-nums",
+      "fill_role": "xp-fill",
+      "fill_class": "sb-xp-bar",
+      "cur": "current",
+      "max": "next",
+      "require_cur": true
+    },
+    {
+      "type": "stat_lines",
+      "lines": [
+        { "label": "AC", "bind": "ac" },
+        { "label": "Perc", "bind": "perception" },
+        { "label": "Spd", "bind": "speed" },
+        { "label": "ClsDC", "bind": "class_dc" }
+      ]
+    },
+    {
+      "type": "tag_list",
+      "bind": "conditions",
+      "class_map": {
+        "dying": "danger",
+        "unconscious": "danger",
+        "paralyzed": "danger",
+        "petrified": "danger",
+        "stunned": "danger",
+        "confused": "danger",
+        "controlled": "danger",
+        "doomed": "danger",
+        "wounded": "warn",
+        "frightened": "warn",
+        "sickened": "warn",
+        "slowed": "warn",
+        "clumsy": "warn",
+        "enfeebled": "warn",
+        "stupefied": "warn",
+        "drained": "warn",
+        "fatigued": "warn",
+        "fleeing": "warn",
+        "immobilized": "warn",
+        "restrained": "warn",
+        "blinded": "warn",
+        "off-guard": "info",
+        "prone": "info",
+        "grabbed": "info",
+        "concealed": "info",
+        "dazzled": "info",
+        "deafened": "info",
+        "fascinated": "info",
+        "encumbered": "info",
+        "hidden": "buff",
+        "invisible": "buff",
+        "quickened": "buff"
+      },
+      "_comment": "Most conditions in this system are VALUED, so the pushed tag is normally \"frightened 2\" rather than \"frightened\". The renderer matches the class_map on the condition NAME, so a valued tag still colours correctly."
+    },
+    {
+      "type": "tag_single",
+      "bind": "concentration",
+      "prefix": "◈ "
+    },
+    {
+      "type": "effects",
+      "bind": "effects"
+    },
+    {
+      "type": "badge_set",
+      "bind": "milestones"
+    },
+    {
+      "type": "pip_levels",
+      "bind": "spell_slots"
+    }
+  ],
+  "sheet": {
+    "combat_strip": [
+      { "label": "HP", "bind": "hp", "format": "ratio" },
+      { "label": "AC", "bind": "ac" },
+      { "label": "Perception", "bind": "perception" },
+      { "label": "Speed", "bind": "speed", "suffix": " ft" },
+      { "label": "Class DC", "bind": "class_dc" }
+    ],
+    "stat_grid": {
+      "label": "Attribute Modifiers",
+      "bind": "ability_scores",
+      "show_modifier": false,
+      "stats": [
+        { "key": "str", "label": "STR" },
+        { "key": "dex", "label": "DEX" },
+        { "key": "con", "label": "CON" },
+        { "key": "int", "label": "INT" },
+        { "key": "wis", "label": "WIS" },
+        { "key": "cha", "label": "CHA" }
+      ]
+    }
+  },
+  "block_badges": [
+    {
+      "icon": "attack",
+      "words": [
+        "strike", "strikes", "attack", "slash", "stab", "blade", "combat",
+        "initiative", "damage", "hit", "miss", "critical success",
+        "critical failure", "critical hit", "flank", "flanking", "off-guard",
+        "trip", "grapple", "shove", "demoralize"
+      ]
+    },
+    {
+      "icon": "chat",
+      "words": [
+        "says", "replies", "whispers", "mutters", "speaks", "voice", "asks",
+        "answers", "dialogue", "turns to you", "diplomacy", "deception"
+      ]
+    },
+    {
+      "icon": "crystal_ball",
+      "words": [
+        "spell", "cast", "casts", "focus spell", "refocus", "focus point",
+        "cantrip", "arcane", "divine", "occult", "primal", "ritual", "rune",
+        "magical", "aura", "recall knowledge"
+      ]
+    },
+    {
+      "icon": "treasure",
+      "words": [
+        "gold", "coin", "loot", "reward", "chest", "pouch", "found", "grants",
+        "gives you", "item", "platinum", "silver", "copper", "treasure bundle"
+      ]
+    },
+    {
+      "icon": "location",
+      "words": [
+        "travel", "road", "path", "arrive", "enter", "city", "town", "village",
+        "dungeon", "forest", "mountain", "shore", "coast", "door", "gate",
+        "stride", "strides", "difficult terrain"
+      ]
+    },
+    {
+      "icon": "heal",
+      "words": [
+        "heal", "rest", "recover", "restore", "health", "potion", "elixir",
+        "treat wounds", "medicine", "wounds close", "regain", "stabilize",
+        "stabilise", "recovery check"
+      ]
+    },
+    {
+      "icon": "scroll",
+      "words": [
+        "quest", "mission", "task", "objective", "assignment", "letter",
+        "note", "parchment", "message", "contract", "accomplishment"
+      ]
+    },
+    {
+      "icon": "faction",
+      "words": [
+        "faction", "guild", "order", "council", "alliance", "sworn",
+        "allegiance", "representative", "envoy", "society"
+      ]
+    }
+  ],
+  "_comment_block_badges": "Keyword -> icon for the small mark on a narration block. English here because the bundled system module is English; a system or campaign in another language overrides this list rather than editing the display. Matching is substring-based, so it only works for the language these words are in — block KIND (npc/dice/tutor) is badged without any word list and works everywhere."
+}

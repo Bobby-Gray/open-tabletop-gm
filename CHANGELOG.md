@@ -6,11 +6,210 @@ The current installed version is recorded in the `VERSION` file at the repo root
 
 Versions before **0.7.0** are reconstructed retroactively from git history; the dates reflect the commit each version is anchored on. Going forward, every release lands in the same commit as a `VERSION` bump and a CHANGELOG entry.
 
-This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](https://github.com/Bobby-Gray/claude-dnd-skill). It tracks behind on features that need adaptation for non-Claude tooling and for system-agnostic design; the goal is parity on what makes sense to port and an independent track on what doesn't.
+This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](https://github.com/neuralinitiative/claude-dnd-skill). It tracks behind on features that need adaptation for non-Claude tooling and for system-agnostic design; the goal is parity on what makes sense to port and an independent track on what doesn't.
 
 ---
 
 ## [Unreleased]
+
+## [0.16.0] — 2026-10-09 — Two more games, and a display that knows which one you are playing
+
+Two new system modules ship with this release, and the display layer finally
+renders each system's own statistics instead of approximating them with D&D's.
+
+`systems/pf2e/` is new: a PF2e-compatible rules module built on the ORC-licensed
+remaster material. `systems/brp/` gains the display manifest it has been missing
+since it was added, which is also what closes #32.
+
+The sidebar was the blocker for both. A system without a manifest falls back to
+the renderer's built-in D&D layout, and that fallback is wrong in ways a player
+notices: BRP has no levels, so it was drawn an XP bar, and its Power Points and
+Sanity had nowhere to go at all. Each module now declares its own widgets.
+
+### Added — a PF2e-compatible system module
+
+- **`systems/pf2e/system.md`** — the rules layer, covering the two mechanics
+  that distinguish this system from other d20 games. **Four degrees of success**
+  (beat the DC by 10, meet it, miss it, miss by 10), with a natural 20 or 1
+  shifting the result one step; the module is explicit that narration must
+  differ per degree, because a critical success described like a success makes
+  the system's defining mechanic invisible at the table. And the
+  **three-action economy** with its multiple attack penalty (−5 on the second
+  Strike, −10 on the third), replacing the move/action/bonus-action split.
+  Also: proficiency ranks where untrained adds nothing at all and every other
+  rank adds the character's level, the dying/wounded/doomed track with its
+  recovery checks in place of death saving throws, valued conditions, Hero
+  Points, Focus Points and Refocus, and the seventeen skills with their named
+  actions.
+- **Attribute modifiers, not scores.** This system has no 3–18 scores to
+  convert — a sheet stores the modifier itself. The module says so and the
+  manifest sets `show_modifier: false`, so the sheet shows the number the rules
+  actually use.
+- **`systems/pf2e/NOTICE`** — ORC License attribution to Paizo Inc. and the
+  Player Core authors, plus the trademark position: the *Pathfinder* wordmark is
+  not covered by the ORC License, which is why the module's label is
+  "PF2e-compatible (ORC)". Read it before renaming anything.
+
+### Added — BRP renders as BRP
+
+- **`systems/brp/ui.json`** (#32). Power Points and Sanity as their own bars,
+  both self-hiding so a non-magical or non-horror campaign shows neither;
+  Damage Bonus, Armour, Major Wound level and Move on the stat lines; the
+  characteristic grid carrying all eight of STR/CON/SIZ/INT/POW/DEX/CHA/EDU as
+  direct ratings. **No XP bar**, because BRP advancement is per-skill and the
+  system has no levels. Badge keywords follow the system's own vocabulary —
+  impale, fumble, special success, First Aid, Sanity.
+
+### Fixed — the documented way to colour a condition did nothing
+
+- **`CONDITION_COLOURS` in `scripts/tracker.py` was read by nothing.** Four
+  documents instructed porters to edit it — `SYSTEM-PORTING.md` in two places,
+  `systems/TEMPLATE.md`, and `systems/brp/system.md` — and the display has
+  always resolved condition colours from the system manifest's `class_map`
+  instead, falling back to a built-in map. A porter following the documented
+  path edited a dict with no consumer, saw no change, and never learned about
+  the mechanism that works. The dead dict is removed and all four documents now
+  point at `ui.json`. A shared dict in a script could not have supported three
+  systems side by side in any case.
+- **The severity vocabulary in the docs did not match the renderer's.**
+  `systems/TEMPLATE.md` and `systems/brp/system.md` both listed `critical` as a
+  severity. The renderer styles exactly four classes — `danger`, `warn`,
+  `info`, `buff` — and anything else renders an unstyled pill. Transcribing
+  either table into a real `class_map` would have produced colourless pills for
+  the most serious conditions in the system. Corrected in both.
+
+### Fixed — "apply racial bonuses" was a request to the model, with nothing behind it
+
+- **`character.py calc` had no `--race` parameter at all.** The creation flow
+  told the GM to apply racial bonuses and then run `calc` to derive the
+  secondary stats, but `calc` never saw the race, so it could not apply the
+  bonus and could not check the step had happened. The bonus was an
+  instruction to the model, and the model is the one part of the toolchain with
+  no way to be verified. A Dwarf and an Elf built from the same array came out
+  with the same Constitution and nothing could notice.
+
+  `calc --race dwarf --subrace hill-dwarf` now applies the bonuses itself and
+  prints base / race / final, with the secondary stats derived from the boosted
+  scores — so HP follows a Dwarf's Constitution without anyone remembering to
+  redo the arithmetic. **An unknown race exits non-zero rather than applying
+  nothing**, because a typo that silently applied no bonus is the failure being
+  closed. Half-Elf's "+1 to two abilities of your choice" cannot be held in a
+  table, so it is reported as still-to-assign instead of dropped. Calling
+  `calc` without `--race` behaves exactly as before.
+
+### Added — races and subraces in the SRD dataset
+
+- **The dataset had no race data of any kind**, so there was nothing for the
+  creation flow to consult even in principle: it carried spells, equipment,
+  magic items, conditions, monsters and class features. `build_srd.py` now
+  fetches `5e-SRD-Races.json` and `5e-SRD-Subraces.json`, and each record
+  carries its ability bonuses flattened to a `{STAT: n}` map rather than
+  upstream's nested shape — so `lookup.py race dwarf` prints the same numbers
+  the calculator applies. 9 races and 4 subraces; dataset 1,454 → 1,467
+  records.
+- `lookup.py` takes `race` / `races` / `ancestry` and `subrace` / `subraces`.
+- The bonus table in `character.py` is a second copy of upstream data, which is
+  a drift risk, so `tests/test_racial_bonuses.py` reconciles it against the
+  built dataset record by record. Where the dataset is absent — it is
+  gitignored here — the reconciliation skips **and says it is unverified**,
+  and a dataset that exists but predates races fails rather than skipping
+  quietly.
+
+### Fixed — the SRD build died partway through, so a fresh clone had no dataset
+
+- **`build_srd.py` crashed with an `AttributeError` in the class-feature
+  pass.** Upstream's advancement entries can be plain strings (UUID
+  references) rather than objects in the 2024-era class documents, and
+  `_parse_scale_tables` called `.get()` on every one of them. The build got
+  through all six 5e-bits categories and then died, writing nothing. Because
+  the dataset is gitignored, an existing checkout kept working from the copy it
+  already had and only a fresh clone was affected — the same shape as the 404
+  in v0.15.0, and the same reason nobody hit it. Non-object entries are now
+  skipped.
+
+### Fixed — renaming an NPC did nothing in four of our scripts
+
+- **`/gm npc rename` was a no-op for any name written without word
+  delimiters.** `_whole_word_pattern` anchored with `\b`, which is the right
+  guard for a Latin name (it stops "Sera" matching inside "Seraphim") and an
+  impossible condition for a Chinese, Japanese, Korean or Thai one: Python's
+  `\w` counts Han, Kana, Hangul and Thai as word characters, and those scripts
+  put no space between a word and the text around it, so the lookbehind can
+  never be satisfied. Measured — the anchored pattern replaced the name in en,
+  fr, de, ru, uk and el and in **none** of zh, ja, ko, th.
+
+  The failure was silent and worse than an error. The rename resolved,
+  reported success, and left the narration log, `world.md`, `state.md` and
+  `npcs.md` all still carrying the old name, leaving a campaign inconsistent
+  with itself rather than unchanged.
+
+  Korean is the case that shows this is not simply about spacing: Korean does
+  space its words, so the leading anchor holds, but its particles attach to
+  the noun with no space, so the trailing one fails. Each edge is now decided
+  independently. A one-character name keeps both anchors, because a single Han
+  character is a morpheme rather than a name — 王 occurs inside 王國
+  ("kingdom") — and over-matching would rewrite the player's transcript, which
+  is not recoverable, while under-matching leaves a stale name, which is.
+  Latin, Cyrillic and Greek behaviour is unchanged, asserted directly so the
+  guard that stops "Ann" matching inside "announce" cannot be lost while
+  chasing this. New shared module `scripts/script_ranges.py`.
+
+### Fixed — the scene background was decided by what a character carried
+
+- **`lantern` and `cleric` were temple keywords.** Every other word in that
+  list names a place or a fixture of one — a nave, an altar, incense. Those
+  two named a thing a character *carries* and a thing a character *is*, so
+  they scored wherever the party went. Measured before the fix: three mentions
+  of a lantern in a room with no other keyword present rendered the room as
+  THE TEMPLE, and so did a cleric walking down a road. Both removed. `prayer`
+  is kept and flagged as the weakest survivor, since it at least describes an
+  act performed at the place.
+- **Keyword scoring counted substrings, not words.** Scores came from
+  `window.count(kw)`, so the arcane keyword `ward` matched inside "deputy
+  warden" and a prison fight scored as arcane. It also matched "wardrobe",
+  "forward" and "steward". Scoring is now whole-word, through the same module
+  as the rename above — so a campaign that overrides a scene's keyword list in
+  Chinese or Japanese still scores, which an unconditional `\b` would have
+  silently broken.
+- **One stray keyword could move the background.** The scene was a bare
+  `max()` over keyword counts, with no threshold, so a single hit took the
+  room and two plausible scenes traded the background back and forth on a
+  one-point edge. A challenger must now beat the scene on screen by 2, and the
+  incumbent carries a bonus of 1 so it can defend itself after its own
+  keywords scroll out of the window — the usual case for a long scene, since a
+  fight in a crypt stops saying "crypt" after the first line.
+
+  The constants were measured against this repo's own keyword lists rather
+  than adopted: a genuine arrival at a city narrated over three chunks scores
+  4, and incidental noise (a couple of night words while at sea) scores 2, so
+  a bar of 3 admits the real transition and blocks the noise. A separate
+  minimum-hits floor was written first and removed again on measurement — the
+  margin check already requires at least 3, which makes a floor of 2
+  unreachable for every input, and a constant that decides nothing reads as
+  protection without being any.
+
+### Added — the manifests are now checked against the renderer
+
+- **`tests/test_ui_manifests.py`.** Nothing validated a manifest at load time:
+  `_renderSidebarWidget` looks a widget's `type` up in the renderer's registry
+  and returns silently on a miss, so a typo'd widget is a stat the table never
+  sees and never hears about. The new suite reads the valid widget types and
+  the four severity classes **out of the renderer itself**, and iterates every
+  `systems/*/` directory rather than a list of system names, so a new system or
+  a new widget is covered without editing the test. It also requires that a
+  bundled module ship a manifest, which is the assertion whose absence let #32
+  stay open, and that a module citing the ORC License carry a `NOTICE` beside
+  its rules.
+
+### Changed — documentation
+
+- **The README lists the games that are actually in the box.** The supported
+  table named only D&D 5e, so BRP had shipped without being discoverable from
+  the front page. All three modules are listed now, with what differs about
+  each one's sheet and a pointer to the licensing position.
+- **`SYSTEM-PORTING.md` step 3 is about writing `ui.json`**, not editing a
+  script, with a worked `class_map` and a note on valued conditions.
+- Links to the parent project now use its current path.
 
 ## [0.15.0] — 2026-09-16 — Creature defenses, narration badges, and a working SRD build
 
@@ -345,7 +544,7 @@ Legacy campaigns predate the field. The migrator backs `state.md` up before any 
 
 ### Companion development upstream
 
-The parent project, [`claude-dnd-skill`](https://github.com/Bobby-Gray/claude-dnd-skill), shipped v1.8.0 today using this pattern. The dnd5e module there now carries data for both of its published editions, with provenance preserved per record (CC-BY-4.0). otgm users running the dnd5e module will get those data files in a follow-up PR scoped to `systems/dnd5e/`.
+The parent project, [`claude-dnd-skill`](https://github.com/neuralinitiative/claude-dnd-skill), shipped v1.8.0 today using this pattern. The dnd5e module there now carries data for both of its published editions, with provenance preserved per record (CC-BY-4.0). otgm users running the dnd5e module will get those data files in a follow-up PR scoped to `systems/dnd5e/`.
 
 ---
 

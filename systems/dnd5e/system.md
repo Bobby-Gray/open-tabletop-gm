@@ -75,10 +75,21 @@ Key fields on every character sheet:
 | XP | Current / threshold for next level |
 
 **Character scripts:**
+
+Pass `--race` (and `--subrace`, where the race has one) and the script applies
+the racial ability bonuses itself, printing base / race / final. **Do not add
+them by hand before calling it.** The scores you pass are the BASE array; an
+unknown race exits non-zero rather than applying nothing, so a typo cannot
+produce a sheet that is quietly missing its bonuses.
+
 ```bash
 python3 systems/dnd5e/character.py calc --class fighter --level 1 \
     STR=15 DEX=10 CON=14 INT=9 WIS=11 CHA=13 \
     --proficient STR CON Athletics Intimidation
+
+python3 systems/dnd5e/character.py calc --class cleric --level 1 \
+    --race dwarf --subrace hill-dwarf \
+    STR=15 DEX=10 CON=14 INT=9 WIS=13 CHA=11
 
 python3 systems/dnd5e/character.py levelup --class fighter --from 1 --hp-roll 7 --con-mod 2
 python3 systems/dnd5e/character.py xp --level 1 --gained 150
@@ -144,10 +155,12 @@ Award Inspiration immediately when a player makes a bold roleplay choice, acts o
 
 ## SRD Data Lookup
 
-The bundled dataset covers 1,453 records: spells, equipment, magic items, conditions, monsters, class features.
+The bundled dataset covers 1,467 records: spells, equipment, magic items, conditions, monsters, races, subraces, class features.
 
 ```bash
 python3 systems/dnd5e/lookup.py spell "fireball"
+python3 systems/dnd5e/lookup.py race "dwarf"            # incl. ability_bonuses
+python3 systems/dnd5e/lookup.py subrace "hill dwarf"    # bonuses STACK on the race's
 python3 systems/dnd5e/lookup.py item "cloak of protection"
 python3 systems/dnd5e/lookup.py feature "sneak attack"
 python3 systems/dnd5e/lookup.py condition "poisoned"

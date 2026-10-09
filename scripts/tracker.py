@@ -56,24 +56,10 @@ _DISPLAY_DIR = _SCRIPTS_DIR.parent / "display"
 PUSH_STATS = str(_DISPLAY_DIR / "push_stats.py")
 SEND_PY    = str(_DISPLAY_DIR / "send.py")
 
-# 5e condition colours for display pills
-CONDITION_COLOURS = {
-    "unconscious":    "danger",
-    "paralyzed":      "danger",
-    "petrified":      "danger",
-    "stunned":        "danger",
-    "incapacitated":  "warn",
-    "frightened":     "warn",
-    "poisoned":       "warn",
-    "charmed":        "warn",
-    "exhausted":      "warn",
-    "grappled":       "info",
-    "restrained":     "info",
-    "prone":          "info",
-    "blinded":        "info",
-    "deafened":       "info",
-    "invisible":      "buff",
-}
+# Condition pill colours are NOT set here. The display resolves them from
+# the loaded system's `ui.json` (the conditions widget's `class_map`), and
+# falls back to a built-in 5e map when a system declares none. A dict in
+# this file would be read by nothing — see systems/UI-MANIFEST.md.
 
 
 def _state_path(campaign: str) -> str:

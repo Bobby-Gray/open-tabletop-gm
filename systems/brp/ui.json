@@ -1,0 +1,167 @@
+{
+  "manifest_version": 1,
+  "system": "brp",
+  "label": "Basic Roleplaying (BRP)",
+  "_comment": "Widgets self-hide when their bound field is absent, so this declares the superset. Three deliberate differences from the dnd5e manifest: there is NO XP bar, because BRP has no level system and advancement is per-skill; there is no spell-slot pip widget, because Power Points are a single pool rather than level-banded; and the attribute grid sets show_modifier:false, because BRP characteristics are used directly (a roll is characteristic x5, not a derived modifier). Sanity self-hides outside horror campaigns. See systems/UI-MANIFEST.md for the widget catalog.",
+  "sidebar": [
+    {
+      "type": "bar",
+      "label": "HP",
+      "bind": "hp",
+      "icon": "/icons/enemy.png",
+      "row_class": "sb-hp-row",
+      "num_class": "sb-hp-nums",
+      "fill_role": "hp-fill",
+      "cur": "current",
+      "max": "max",
+      "color": "hp",
+      "temp": "temp"
+    },
+    {
+      "type": "bar",
+      "label": "PP",
+      "bind": "power_points",
+      "cur": "current",
+      "max": "max",
+      "require_cur": true
+    },
+    {
+      "type": "bar",
+      "label": "SAN",
+      "bind": "sanity",
+      "cur": "current",
+      "max": "max",
+      "require_cur": true
+    },
+    {
+      "type": "stat_lines",
+      "lines": [
+        { "label": "DB", "bind": "damage_bonus" },
+        { "label": "Armour", "bind": "armour" },
+        { "label": "Major", "bind": "major_wound" },
+        { "label": "Move", "bind": "move" }
+      ]
+    },
+    {
+      "type": "tag_list",
+      "bind": "conditions",
+      "class_map": {
+        "unconscious": "danger",
+        "bleeding": "danger",
+        "impaled": "danger",
+        "dying": "danger",
+        "major wound": "warn",
+        "prone": "warn",
+        "stunned": "warn",
+        "fatigued": "warn",
+        "poisoned": "warn",
+        "insane": "warn",
+        "shaken": "info",
+        "grappled": "info",
+        "invisible": "buff",
+        "berserk": "buff"
+      }
+    },
+    {
+      "type": "tag_single",
+      "bind": "concentration",
+      "prefix": "◈ "
+    },
+    {
+      "type": "effects",
+      "bind": "effects"
+    },
+    {
+      "type": "badge_set",
+      "bind": "milestones"
+    }
+  ],
+  "sheet": {
+    "combat_strip": [
+      { "label": "HP", "bind": "hp", "format": "ratio" },
+      { "label": "Power Points", "bind": "power_points", "format": "ratio" },
+      { "label": "Sanity", "bind": "sanity", "format": "ratio" },
+      { "label": "Damage Bonus", "bind": "damage_bonus" },
+      { "label": "Armour", "bind": "armour" }
+    ],
+    "stat_grid": {
+      "label": "Characteristics",
+      "bind": "ability_scores",
+      "show_modifier": false,
+      "stats": [
+        { "key": "str", "label": "STR" },
+        { "key": "con", "label": "CON" },
+        { "key": "siz", "label": "SIZ" },
+        { "key": "int", "label": "INT" },
+        { "key": "pow", "label": "POW" },
+        { "key": "dex", "label": "DEX" },
+        { "key": "cha", "label": "CHA" },
+        { "key": "edu", "label": "EDU" }
+      ]
+    }
+  },
+  "block_badges": [
+    {
+      "icon": "attack",
+      "words": [
+        "attack", "attacks", "strike", "slash", "stab", "blade", "combat",
+        "initiative", "damage", "hit", "miss", "parry", "dodge", "impale",
+        "knockdown", "fumble", "special success", "critical", "major wound"
+      ]
+    },
+    {
+      "icon": "chat",
+      "words": [
+        "says", "replies", "whispers", "mutters", "speaks", "voice", "asks",
+        "answers", "dialogue", "turns to you", "persuade", "fast talk"
+      ]
+    },
+    {
+      "icon": "crystal_ball",
+      "words": [
+        "spell", "cast", "casts", "power points", "magic", "ritual", "rune",
+        "sigil", "psychic", "sorcery", "mythos", "sanity", "madness",
+        "unnatural", "eldritch"
+      ]
+    },
+    {
+      "icon": "treasure",
+      "words": [
+        "coin", "loot", "reward", "chest", "pouch", "found", "grants",
+        "gives you", "item", "cash", "artefact", "artifact"
+      ]
+    },
+    {
+      "icon": "location",
+      "words": [
+        "travel", "road", "path", "arrive", "enter", "city", "town", "village",
+        "ruins", "forest", "mountain", "shore", "coast", "door", "gate",
+        "library", "asylum"
+      ]
+    },
+    {
+      "icon": "heal",
+      "words": [
+        "heal", "rest", "recover", "restore", "health", "bandage", "first aid",
+        "medicine", "surgery", "wounds close", "regain", "stabilise",
+        "stabilize"
+      ]
+    },
+    {
+      "icon": "scroll",
+      "words": [
+        "quest", "mission", "task", "objective", "assignment", "letter",
+        "note", "clue", "message", "contract", "newspaper", "journal",
+        "tome", "manuscript"
+      ]
+    },
+    {
+      "icon": "faction",
+      "words": [
+        "faction", "guild", "order", "council", "alliance", "sworn", "cult",
+        "allegiance", "representative", "envoy", "society", "lodge"
+      ]
+    }
+  ],
+  "_comment_block_badges": "Keyword -> icon for the small mark on a narration block. English here because the bundled system module is English; a system or campaign in another language overrides this list rather than editing the display. Matching is substring-based, so it only works for the language these words are in — block KIND (npc/dice/tutor) is badged without any word list and works everywhere."
+}

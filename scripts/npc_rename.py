@@ -38,6 +38,8 @@ import json
 import pathlib
 import random
 import re
+
+import script_ranges
 import shutil
 import subprocess
 import sys
@@ -165,10 +167,16 @@ def _whole_word_pattern(name: str) -> re.Pattern:
     Word-boundary aware so 'Sera' doesn't match inside 'Seraphim' but does
     match in 'Sera Voss' or 'Sera,'. Multi-word names are joined with a
     flexible whitespace pattern so 'Aldric  Voss' (double space) still matches.
+
+    Anchored with `\b` until 2026-10-09, which made a rename a no-op for every
+    name written in a script without word delimiters. Measured: the anchored
+    pattern replaced the name in en, fr, ru and uk narration and in NONE of zh,
+    ja, ko or th -- so a Chinese or Japanese campaign could rename an NPC,
+    be told it worked, and find every line of prose still carrying the old
+    name. See scripts/script_ranges.py for why, and for the length gate that
+    keeps a single-character name anchored.
     """
-    parts = [re.escape(p) for p in name.strip().split()]
-    body = r"\s+".join(parts)
-    return re.compile(rf"\b{body}\b")
+    return script_ranges.whole_word_pattern(name)
 
 
 def find_hits(camp_dir: pathlib.Path, old: str,

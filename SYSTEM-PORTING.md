@@ -94,21 +94,24 @@ The display tracks `current / max` HP plus optional temp HP. For systems with mu
 
 ### 5. Conditions / status effects
 
-`tracker.py` has a colour-coded condition list hardcoded for D&D. To use it with your system, update the `CONDITION_COLOURS` dictionary near the top of `scripts/tracker.py`:
+Condition pills are coloured from your system's **`ui.json`**, under the conditions widget's `class_map`. Nothing in `scripts/` needs editing — a per-system manifest is what lets three systems ship side by side, which a shared dict in a script could not do.
 
-```python
-CONDITION_COLOURS = {
-    "unconscious":  "danger",   # red
-    "stunned":      "danger",
-    "frightened":   "warn",     # amber
-    "poisoned":     "warn",
-    "grappled":     "info",     # blue
-    "prone":        "info",
-    "invisible":    "buff",     # green
-}
+```jsonc
+// systems/<your-system>/ui.json
+{ "type": "tag_list", "bind": "conditions", "class_map": {
+    "unconscious": "danger",   // red
+    "stunned":     "danger",
+    "frightened":  "warn",     // amber
+    "poisoned":    "warn",
+    "grappled":    "info",     // blue
+    "prone":       "info",
+    "invisible":   "buff"      // green
+} }
 ```
 
-Replace these with your system's status effects. The four severity levels are `danger`, `warn`, `info`, `buff`. You don't need to use all four — use whichever make sense.
+List your system's status effects. The four severity classes are `danger`, `warn`, `info`, `buff` — those exact four strings, and no others; an unrecognised class renders an unstyled pill. You don't need to use all four. A system that declares no `class_map` falls back to the renderer's built-in 5e map, so authoring one is an upgrade rather than a prerequisite.
+
+For a system whose conditions carry a **value** (`frightened 2`), push the value in the tag and keep the `class_map` keyed on the bare name — the renderer matches on the name. `systems/pf2e/ui.json` is the worked example.
 
 ### 6. Recovery / rests
 
@@ -155,8 +158,8 @@ Work through each section of the template. The minimum viable system module has:
 
 You don't need to fill in everything before starting to play. Start with dice and health, play a session, note what the GM gets wrong, then fill in the gaps.
 
-### Step 3 — Update tracker.py conditions (optional)
-If your system has a specific set of named conditions and you want them colour-coded in the display, update `CONDITION_COLOURS` in `scripts/tracker.py` as shown above.
+### Step 3 — Author `ui.json` (optional)
+If your system has a specific set of named conditions, or a sidebar that should differ from the D&D one, write `systems/<your-system>/ui.json`. It is a ~40-line declarative manifest covering the sidebar widgets, the sheet's combat strip and attribute grid, and the condition `class_map` shown above. Full widget catalog and two worked examples: [`systems/UI-MANIFEST.md`](systems/UI-MANIFEST.md). Without one, the display falls back to the built-in D&D layout.
 
 ### Step 4 — Create a campaign
 Run `/gm new <campaign-name>` and specify your system when prompted. The skill will load your `system.md` alongside `SKILL.md` for every session.

@@ -157,13 +157,15 @@ For other systems, use tracker.py conditions to track incapacitation state.
 
 <!--
 List the status effects used in your system with severity tiers for colour-coding:
-  critical  → red pills in display sidebar
+  danger    → red pills in display sidebar
   warn      → amber pills
   info      → blue pills
   buff      → green pills
 
-You will need to update CONDITION_COLOURS in tracker.py for your system's conditions.
-See SYSTEM-PORTING.md for instructions.
+Those four strings are the whole vocabulary; anything else renders an unstyled pill.
+To colour them, list your conditions in the `class_map` of the conditions widget in
+systems/<your-system>/ui.json. Nothing in scripts/ needs editing.
+See SYSTEM-PORTING.md and systems/UI-MANIFEST.md for instructions.
 -->
 
 | Condition | Severity | Effect summary |
