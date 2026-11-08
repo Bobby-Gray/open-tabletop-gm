@@ -12,6 +12,103 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-11-08 — A Fourth Game, and a City to Play It In
+
+A fourth system module ships in this release: cyberpunk play compatible with
+*Cities Without Number*, written from the Cities Without Number SRD, which
+Sine Nomine Publishing released under CC0. It brings the rules layer, a
+character sidebar, rows in the combat and dice tables, and something the
+display could not do before — its own scenes. A system manifest may now
+declare the backgrounds its campaigns play against, so a cyberpunk campaign
+gets streets, rooftops and the net instead of the inn and the crypt, and a
+fantasy campaign never sees a neon sign.
+
+### Added — a module compatible with Cities Without Number
+
+- **`systems/cwn/system.md`** — the rules layer, table-dense like the PF2e
+  module: the flat attribute curve (14–17 is +1, not +2), 2d6 skill checks
+  with their difficulty tiers and the −1 for an untrained skill, the four
+  saves derived from level and attributes, 1d8 initiative, attacks against
+  separate Ranged and Melee AC, the Trauma Die and Trauma Target, Shock,
+  Mortally Wounded and Frail, and the d12 Major Injury table. Character
+  creation runs in the SRD's order — attributes, background with its
+  pick-or-roll skills, Edges, Foci (one, plus one per Focused Edge), the free
+  skill, hit points, contacts, gear — with every background's tables and
+  every Edge and Focus in a line. Cyberware with **System Strain** (the
+  maximum is the CON score, moved by lifestyle; implants add permanent
+  strain), the optional Alienation and chrome-syndrome rules, drugs, and
+  condensed hacking, drones and vehicles: the core loop, the key statistics
+  and a short table each, not the full catalogues.
+- **The die is named in every call.** A **Rolling** section tells the GM to
+  say "2d6" for a skill check, "d20" for a save or an attack and "1d8" for
+  initiative whenever players roll their own dice. The phone roller defaults
+  to a d20, so a bare "roll Sneak" comes back on the wrong die for the
+  system's most common roll.
+- **`systems/cwn/ui.json`** — HP, a **System Strain** bar and an **Access**
+  bar for hackers, both drawn only for a character that carries them; AC as
+  ranged/melee, Trauma Target, attack bonus and the four save targets as stat
+  lines; the attribute grid showing this system's modifiers; and a condition
+  map (mortally wounded, frail, the major injuries, jacked in, total defense)
+  using only the four severities the renderer styles.
+- **`systems/cwn/NOTICE`** — attribution to Kevin Crawford and Sine Nomine
+  Publishing and the CC0 1.0 deed. The module is compatible with Cities
+  Without Number, is not official, and is not affiliated with, endorsed by or
+  licensed by Sine Nomine Publishing. The default setting is not in the SRD
+  and is not included; neither is the SRD's optional magic chapter. The
+  module's own wording is AGPL-3.0-or-later like the rest of the project. A
+  module whose `system.md` cites CC0 must now carry a NOTICE with the deed
+  and that wording, as one citing the ORC License already had to.
+
+### Added — combat and dice rows for the new system
+
+- **`combat.py init`** rolls **1d8 + `dex_mod`** with **PCs winning ties**,
+  and the line reads `d8(5) + 1 DEX = 6` so it cannot be mistaken for D&D.
+  This is the SRD's individual-initiative option; its default of one roll per
+  side is a single `dice.py 1d8+<best mod>` per side, and `scripts/combat.md`
+  says so. An NPC with no `dex_mod` adds nothing, as the rules have it.
+- **`combat.py attack`** resolves d20 + bonus against AC and nothing else: a
+  natural 20 that falls short misses and a natural 1 that beats AC hits,
+  because the SRD gives attacks no natural-number rule. `--trauma 1d6/x3 --tt
+  7` rolls the Trauma Die on a hit and multiplies the whole damage, modifier
+  included, at or over the Trauma Target; `--shock 2/13` deals Shock on a miss
+  against AC 13 or lower and is the floor of a hit; `--crit` makes the hit
+  Traumatic, the Execution Attack rule. Without `--trauma` a hit prints the
+  manual step instead of skipping it. These options are refused for any
+  other system rather than ignored.
+- **`dice.py`** gains a `cwn` row in `NATURAL_RULES`: on a save a natural 20
+  always succeeds and a natural 1 always fails, whatever the target; attacks
+  and checks get no label. A multi-die roll now resolves against `--dc`, so a
+  2d6 skill check (or `3d6kh2` for a Specialist) reads `vs DC 8 — SUCCESS`;
+  before, `--dc` was silently ignored for anything but a single d20.
+
+### Added — a system can bring its own scenes
+
+- **The display's scenes were one fantasy set for every campaign.** A
+  cyberpunk campaign rested on "The Inn" and could only move to another
+  fantasy room: four lines of a neon street fight scored one point, for "The
+  Town", and a hacker in a network node scored nothing on any of the 17
+  scenes, so the background never moved. A manifest may now declare `scenes`
+  (in priority order) and a `default_scene`; a campaign on that system scores
+  against that set **instead of** the built-in one, through the same
+  whole-word scorer, margin and incumbent bonus. A system that declares
+  nothing keeps the built-in 17 scenes exactly, and the two sets never mix. A
+  viewer connecting mid-session is sent the set's current scene, and switching
+  to a campaign on another system puts that set's default on screen at once.
+- **Nine city scenes for Cities Without Number** — the street, a rooftop, a
+  club, a corporate tower, a clinic, a market, an apartment block, a
+  safehouse and the net — each with its own keywords, gradient and a particle
+  type the renderer draws. A scene missing any field is dropped, and a
+  manifest with none left falls back to the built-in set. The field is
+  documented in `SYSTEM-PORTING.md`, `systems/TEMPLATE.md` and
+  `systems/UI-MANIFEST.md`.
+
+### Changed — docs
+
+- The README lists four games, with a row and a licensing paragraph for the
+  new module; `scripts/combat.md` carries its initiative and attack row;
+  `SKILL-branches.md` and `SKILL-scripts.md` name its initiative key, its
+  attack options and the save rule.
+
 ## [0.17.0] — 2026-11-08 — Rules That Follow the Game You Are Playing
 
 Fifteen fixes in one release, so an existing install updates once and receives

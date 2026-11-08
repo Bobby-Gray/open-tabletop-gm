@@ -21,7 +21,7 @@ A GM framework that offloads everything mechanical to Python so the LLM can focu
 - <img src="docs/icons/scroll.png" height="18"> **Persistent campaigns** — state, world, NPCs, and character sheets survive across sessions in plain Markdown files
 - <img src="docs/icons/dagger.png" height="18"> **Python toolchain** — dice, combat initiative, HP tracking, timed effects, conditions, calendar, campaign search; all run locally with zero LLM involvement
 - <img src="docs/icons/crystal_ball.png" height="18"> **Cinematic display companion** — optional Flask web app that renders your session as a live display on any browser or TV, with a real-time stat sidebar, effect pills, and player input panel
-- <img src="docs/icons/dragon.png" height="18"> **Three game systems in the box** — D&D 5e, a PF2e-compatible module and Basic Roleplaying, each with its own rules layer and its own character sidebar; swap in any other TTRPG by writing a system module
+- <img src="docs/icons/dragon.png" height="18"> **Four game systems in the box** — D&D 5e, a PF2e-compatible module, Basic Roleplaying and a cyberpunk module compatible with Cities Without Number, each with its own rules layer and its own character sidebar; swap in any other TTRPG by writing a system module
 - <img src="docs/icons/spellbook.png" height="18"> **Campaign relationship graph** — typed-edge graph alongside the markdown campaign files, with verbatim source-anchors on every edge; `scene-context` query auto-pulled at `/gm load` to surface who-knows-whom in the current scene without re-reading full NPC files; designed to hold long-session continuity when context compaction strips files out of scope. Manual + query-only in this fork (no LLM dependency); see [`CHANGELOG.md`](CHANGELOG.md) for the why
 
 ---
@@ -43,7 +43,7 @@ systems/<your-system>/
 
 `SKILL.md` contains everything about *being a good GM*. `system.md` contains everything about *your specific game*. The GM model reads both at session start — it brings the craft, your system module brings the rules.
 
-**D&D 5e is the reference implementation.** It demonstrates what a complete system module looks like: dice conventions, ability scores, spell slots, conditions, death saves, SRD lookup, and character scripts. Two more ship alongside it — a PF2e-compatible module and Basic Roleplaying — and between them they show what actually varies: PF2e sheets store attribute *modifiers* with no scores to derive from, and BRP has no levels, so it has no XP bar and tracks Power Points and Sanity instead. None of that needed a line of display code; each system declares its own `ui.json`.
+**D&D 5e is the reference implementation.** It demonstrates what a complete system module looks like: dice conventions, ability scores, spell slots, conditions, death saves, SRD lookup, and character scripts. Three more ship alongside it — a PF2e-compatible module, Basic Roleplaying and a module compatible with Cities Without Number — and between them they show what actually varies: PF2e sheets store attribute *modifiers* with no scores to derive from, BRP has no levels, so it has no XP bar and tracks Power Points and Sanity instead, and Cities Without Number tracks System Strain beside HP and brings its own city scenes in place of the fantasy backgrounds. None of that needed a line of display code; each system declares its own `ui.json`.
 
 **Building a new system module** takes one file to start — a filled-in `systems/TEMPLATE.md` for your game. You can start with just dice resolution and health, play a session, then iterate. Full porting guide: [SYSTEM-PORTING.md](SYSTEM-PORTING.md).
 
@@ -56,11 +56,15 @@ systems/<your-system>/
 | D&D 5e | `systems/dnd5e/` | Full support — scripts, SRD dataset, character tools |
 | PF2e-compatible (ORC) | `systems/pf2e/` | Three-action economy, four degrees of success, hero points, focus spells. Rules module + display manifest; `combat.py` rolls Perception initiative and resolves Strikes to four degrees |
 | Basic Roleplaying (BRP) | `systems/brp/` | d100 roll-under, Power Points, optional Sanity. Rules module + display manifest; `combat.py` orders the fight by DEX rank |
+| Compatible with Cities Without Number | `systems/cwn/` | Cyberpunk: 2d6 skill checks, d20 saves and attacks, Trauma Die, System Strain, cyberware, hacking and drones. Rules module + display manifest with its own city scenes; `combat.py` rolls 1d8 + DEX initiative and resolves the Trauma Die and Shock |
 
-All three are rules modules the GM model reads, each with a display manifest so
+All four are rules modules the GM model reads, each with a display manifest so
 the character sidebar shows that system's own statistics — PF2e sheets store
-attribute *modifiers* with no scores to derive from, and BRP has no XP bar
-because it has no levels. None of them needs a line of display code.
+attribute *modifiers* with no scores to derive from, BRP has no XP bar because
+it has no levels, and a Cities Without Number character carries System Strain
+and, for a hacker, Access. A manifest can also bring its own background scenes:
+a Cities Without Number campaign plays on streets, rooftops and in the net
+instead of the inn and the crypt. None of them needs a line of display code.
 
 `combat.py` and `dice.py` read the campaign's `**System Module:**` and apply
 that system's rules — initiative stat and tie order, what a critical hit is,
@@ -68,10 +72,18 @@ and whether a natural 20 means anything on the roll in hand. A system they do
 not know is refused rather than given D&D arithmetic; adding one is a row in a
 table (see `scripts/combat.md`).
 
-The two non-D&D modules carry ORC-licensed rules content with attribution in
+The PF2e and BRP modules carry ORC-licensed rules content with attribution in
 their `NOTICE` files. The *Pathfinder* wordmark is Paizo's and is not licensed
 by the ORC License, so that module is named and labelled "PF2e-compatible
 (ORC)" — see `systems/pf2e/NOTICE` before renaming it.
+
+The Cities Without Number module is written from the Cities Without Number SRD
+by Kevin Crawford (Sine Nomine Publishing), which is dedicated to the public
+domain under CC0 1.0. It is compatible with Cities Without Number; it is not an
+official product and is not affiliated with, endorsed by or licensed by Sine
+Nomine Publishing. The game's default setting is not in the SRD and is not
+included, and neither is the SRD's optional magic chapter — see
+`systems/cwn/NOTICE`.
 
 **Adding your own:** Copy `systems/TEMPLATE.md` to `systems/<your-system>/system.md` and fill it in, then optionally add a `ui.json` for the sidebar ([systems/UI-MANIFEST.md](systems/UI-MANIFEST.md)). See [SYSTEM-PORTING.md](SYSTEM-PORTING.md) for a compatibility breakdown of popular systems (Vampire: The Masquerade, Cyberpunk RED, Warhammer 40k, Call of Cthulhu).
 
@@ -338,6 +350,8 @@ The server scans narration text for keywords and crossfades the background gradi
 | Night | midnight, moon, constellation | stars |
 | City / Town | market, cobble, district, crowd | rain |
 | + 7 more | mine, castle, ruins, desert, fire, temple, swamp | — |
+
+These are the built-in fantasy scenes. A system can declare its own set in its `ui.json`, and its campaigns then use only those: the Cities Without Number module ships nine — street, rooftop, club, corporate tower, clinic, market, apartment block, safehouse and the net — and a fantasy campaign never sees them.
 
 Scene transitions crossfade over ~2.5 seconds. Detection runs over a 20-chunk rolling window, and a challenger has to beat the scene already on screen by 2 points to take the room, with the incumbent carrying a bonus of 1 so it can hold its ground once its own keywords scroll out of the window. Before that margin existed a single keyword was enough to change the background, and two plausible scenes would trade it back and forth on a one-point edge. Keywords are matched as whole words, so `ward` no longer fires inside "deputy warden".
 

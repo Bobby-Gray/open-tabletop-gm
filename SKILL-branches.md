@@ -156,7 +156,7 @@ Each player message during an active session:
 ## `/gm combat start`
 
 1. Read `<skill-base>/scripts/combat.md`
-2. Collect combatants: name, HP, AC, type (pc/npc), and the system's initiative stat (`dex_mod` for dnd5e, `perception` for pf2e, `dex` for brp — see the table in `scripts/combat.md`)
+2. Collect combatants: name, HP, AC, type (pc/npc), and the system's initiative stat (`dex_mod` for dnd5e, `perception` for pf2e, `dex` for brp, `dex_mod` for cwn — see the table in `scripts/combat.md`)
 3. Run `combat.py init '<JSON>' -c <campaign>` → store STATE_JSON in `state.md → ## Active Combat`
 4. If display running: push turn order via `push_stats.py --turn-order`
 5. Enter COMBAT state

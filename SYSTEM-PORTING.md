@@ -27,7 +27,7 @@ These parts of the skill work identically for any tabletop RPG:
 - **Campaign file structure** — `state.md`, `world.md`, `npcs.md`, `session-log.md` are game-agnostic. A campaign is a campaign.
 - **Time and calendar** — `calendar.py` is fully configurable to any calendar system. You define the month names, day names, and month length.
 - **The display companion** — the cinematic display, stat sidebar, and effect pills work for any game. Health bars, resource pips, conditions, turn order — all generic.
-- **Scene detection** — the display companion's scene keyword system works for any setting. It reads the narration and adjusts the background accordingly.
+- **Scene detection** — the display companion reads the narration and crossfades the background to match. The built-in scenes are fantasy (an inn, a crypt, a temple); a system whose setting is somewhere else declares its own set in `ui.json` (see Step 3), and its campaigns then use that set instead of the built-in one.
 - **The 12 GM principles** — these apply to every TTRPG. Improvisation, consequence, NPC craft, pacing — universal.
 - **Narrative arc system** — both campaign modes work with any game system. *Improvised campaigns* get an auto-generated three-act dynamic arc at `/gm new` (six beats defined by consequence, not event; tracked and revised across sessions). *Structured campaigns* use `/gm import` to ingest a pre-written source document (PDF, markdown, DOCX, or plain text) and extract acts, chapters, key beats, and steering notes automatically. The arc operates above the system layer — it cares about story shape, not game mechanics.
 - **Campaign import** — `scripts/import_campaign.py` is fully system-agnostic. It extracts text from any source document and hands it to the GM model for structural analysis. The resulting campaign files use the same format regardless of what game system the source describes.
@@ -160,6 +160,25 @@ You don't need to fill in everything before starting to play. Start with dice an
 
 ### Step 3 — Author `ui.json` (optional)
 If your system has a specific set of named conditions, or a sidebar that should differ from the D&D one, write `systems/<your-system>/ui.json`. It is a ~40-line declarative manifest covering the sidebar widgets, the sheet's combat strip and attribute grid, and the condition `class_map` shown above. Full widget catalog and two worked examples: [`systems/UI-MANIFEST.md`](systems/UI-MANIFEST.md). Without one, the display falls back to the built-in D&D layout.
+
+**Scenes.** The same manifest may declare the system's own background scenes, which **replace** the built-in fantasy set for every campaign on that system (a system that declares none keeps the built-in set):
+
+```jsonc
+"default_scene": "cp_street",          // shown before the narration names a place
+"scenes": {                            // object order is priority order
+  "cp_street": {
+    "keywords": ["street", "alley", "neon", "sidewalk"],   // whole-word matches
+    "colors": ["#05060f", "#1a0c2e"],  // two-stop gradient, top then bottom
+    "accent": "#ff2bd6",
+    "particles": "rain",               // a type the renderer draws: embers, fireflies, smoke,
+                                       // dust, snow, stars, bubbles, sparks, sand, rain, drips,
+                                       // mist, leaves, ripples
+    "label": "The Street"
+  }
+}
+```
+
+Scoring is the built-in scorer: keyword hits over the last 20 chunks, and a challenger must beat the scene on screen by 2 with the incumbent holding a bonus of 1. A scene missing any of the five fields is dropped, and a manifest with no usable scene falls back to the built-in set. `systems/cwn/ui.json` is the worked example.
 
 ### Step 4 — Create a campaign
 Run `/gm new <campaign-name>` and specify your system when prompted. The skill will load your `system.md` alongside `SKILL.md` for every session.

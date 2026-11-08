@@ -22,10 +22,14 @@ Options:
                              labelled only where the active system gives them
                              a meaning for that kind of roll (D&D 5e: attacks
                              only; PF2e: any check, as a one-step shift in the
-                             degree of success). Without --vs nothing is
+                             degree of success; cwn: saves only, where a
+                             natural 20 always succeeds and a natural 1
+                             always fails). Without --vs nothing is
                              labelled, because a natural 20 on an ability
                              check is not a critical hit.
-    --dc N                   resolve against a DC (or AC, with --vs attack)
+    --dc N                   resolve against a DC (or AC, with --vs attack;
+                             a save target, with --vs save). Multi-die rolls
+                             such as a 2d6 skill check resolve against it too
     -c, --campaign NAME      read the system from the campaign's state.md
     --system NAME            override the system (dnd5e, pf2e, brp, ...)
 
@@ -109,11 +113,14 @@ def pf2e_degree(natural: int, total: int, dc: int) -> int:
 #                  automatic miss; on checks and saves a natural means nothing
 #   "degrees"      every check, save and attack has four degrees of success,
 #                  and a natural 20 / 1 moves the degree one step
+#   "save_auto"    a natural 20 on a SAVE always succeeds and a natural 1
+#                  always fails; attacks and checks have no natural rule
 # A system with no row gets no natural-number label at all — a DC still
 # resolves to success or failure. Supporting a system is adding a row.
 NATURAL_RULES = {
     "dnd5e": "attack_crit",
     "pf2e": "degrees",
+    "cwn": "save_auto",
 }
 
 
@@ -130,6 +137,23 @@ def d20_verdict(natural: int, total: int, vs: str = "", dc=None,
             if dc is not None:
                 return f"  vs AC {dc} — {'HIT' if total >= dc else 'MISS'}"
             return ""
+    elif rule == "save_auto" and vs == "save":
+        if dc is not None:
+            if natural in (1, 20):
+                ok = natural == 20
+                return (f"  vs save {dc} — {'SUCCESS' if ok else 'FAILURE'} "
+                        f"(natural {natural}: always {'succeeds' if ok else 'fails'})")
+            return f"  vs save {dc} — {'SUCCESS' if total >= dc else 'FAILURE'}"
+        if natural == 20:
+            return "  (natural 20: the save succeeds)"
+        if natural == 1:
+            return "  (natural 1: the save fails)"
+        return ""
+    elif rule == "save_auto" and vs == "attack":
+        # No natural rule on an attack: total against AC and nothing else.
+        if dc is not None:
+            return f"  vs AC {dc} — {'HIT' if total >= dc else 'MISS'}"
+        return ""
     elif rule == "degrees" and vs:
         if dc is not None:
             degree = pf2e_degree(natural, total, dc)
@@ -148,6 +172,14 @@ def d20_verdict(natural: int, total: int, vs: str = "", dc=None,
     if dc is not None:
         return f"  vs DC {dc} — {'SUCCESS' if total >= dc else 'FAILURE'}"
     return ""
+
+
+def _dc_verdict(total: int, dc) -> str:
+    """A multi-die roll against --dc: a 2d6 skill check, or 3d6kh2. No
+    natural-number rule applies to these in any bundled system."""
+    if dc is None:
+        return ""
+    return f"  vs DC {dc} — {'SUCCESS' if total >= dc else 'FAILURE'}"
 
 
 def format_modifier(mod):
@@ -193,7 +225,8 @@ def run(notation: str, silent: bool = False, vs: str = "", dc=None,
             drop_str = f"  (dropped: {dropped})" if dropped else ""
             mod_str = format_modifier(modifier)
             print(f"Rolls: {rolls}{drop_str}")
-            print(f"Kept ({keep_mode}{keep_count}): [{kept_str}]{mod_str} = {result}")
+            print(f"Kept ({keep_mode}{keep_count}): [{kept_str}]{mod_str} = {result}"
+                  f"{_dc_verdict(result, dc)}")
         return result
 
     result = sum(rolls) + modifier
@@ -205,7 +238,7 @@ def run(notation: str, silent: bool = False, vs: str = "", dc=None,
             print(f"Roll: {raw}{mod_str} = {result}{flag}")
         else:
             mod_str = format_modifier(modifier)
-            print(f"Rolls: {rolls}{mod_str} = {result}")
+            print(f"Rolls: {rolls}{mod_str} = {result}{_dc_verdict(result, dc)}")
     return result
 
 

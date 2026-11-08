@@ -235,6 +235,28 @@ If you always import pre-written sources for this system, note the typical struc
 
 ---
 
+## Display Scenes (optional)
+
+<!--
+The display companion crossfades its background to match the narration. Its
+built-in scenes are fantasy: an inn, a dungeon, a crypt, a temple, a forest.
+If your game is set somewhere else, declare your own set in
+systems/<your-system>/ui.json with "scenes" and "default_scene"; campaigns on
+your system then use ONLY your scenes, and every other system keeps the
+built-in ones. Each scene needs keywords, two gradient colours, an accent, a
+particle type the renderer draws and a label. Format and the particle list:
+SYSTEM-PORTING.md, Step 3. Worked example: systems/cwn/ui.json.
+
+List the places your game usually happens and the words narration uses for
+them — those become the keywords.
+-->
+
+| Scene | Keywords | Particles |
+|-------|----------|-----------|
+| [scene] | [words the narration uses for it] | [rain / dust / sparks / ...] |
+
+---
+
 ## Additional System Notes
 
 <!--

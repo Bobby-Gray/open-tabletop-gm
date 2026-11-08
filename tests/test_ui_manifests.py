@@ -210,6 +210,24 @@ class BundledSystemsShipManifestTests(unittest.TestCase):
                                     f"systems/{d.name}/system.md cites the ORC Licence "
                                     f"but systems/{d.name}/NOTICE is missing")
 
+    def test_a_module_citing_cc0_carries_a_notice(self):
+        """CC0 asks for no attribution, which is why the rule has to be
+        written down: a public-domain source is still a source, and its
+        NOTICE is where the not-official, not-affiliated wording lives."""
+        cited = [d for d in _system_dirs()
+                 if re.search(r"\bCC0\b", (d / "system.md").read_text(encoding="utf-8"))]
+        self.assertTrue(cited, "no bundled module cites CC0; the rule below checks nothing")
+        for d in cited:
+            with self.subTest(system=d.name):
+                notice = d / "NOTICE"
+                self.assertTrue(notice.is_file(),
+                                f"systems/{d.name}/system.md cites CC0 "
+                                f"but systems/{d.name}/NOTICE is missing")
+                text = notice.read_text(encoding="utf-8")
+                self.assertIn("creativecommons.org/publicdomain/zero/1.0", text)
+                self.assertRegex(text, r"(?i)not affiliated with")
+                self.assertRegex(text, r"(?i)endorsed")
+
 
 if __name__ == "__main__":
     unittest.main()

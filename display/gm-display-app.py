@@ -598,6 +598,86 @@ SCENE_PRIORITY = [
     "forest", "swamp", "castle", "ocean", "mountain", "desert", "ruins",
     "tavern", "city", "night",
 ]
+DEFAULT_SCENE = "tavern"   # we start in the inn
+
+# ─── Per-system scene sets ────────────────────────────────────────────────────
+# The set above is fantasy. A system manifest (systems/<name>/ui.json) may
+# declare its own `scenes` — an object of scene definitions in priority order —
+# and a `default_scene`; a campaign on that system then scores against that set
+# INSTEAD of this one, so a cyberpunk street never reads as "The Inn" and a
+# fantasy campaign never sees a neon scene. A system that declares nothing keeps
+# the built-in set exactly.
+
+_SCENE_FIELDS = ("keywords", "colors", "accent", "particles", "label")
+
+
+def _valid_scene(spec) -> bool:
+    """A scene the renderer can draw: keywords, a two-stop gradient, an accent,
+    a particle type and a label. Anything less is dropped rather than shipped
+    to the browser half-formed."""
+    if not isinstance(spec, dict) or not all(spec.get(k) for k in _SCENE_FIELDS):
+        return False
+    kws, colors = spec["keywords"], spec["colors"]
+    return (isinstance(kws, list) and all(isinstance(k, str) and k.strip() for k in kws)
+            and isinstance(colors, list) and len(colors) == 2
+            and all(isinstance(c, str) for c in colors)
+            and all(isinstance(spec[k], str) for k in ("accent", "particles", "label")))
+
+
+def _manifest_scene_set(manifest) -> Optional[tuple]:
+    """(scenes, priority, default) from a manifest's `scenes`, or None when it
+    declares none that are usable. Object order is priority order."""
+    if not isinstance(manifest, dict):
+        return None
+    declared = manifest.get("scenes")
+    if not isinstance(declared, dict):
+        return None
+    scenes = {name: {k: spec[k] for k in _SCENE_FIELDS}
+              for name, spec in declared.items() if _valid_scene(spec)}
+    if not scenes:
+        return None
+    default = manifest.get("default_scene")
+    if default not in scenes:
+        default = next(iter(scenes))
+    return scenes, list(scenes), default
+
+
+_BUILTIN_SCENE_SET = (SCENES, SCENE_PRIORITY, DEFAULT_SCENE)
+_scene_set_cache: dict = {"key": None, "value": _BUILTIN_SCENE_SET}
+
+
+def _active_scene_set() -> tuple:
+    """(scenes, priority, default) for the active campaign's system.
+
+    Resolved the way `_load_ui_manifest` resolves the sidebar: active campaign
+    → `**System Module:**` → systems/<module>/ui.json. No campaign, no manifest,
+    or a manifest without usable `scenes` all mean the built-in set. Cached on
+    the manifest's path and mtime, because this runs on every narration chunk.
+    """
+    name = _active_campaign_name()
+    if not name:
+        return _BUILTIN_SCENE_SET
+    try:
+        path = _SYSTEMS_DIR / _campaign_system(name) / "ui.json"
+        key = (str(path), path.stat().st_mtime_ns)
+    except (OSError, ValueError):
+        return _BUILTIN_SCENE_SET
+    if _scene_set_cache["key"] != key:
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, ValueError):
+            manifest = None
+        _scene_set_cache["key"] = key
+        _scene_set_cache["value"] = _manifest_scene_set(manifest) or _BUILTIN_SCENE_SET
+    return _scene_set_cache["value"]
+
+
+def _current_scene() -> dict:
+    """The scene on screen, as a payload. A name left over from another set
+    (the campaign changed systems) reads as that set's default."""
+    scenes, _, default = _active_scene_set()
+    name = _current_scene_name if _current_scene_name in scenes else default
+    return scenes[name] | {"name": name}
 
 # ─── ANSI / TUI chrome stripping ─────────────────────────────────────────────
 
@@ -809,7 +889,7 @@ def _clean(text: str) -> str:
 
 # ─── Scene detection ──────────────────────────────────────────────────────────
 
-_current_scene_name: str = "tavern"   # default — we start in the inn
+_current_scene_name: str = DEFAULT_SCENE
 _scene_buffer: list[str] = []
 _BUFFER_WINDOW = 20   # analyse last N cleaned chunks together
 
@@ -867,9 +947,13 @@ def _detect_scene(text: str) -> Optional[dict]:
 
     window = " ".join(_scene_buffer)
 
+    # The campaign's system decides which scenes exist at all.
+    scenes, priority, default = _active_scene_set()
+    current = _current_scene_name if _current_scene_name in scenes else default
+
     scores: dict[str, int] = {}
-    for scene_name in SCENE_PRIORITY:
-        scene = SCENES[scene_name]
+    for scene_name in priority:
+        scene = scenes[scene_name]
         score = sum(len(_cached_keyword_pattern(kw).findall(window))
                     for kw in scene["keywords"])
         if score > 0:
@@ -879,16 +963,28 @@ def _detect_scene(text: str) -> Optional[dict]:
         return None
 
     best = max(scores, key=lambda k: scores[k])
-    if best == _current_scene_name:
+    if best == current:
         return None   # no change
-    # `_current_scene_name` may not be in `scores` at all once its keywords
-    # have scrolled out of the window -- that is the case the bonus is for.
-    held = scores.get(_current_scene_name, 0) + _SCENE_INCUMBENT_BONUS
+    # `current` may not be in `scores` at all once its keywords have scrolled
+    # out of the window -- that is the case the bonus is for.
+    held = scores.get(current, 0) + _SCENE_INCUMBENT_BONUS
     if scores[best] - held < _SCENE_SWITCH_MARGIN:
         return None
 
     _current_scene_name = best
-    return SCENES[best] | {"name": best}
+    return scenes[best] | {"name": best}
+
+
+def _switch_scene_set() -> None:
+    """After a campaign change: if the scene on screen is not in the new
+    campaign's set, reset to that set's default and tell the browsers."""
+    global _current_scene_name, _scene_buffer
+    scenes, _, default = _active_scene_set()
+    if _current_scene_name in scenes:
+        return
+    _current_scene_name = default
+    _scene_buffer = []
+    _broadcast({"scene": _current_scene()})
 
 
 # ─── SSE client registry ─────────────────────────────────────────────────────
@@ -1352,6 +1448,13 @@ def chunk():
                 f.write(str(data["campaign"]).strip())
             _load_log()
             _load_tail()
+        except Exception:
+            pass
+        # A campaign on another system brings another scene set: put that
+        # set's scene on screen now rather than leaving the old one up until
+        # the narration happens to name a new place.
+        try:
+            _switch_scene_set()
         except Exception:
             pass
         # Resolve and stash the system version for this campaign so the sidebar
@@ -2579,8 +2682,7 @@ def stream():
 
     # Send the current scene immediately on connect so the browser
     # starts with the right background even mid-session.
-    initial_scene = SCENES[_current_scene_name] | {"name": _current_scene_name}
-    q.put_nowait({"scene": initial_scene})
+    q.put_nowait({"scene": _current_scene()})
 
     # Replay recent entries so late-connecting / reconnecting browsers catch up.
     # Sent as a typed batch so the browser can render each item (dm/player/dice) correctly.

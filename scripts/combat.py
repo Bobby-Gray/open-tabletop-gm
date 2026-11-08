@@ -13,6 +13,8 @@ Usage:
                                  "init_mod" (and "init_label") to roll another
                                  skill instead, e.g. Stealth for an ambusher
             brp    "dex"         no roll; DEX rank, highest first
+            cwn    "dex_mod"     1d8 + DEX modifier, PCs win ties (the
+                                 SRD's individual-initiative option)
 
     python3 combat.py tracker <state_json>
         Prints the current combat tracker table from a JSON state blob.
@@ -22,6 +24,13 @@ Usage:
         Resolves a single attack roll and damage. --crit makes a hit a
         critical hit (an attack on a paralysed target from within reach, an
         expanded critical range the GM has already checked).
+
+        cwn only: [--trauma <die>/x<rating>] [--tt <trauma target>] [--shock <pts>/<ac>]
+        --trauma rolls the weapon's Trauma Die on a hit against --tt (default
+        6, an unarmoured human); at or over it the damage is multiplied by the
+        rating. --shock applies the weapon's Shock on a miss when --ac is at or
+        under its AC ("2/13", or "5/-" for any AC), and is the floor of a hit.
+        --crit makes the hit Traumatic (an Execution Attack) and needs --trauma.
 
 The system is read from `**System Module:**` in the campaign's state.md (the
 resolution scripts/paths.py uses everywhere else), or given with --system. With
@@ -103,6 +112,11 @@ INITIATIVE = {
               "ties": "foes_first", "choose": True, "required": True},
     "brp":   {"die": None, "stat": "dex", "label": "DEX", "ties": "none",
               "choose": False, "required": True},
+    # The SRD's default is one roll per SIDE (1d8 + the side's best DEX mod);
+    # its optional individual initiative is the per-combatant form this script
+    # rolls. NPCs usually add nothing, so a missing dex_mod is 0.
+    "cwn":   {"die": 8, "stat": "dex_mod", "label": "DEX", "ties": "pcs_first",
+              "choose": False, "required": False},
 }
 
 
@@ -296,25 +310,129 @@ def format_attack_pf2e(r: dict) -> str:
     return "\n".join(lines)
 
 
+def parse_trauma(spec: str) -> tuple:
+    """"1d8/x3" -> ("1d8", 3). The die may carry a bonus ("1d8+1/x3")."""
+    m = re.match(r'^\s*(\d*d\d+(?:[+-]\d+)?)\s*/\s*x?(\d+)\s*$', str(spec).lower())
+    if not m:
+        raise CombatError(f"bad --trauma {spec!r}: expected <die>/x<rating>, e.g. 1d8/x3")
+    return m.group(1), int(m.group(2))
+
+
+def parse_shock(spec: str) -> tuple:
+    """"2/13" -> (2, 13); "5/-" -> (5, None), Shock that applies at any AC."""
+    m = re.match(r'^\s*(\d+)\s*/\s*(?:ac\s*)?(\d+|-|any)\s*$', str(spec).lower())
+    if not m:
+        raise CombatError(f"bad --shock {spec!r}: expected <points>/<ac>, e.g. 2/13 or 5/-")
+    return int(m.group(1)), (None if m.group(2) in ("-", "any") else int(m.group(2)))
+
+
+def resolve_attack_cwn(atk_bonus: int, target_ac: int, dmg_notation: str,
+                       is_crit: bool = False, trauma: str = "", tt: int = 6,
+                       shock: str = "") -> dict:
+    """Cities Without Number: d20 + attack bonus against the target's Ranged
+    or Melee AC, and nothing else decides the hit — no natural 20 or 1.
+
+    The big hit is the Trauma Die, rolled on a hit against the target's Trauma
+    Target; at or over it the TOTAL damage is multiplied by the weapon's Trauma
+    Rating. Without `trauma` the die is left to the GM and the output says so.
+    `shock` deals its points on a miss when the target's AC is at or under the
+    Shock AC, and a hit never deals less. `is_crit` makes a hit Traumatic, the
+    Execution Attack rule.
+    """
+    die, rating = parse_trauma(trauma) if trauma else ("", 0)
+    if is_crit and not die:
+        raise CombatError("--crit in cwn makes the hit a Traumatic Hit, which "
+                          "needs the weapon's --trauma <die>/x<rating>")
+    shock_pts, shock_ac = parse_shock(shock) if shock else (0, None)
+    shock_applies = bool(shock) and (shock_ac is None or target_ac <= shock_ac)
+
+    raw = _d(20)
+    total = raw + atk_bonus
+    hit = total >= target_ac
+    result = {
+        "d20": raw,
+        "attack_bonus": atk_bonus,
+        "total": total,
+        "target_ac": target_ac,
+        "hit": hit,
+        "crit": False,
+        "fumble": False,
+        "trauma_die": die,
+        "trauma_target": tt,
+        "shock": shock_pts if shock_applies else 0,
+    }
+    if hit:
+        dmg, rolls = dice(dmg_notation)
+        result["damage_rolled"] = dmg
+        result["damage_rolls"] = rolls
+        if die:
+            t_roll, _ = dice(die)
+            traumatic = is_crit or t_roll >= tt
+            result.update(trauma_roll=t_roll, traumatic=traumatic, trauma_rating=rating)
+            if traumatic:
+                dmg *= rating
+        if shock_applies and dmg < shock_pts:
+            dmg = shock_pts
+        result["damage"] = dmg
+    elif shock_applies:
+        result["damage"] = shock_pts
+    return result
+
+
+def format_attack_cwn(r: dict) -> str:
+    lines = [f"Attack: d20({r['d20']}) + {r['attack_bonus']} = {r['total']} vs AC "
+             f"{r['target_ac']} — {'HIT' if r['hit'] else 'MISS'}"]
+    if r["hit"]:
+        lines.append(f"Damage: {r['damage_rolls']} + mod = {r['damage_rolled']}")
+        if r["trauma_die"]:
+            if r["traumatic"]:
+                why = "Execution Attack" if r["trauma_roll"] < r["trauma_target"] else "TRAUMATIC HIT"
+                lines.append(f"Trauma: {r['trauma_die']}({r['trauma_roll']}) vs TT "
+                             f"{r['trauma_target']} — {why} x{r['trauma_rating']} = "
+                             f"{r['damage_rolled'] * r['trauma_rating']} damage")
+            else:
+                lines.append(f"Trauma: {r['trauma_die']}({r['trauma_roll']}) vs TT "
+                             f"{r['trauma_target']} — not traumatic")
+        else:
+            lines.append("Trauma: roll the weapon's Trauma Die against the target's "
+                         "Trauma Target (or pass --trauma <die>/x<rating> --tt N)")
+        if r["shock"] and r["damage"] == r["shock"] and r["damage"] > r["damage_rolled"]:
+            lines.append(f"Shock floor: a hit never deals less than its Shock — {r['damage']} damage")
+    elif r["shock"]:
+        lines.append(f"Shock: {r['shock']} damage on the miss")
+    return "\n".join(lines)
+
+
 # system -> (resolver, formatter). A system with no row has no d20-against-AC
 # attack (BRP rolls a percentile skill against a defence), and `attack` says so
 # rather than applying another system's arithmetic.
 ATTACK_RESOLVERS = {
     "dnd5e": (resolve_attack, format_attack),
     "pf2e":  (resolve_attack_pf2e, format_attack_pf2e),
+    "cwn":   (resolve_attack_cwn, format_attack_cwn),
+}
+
+# Options a system's resolver takes beyond the shared four. Passing one to a
+# system that has no such rule is refused rather than ignored.
+ATTACK_OPTIONS = {
+    "cwn": ("trauma", "tt", "shock"),
 }
 
 
 def attack(system: str, atk_bonus: int, target_ac: int, dmg_notation: str,
-           is_crit: bool = False) -> str:
+           is_crit: bool = False, **options) -> str:
     if system not in ATTACK_RESOLVERS:
         known = ", ".join(sorted(ATTACK_RESOLVERS))
         raise CombatError(
             f"`attack` has no resolver for system '{system}' (known: {known}). "
             f"Resolve the attack as systems/{system}/system.md describes, "
             f"rolling with dice.py.")
+    extra = sorted(set(options) - set(ATTACK_OPTIONS.get(system, ())))
+    if extra:
+        flags = ", ".join(f"--{k}" for k in extra)
+        raise CombatError(f"{flags} has no meaning in system '{system}'")
     resolver, formatter = ATTACK_RESOLVERS[system]
-    return formatter(resolver(atk_bonus, target_ac, dmg_notation, is_crit))
+    return formatter(resolver(atk_bonus, target_ac, dmg_notation, is_crit, **options))
 
 
 def _split_system_flags(argv: list) -> tuple:
@@ -369,7 +487,12 @@ def main(argv: list) -> int:
             ac = int(args[args.index("--ac") + 1])
             dmg = args[args.index("--dmg") + 1]
             crit = "--crit" in args
-            print(attack(system, atk, ac, dmg, crit))
+            options = {}
+            for flag in ("--trauma", "--tt", "--shock"):
+                if flag in args:
+                    value = args[args.index(flag) + 1]
+                    options[flag[2:]] = int(value) if flag == "--tt" else value
+            print(attack(system, atk, ac, dmg, crit, **options))
 
         else:
             print(f"Unknown command: {cmd}")

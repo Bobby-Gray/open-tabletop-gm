@@ -30,9 +30,12 @@ Say what the d20 is for with `--vs check|save|attack`, and optionally `--dc N`
 (the AC, for an attack). A natural 20 or 1 is labelled only where the campaign's
 system gives it a meaning: in D&D 5e that is attack rolls only (a critical hit,
 an automatic miss); in PF2e any check, as a one-step shift in the degree of
-success, which `--dc` resolves to all four degrees. Without `--vs` nothing is
-labelled — a natural 20 on an ability check is not a critical hit. The system
-comes from `-c <campaign>` (its `**System Module:**`) or `--system <name>`.
+success, which `--dc` resolves to all four degrees; in Cities Without Number
+saves only (a natural 20 always succeeds, a natural 1 always fails). Without
+`--vs` nothing is labelled — a natural 20 on an ability check is not a critical
+hit. The system comes from `-c <campaign>` (its `**System Module:**`) or
+`--system <name>`. `--dc` also resolves a multi-die roll, such as a 2d6 skill
+check (`dice.py 2d6+1 --dc 8`).
 
 ```bash
 python3 <skill-base>/scripts/dice.py d20+6 --vs attack --dc 15 -c my-campaign
@@ -47,13 +50,14 @@ python3 <skill-base>/scripts/dice.py d20+4 --vs save --dc 18 --system pf2e
 # Roll initiative and print tracker (rules follow the campaign's system; see scripts/combat.md)
 python3 <skill-base>/scripts/combat.py init '<JSON>' -c <campaign>
 # dnd5e JSON: [{"name":"Aldric","dex_mod":1,"hp":134,"ac":20,"type":"pc"}, ...]
-# pf2e uses "perception", brp uses "dex" in place of "dex_mod"
+# pf2e uses "perception", brp uses "dex" in place of "dex_mod"; cwn uses "dex_mod" with a d8
 
 # Reprint tracker from saved state
 python3 <skill-base>/scripts/combat.py tracker '<JSON>' <round_num>
 
-# Resolve a single attack (dnd5e and pf2e)
+# Resolve a single attack (dnd5e, pf2e and cwn)
 python3 <skill-base>/scripts/combat.py attack --atk 10 --ac 20 --dmg 2d6+5 -c <campaign>
+# cwn: add --trauma 1d6/x3 --tt 6 to roll the Trauma Die, --shock 2/13 for Shock on a miss
 ```
 
 `init` outputs a `STATE_JSON:` line — store it in `state.md` under `## Active Combat` between turns.

@@ -56,6 +56,9 @@ shows it.
 }
 ```
 
+Two optional top-level fields, `scenes` and `default_scene`, give the system
+its own display backgrounds — see [Scenes](#scenes) below.
+
 The card's name / race·class·level / background header is universal and rendered
 for every system (fields self-hide when empty), so it isn't in the manifest.
 Faction, quest, and turn-order panels are global and system-agnostic — also out of
@@ -118,6 +121,34 @@ shows the value directly — the right behaviour for dice-pool systems where the
 The rest of the sheet modal (attacks / spells / features / inventory /
 relationships) is already field-driven and self-hiding — it renders whatever the
 pushed `sheet` object contains, for any system, no manifest needed.
+
+## Scenes
+
+The display's background follows the narration: keyword hits are scored over
+the last 20 chunks and the scene with the most takes the screen, by a margin.
+The built-in scenes are fantasy. A manifest that declares `scenes` replaces
+them for campaigns on that system:
+
+```jsonc
+"default_scene": "cp_street",
+"scenes": {
+  "cp_net":    { "keywords": ["cyberspace", "node", "jacked in"], "colors": ["#000814", "#001d3d"],
+                 "accent": "#00e5ff", "particles": "fireflies", "label": "The Net" },
+  "cp_street": { "keywords": ["street", "alley", "neon"], "colors": ["#05060f", "#1a0c2e"],
+                 "accent": "#ff2bd6", "particles": "rain", "label": "The Street" }
+}
+```
+
+- Object order is priority order: on an exact tie the earlier scene wins, so
+  list the specific places before the general ones.
+- `particles` must be a key of `PARTICLE_COUNT` in
+  `display/templates/index.html`; `tests/test_scene_sets.py` checks every
+  declared scene against it.
+- Keywords match as whole words and use the same margin and incumbent bonus
+  as the built-in set.
+- A system that declares no `scenes` keeps the built-in set exactly; the two
+  never mix. A scene missing a field is dropped, and a manifest with none left
+  falls back to the built-in set.
 
 ## Illustrative target — Shadowrun 5e
 

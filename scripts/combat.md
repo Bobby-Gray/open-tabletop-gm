@@ -23,13 +23,18 @@ Say what the d20 is for with `--vs check|save|attack`, and optionally `--dc N`
 (the AC, for an attack). A natural 20 or 1 is labelled only where the campaign's
 system gives it a meaning: in D&D 5e that is attack rolls only (a critical hit,
 an automatic miss); in PF2e any check, as a one-step shift in the degree of
-success, which `--dc` resolves to all four degrees. Without `--vs` nothing is
-labelled — a natural 20 on an ability check is not a critical hit. The system
-comes from `-c <campaign>` (its `**System Module:**`) or `--system <name>`.
+success, which `--dc` resolves to all four degrees; in Cities Without Number
+saves only (a natural 20 always succeeds, a natural 1 always fails — attacks
+have no natural rule). Without `--vs` nothing is labelled — a natural 20 on an
+ability check is not a critical hit. The system comes from `-c <campaign>` (its
+`**System Module:**`) or `--system <name>`. A multi-die roll resolves against
+`--dc` too, which is how a 2d6 skill check is rolled.
 
 ```bash
 python3 $SKILL/scripts/dice.py d20+6 --vs attack --dc 15 -c $CAMP
 python3 $SKILL/scripts/dice.py d20+4 --vs save --dc 18 --system pf2e
+python3 $SKILL/scripts/dice.py 2d6+1 --dc 8                      # cwn skill check
+python3 $SKILL/scripts/dice.py d20 --vs save --dc 14 --system cwn
 ```
 
 ---
@@ -61,6 +66,7 @@ D&D 5e. Each system's initiative stat goes in the combatant JSON under its own k
 | `dnd5e` | d20 + DEX modifier | `dex_mod` | higher DEX modifier first | natural 20 hits and crits (dice doubled), natural 1 misses |
 | `pf2e` | d20 + Perception modifier | `perception` | foes before PCs | four degrees: beat AC by 10 to crit, natural 20/1 shift one step; a crit doubles all damage |
 | `brp` | no roll — DEX rank, highest first | `dex` | listed order (GM's call) | not supported — resolve the percentile attack and defence per `systems/brp/system.md` |
+| `cwn` | 1d8 + DEX modifier (individual initiative) | `dex_mod` (NPCs may omit it) | PCs before foes | d20 + bonus vs AC, no natural rule and no crit; `--trauma <die>/x<rating> --tt N` rolls the Trauma Die on a hit, `--shock <pts>/<ac>` applies Shock on a miss |
 
 - **PF2e:** a scene can call for a different initiative skill for one combatant
   (Stealth for an ambusher, Deception for a bluff). Give that combatant
@@ -69,6 +75,14 @@ D&D 5e. Each system's initiative stat goes in the combatant JSON under its own k
   into `--atk` yourself.
 - **BRP:** `ac` is optional in the JSON (the tracker shows `—`); armour reduces
   damage in this system rather than being a target number.
+- **Cities Without Number:** the rules' default is one initiative roll per
+  SIDE (1d8 + the side's best DEX modifier); `init` rolls the optional
+  individual form. For side initiative roll `dice.py 1d8+<best mod>` once per
+  side instead. Pass the target's Ranged or Melee AC to `--ac` as the attack
+  requires. Without `--trauma`, a hit prints a reminder to roll the weapon's
+  Trauma Die against the target's Trauma Target by hand. `--crit` makes a hit
+  Traumatic (an Execution Attack) and needs `--trauma`; `--trauma`, `--tt` and
+  `--shock` are refused for any other system.
 - **Any other system:** `init` and `attack` refuse with a message rather than
   apply another system's arithmetic. Add a row to `INITIATIVE` (and, for a
   d20-against-AC system, `ATTACK_RESOLVERS`) in `scripts/combat.py`, or run

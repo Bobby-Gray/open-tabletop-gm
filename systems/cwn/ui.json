@@ -1,0 +1,280 @@
+{
+  "manifest_version": 1,
+  "system": "cwn",
+  "label": "Compatible with Cities Without Number",
+  "_comment": "Widgets self-hide when their bound field is absent, so this declares the superset. Differences from the dnd5e manifest: a System Strain bar (current includes permanent strain; max is the CON score adjusted by lifestyle) and an Access bar for hackers, both require_cur so they draw only for a character that has them; two ACs, because ranged and melee attacks target different numbers; Trauma Target and the four save targets as stat lines; no hit dice and no spell slots. The attribute grid shows the pushed modifier as-is, because this system's curve is flatter than the d20 one (14-17 is +1) and the renderer derives nothing. No Effort line: Effort belongs to the SRD's magic chapter, which this module omits. See systems/UI-MANIFEST.md for the widget catalog.",
+  "sidebar": [
+    {
+      "type": "bar",
+      "label": "HP",
+      "bind": "hp",
+      "icon": "/icons/enemy.png",
+      "row_class": "sb-hp-row",
+      "num_class": "sb-hp-nums",
+      "fill_role": "hp-fill",
+      "cur": "current",
+      "max": "max",
+      "color": "hp",
+      "temp": "temp"
+    },
+    {
+      "type": "bar",
+      "label": "Strain",
+      "bind": "system_strain",
+      "icon": "/icons/potion.png",
+      "cur": "current",
+      "max": "max",
+      "require_cur": true
+    },
+    {
+      "type": "bar",
+      "label": "Access",
+      "bind": "access",
+      "icon": "/icons/focus.png",
+      "cur": "current",
+      "max": "max",
+      "require_cur": true
+    },
+    {
+      "type": "bar",
+      "label": "XP",
+      "bind": "xp",
+      "icon": "/icons/ability.png",
+      "row_class": "sb-xp-row",
+      "num_class": "sb-xp-nums",
+      "fill_role": "xp-fill",
+      "fill_class": "sb-xp-bar",
+      "cur": "current",
+      "max": "next",
+      "require_cur": true
+    },
+    {
+      "type": "stat_lines",
+      "lines": [
+        { "label": "AC", "bind": "ac" },
+        { "label": "TT", "bind": "trauma_target" },
+        { "label": "Atk", "bind": "attack_bonus" },
+        { "label": "Phys", "bind": "saves.physical" },
+        { "label": "Evas", "bind": "saves.evasion" },
+        { "label": "Ment", "bind": "saves.mental" },
+        { "label": "Luck", "bind": "saves.luck" }
+      ],
+      "_comment": "Push ac as \"16/13\" (ranged/melee). Save values are TARGETS to roll at or over on a d20, not bonuses."
+    },
+    {
+      "type": "tag_list",
+      "bind": "conditions",
+      "class_map": {
+        "mortally wounded": "danger",
+        "unconscious": "danger",
+        "coma": "danger",
+        "internal damage": "danger",
+        "brain damage": "danger",
+        "psychosis": "danger",
+        "frail": "warn",
+        "gut wound": "warn",
+        "blinded": "warn",
+        "leg ruined": "warn",
+        "arm ruined": "warn",
+        "stunned": "warn",
+        "poisoned": "warn",
+        "grappled": "info",
+        "prone": "info",
+        "surprised": "info",
+        "jacked in": "info",
+        "total defense": "buff",
+        "hidden": "buff"
+      }
+    },
+    {
+      "type": "effects",
+      "bind": "effects"
+    },
+    {
+      "type": "badge_set",
+      "bind": "milestones"
+    }
+  ],
+  "sheet": {
+    "combat_strip": [
+      { "label": "HP", "bind": "hp", "format": "ratio" },
+      { "label": "Strain", "bind": "system_strain", "format": "ratio" },
+      { "label": "AC (R/M)", "bind": "ac" },
+      { "label": "Trauma Target", "bind": "trauma_target" },
+      { "label": "Attack", "bind": "attack_bonus" },
+      { "label": "Access", "bind": "access", "format": "ratio" }
+    ],
+    "stat_grid": {
+      "label": "Attributes",
+      "bind": "ability_scores",
+      "show_modifier": true,
+      "stats": [
+        { "key": "str", "label": "STR" },
+        { "key": "dex", "label": "DEX" },
+        { "key": "con", "label": "CON" },
+        { "key": "int", "label": "INT" },
+        { "key": "wis", "label": "WIS" },
+        { "key": "cha", "label": "CHA" }
+      ],
+      "_comment": "Push { \"str\": {\"score\": 14, \"mod\": \"+1\"}, ... } with the modifier from this system's curve: 3 is -2, 4-7 -1, 8-13 +0, 14-17 +1, 18 +2."
+    }
+  },
+  "default_scene": "cp_street",
+  "scenes": {
+    "cp_net": {
+      "keywords": [
+        "cyberspace", "jack in", "jacks in", "jacked in", "node", "avatar",
+        "demon", "barrier", "datafile", "firewall", "watchdog", "server",
+        "network", "the net"
+      ],
+      "colors": ["#000814", "#001d3d"],
+      "accent": "#00e5ff",
+      "particles": "fireflies",
+      "label": "The Net"
+    },
+    "cp_clinic": {
+      "keywords": [
+        "clinic", "surgery", "operating table", "scalpel", "cyberdoc",
+        "street doc", "implant", "anesthetic", "gurney", "sterile",
+        "medkit", "stitches"
+      ],
+      "colors": ["#00140f", "#002a22"],
+      "accent": "#39ff9f",
+      "particles": "bubbles",
+      "label": "The Clinic"
+    },
+    "cp_nightclub": {
+      "keywords": [
+        "nightclub", "club", "dance floor", "bass", "dj", "strobe",
+        "bouncer", "vip", "booth", "cocktail", "lasers", "speakers"
+      ],
+      "colors": ["#12001a", "#2d0036"],
+      "accent": "#c04dff",
+      "particles": "sparks",
+      "label": "The Club"
+    },
+    "cp_tower": {
+      "keywords": [
+        "tower", "lobby", "executive", "boardroom", "corporate",
+        "elevator", "atrium", "receptionist", "office", "cubicle",
+        "security desk", "penthouse"
+      ],
+      "colors": ["#06101a", "#10283a"],
+      "accent": "#3fe0c5",
+      "particles": "dust",
+      "label": "The Tower"
+    },
+    "cp_rooftop": {
+      "keywords": [
+        "rooftop", "roof", "ledge", "skyline", "antenna", "helipad",
+        "water tower", "parapet", "fire escape", "vents"
+      ],
+      "colors": ["#020414", "#0d1a33"],
+      "accent": "#5ad1ff",
+      "particles": "stars",
+      "label": "The Rooftop"
+    },
+    "cp_market": {
+      "keywords": [
+        "market", "stall", "stalls", "vendor", "haggle", "bazaar", "noodle",
+        "food cart", "crowd", "awning", "hawker", "night market"
+      ],
+      "colors": ["#1a0a00", "#331a05"],
+      "accent": "#ffb020",
+      "particles": "smoke",
+      "label": "The Market"
+    },
+    "cp_block": {
+      "keywords": [
+        "apartment", "tenement", "stairwell", "hallway", "landing",
+        "neighbor", "neighbour", "laundry", "peephole", "housing block"
+      ],
+      "colors": ["#0c0c10", "#1c1a24"],
+      "accent": "#e0c060",
+      "particles": "drips",
+      "label": "The Block"
+    },
+    "cp_safehouse": {
+      "keywords": [
+        "safehouse", "safe house", "hideout", "bolt hole", "crash pad",
+        "squat", "mattress", "go-bag", "burner", "lying low"
+      ],
+      "colors": ["#0d0a08", "#211a14"],
+      "accent": "#d08040",
+      "particles": "dust",
+      "label": "The Safehouse"
+    },
+    "cp_street": {
+      "keywords": [
+        "street", "streets", "alley", "alleyway", "neon", "sidewalk",
+        "gutter", "crosswalk", "traffic", "streetlight", "overpass",
+        "puddle"
+      ],
+      "colors": ["#05060f", "#1a0c2e"],
+      "accent": "#ff2bd6",
+      "particles": "rain",
+      "label": "The Street"
+    }
+  },
+  "_comment_scenes": "A manifest that declares `scenes` REPLACES the display's built-in fantasy set for campaigns on this system; a system that declares none keeps the built-in scenes. Object order is priority order (an exact score tie goes to the earlier scene). Keywords are matched as whole words and scored with the same margin and incumbent bonus as the built-in set. `particles` must be a type the renderer draws (PARTICLE_COUNT in display/templates/index.html).",
+  "block_badges": [
+    {
+      "icon": "attack",
+      "words": [
+        "shoot", "shoots", "shot", "fires", "gun", "pistol", "rifle",
+        "shotgun", "knife", "blade", "attack", "combat", "initiative",
+        "damage", "hit", "miss", "trauma", "traumatic hit", "shock"
+      ]
+    },
+    {
+      "icon": "chat",
+      "words": [
+        "says", "replies", "whispers", "mutters", "speaks", "voice", "asks",
+        "answers", "turns to you", "talk", "connect"
+      ]
+    },
+    {
+      "icon": "focus",
+      "words": [
+        "hack", "hacks", "hacker", "cyberspace", "program", "jack in",
+        "node", "demon", "access", "drone", "cyber", "implant", "chrome"
+      ]
+    },
+    {
+      "icon": "treasure",
+      "words": [
+        "cash", "money", "paid", "payment", "credit chip", "dollars",
+        "loot", "reward", "found", "gives you", "item"
+      ]
+    },
+    {
+      "icon": "location",
+      "words": [
+        "arrive", "enter", "street", "alley", "rooftop", "tower", "district",
+        "block", "door", "gate", "drive", "car"
+      ]
+    },
+    {
+      "icon": "heal",
+      "words": [
+        "heal", "rest", "recover", "first aid", "medkit", "stabilize",
+        "stabilise", "trauma patch", "strain", "clinic", "street doc"
+      ]
+    },
+    {
+      "icon": "scroll",
+      "words": [
+        "job", "mission", "contract", "objective", "message", "fixer",
+        "paydata", "datafile"
+      ]
+    },
+    {
+      "icon": "faction",
+      "words": [
+        "corp", "corporation", "gang", "ganger", "faction", "cops",
+        "security", "syndicate", "crew"
+      ]
+    }
+  ],
+  "_comment_block_badges": "Keyword -> icon for the small mark on a narration block, in English like the module. Matching is substring-based (see systems/pf2e/ui.json); block KIND is badged without any word list."
+}
