@@ -41,6 +41,8 @@ Usage:
   python3 gm_graph.py <subcommand> --campaign <name> [args]
 
 Subcommands:
+  init           create an empty graph.json (idempotent on an empty graph;
+                 refuses, exit 1, when the graph already has nodes or edges)
   add-node       --type T --name N [--id ID] [--tags t1,t2] [--summary S]
   add-edge       --from FROM --to TO --type T [--since N] [--until N] [--note S]
   set-disposition --to NPC_OR_FACTION --level L [--since N] [--note S]
@@ -190,6 +192,37 @@ def _edge_active_at(edge: dict, session: Optional[int]) -> bool:
 
 
 # -------- subcommands --------
+
+def cmd_init(args) -> int:
+    """Create the campaign's graph file, empty. Safe to run more than once.
+
+    Seeding is the GM's job — proposing nodes and edges from the campaign files
+    and asking for approval (SKILL-commands.md, `/gm graph init`). This only
+    makes the file exist so that flow, and `scene-context`, have one to work
+    with. A graph that already holds anything is left exactly as it is.
+    """
+    p = _graph_path(args.campaign)
+    if not p.parent.exists():
+        print(f"error: no campaign directory at {p.parent}", file=sys.stderr)
+        return 1
+    if p.exists():
+        try:
+            data = _load(args.campaign)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"error: {p} exists but is unreadable ({e}); not overwriting",
+                  file=sys.stderr)
+            return 1
+        if data["nodes"] or data["edges"]:
+            print(f"refusing to overwrite {p}: it already holds "
+                  f"{len(data['nodes'])} nodes and {len(data['edges'])} edges",
+                  file=sys.stderr)
+            return 1
+        print(f"graph already initialized (empty): {p}")
+        return 0
+    _save(args.campaign, {"version": 1, "nodes": [], "edges": []})
+    print(f"graph initialized: {p} (empty — seed it with add-node / add-edge)")
+    return 0
+
 
 def cmd_add_node(args) -> int:
     data = _load(args.campaign)
@@ -701,6 +734,12 @@ def main() -> int:
 
     def add_camp(sp):
         sp.add_argument("--campaign", required=True)
+
+    sp = sub.add_parser("init",
+        help="create an empty graph.json for the campaign; never overwrites "
+             "a graph that already has nodes or edges")
+    add_camp(sp)
+    sp.set_defaults(func=cmd_init)
 
     sp = sub.add_parser("add-node")
     add_camp(sp)

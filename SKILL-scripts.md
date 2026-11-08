@@ -26,22 +26,34 @@ python3 <skill-base>/scripts/dice.py d20+3 dis     # disadvantage + modifier
 python3 <skill-base>/scripts/dice.py d20 --silent  # returns integer only
 ```
 
-Flags nat 20 (CRITICAL HIT) and nat 1 (FUMBLE) automatically.
+Say what the d20 is for with `--vs check|save|attack`, and optionally `--dc N`
+(the AC, for an attack). A natural 20 or 1 is labelled only where the campaign's
+system gives it a meaning: in D&D 5e that is attack rolls only (a critical hit,
+an automatic miss); in PF2e any check, as a one-step shift in the degree of
+success, which `--dc` resolves to all four degrees. Without `--vs` nothing is
+labelled — a natural 20 on an ability check is not a critical hit. The system
+comes from `-c <campaign>` (its `**System Module:**`) or `--system <name>`.
+
+```bash
+python3 <skill-base>/scripts/dice.py d20+6 --vs attack --dc 15 -c my-campaign
+python3 <skill-base>/scripts/dice.py d20+4 --vs save --dc 18 --system pf2e
+```
 
 ---
 
 ## Combat Script — `scripts/combat.py`
 
 ```bash
-# Roll initiative and print tracker
-python3 <skill-base>/scripts/combat.py init '<JSON>'
-# JSON: [{"name":"Aldric","dex_mod":1,"hp":134,"ac":20,"type":"pc"}, ...]
+# Roll initiative and print tracker (rules follow the campaign's system; see scripts/combat.md)
+python3 <skill-base>/scripts/combat.py init '<JSON>' -c <campaign>
+# dnd5e JSON: [{"name":"Aldric","dex_mod":1,"hp":134,"ac":20,"type":"pc"}, ...]
+# pf2e uses "perception", brp uses "dex" in place of "dex_mod"
 
 # Reprint tracker from saved state
 python3 <skill-base>/scripts/combat.py tracker '<JSON>' <round_num>
 
-# Resolve a single attack
-python3 <skill-base>/scripts/combat.py attack --atk 10 --ac 20 --dmg 2d6+5
+# Resolve a single attack (dnd5e and pf2e)
+python3 <skill-base>/scripts/combat.py attack --atk 10 --ac 20 --dmg 2d6+5 -c <campaign>
 ```
 
 `init` outputs a `STATE_JSON:` line — store it in `state.md` under `## Active Combat` between turns.
@@ -61,6 +73,7 @@ python3 <skill-base>/scripts/tracker.py -c $CAMP effect start "Aldric" "Web" 10r
 python3 <skill-base>/scripts/tracker.py -c $CAMP effect start "Vesper" "Hunter's Mark" indef
 python3 <skill-base>/scripts/tracker.py -c $CAMP effect end   "Aldric" "Web"
 python3 <skill-base>/scripts/tracker.py -c $CAMP effect tick  "Aldric"   # call on actor's turn; prints expiry warnings
+python3 <skill-base>/scripts/tracker.py -c $CAMP effect advance 30m        # in-game time passed (calendar.py advance/rest do this)
 
 # Conditions
 python3 <skill-base>/scripts/tracker.py -c $CAMP condition add    "Vesper" Frightened
@@ -80,11 +93,13 @@ python3 <skill-base>/scripts/tracker.py -c $CAMP saves "Aldric" reset
 # Status / clear
 python3 <skill-base>/scripts/tracker.py -c $CAMP status
 python3 <skill-base>/scripts/tracker.py -c $CAMP status "Aldric"
-python3 <skill-base>/scripts/tracker.py -c $CAMP clear           # conditions + concentration + effects
-python3 <skill-base>/scripts/tracker.py -c $CAMP clear --all     # also clears death saves
+python3 <skill-base>/scripts/tracker.py -c $CAMP clear           # end of encounter: conditions + round effects
+python3 <skill-base>/scripts/tracker.py -c $CAMP clear --all     # everything, death saves included
 ```
 
-**When to run:** condition applied or removed; concentration begins or breaks; PC drops to 0 HP; each death save rolled; end of encounter — `clear`.
+**When to run:** condition applied or removed; concentration begins or breaks; PC drops to 0 HP; each death save rolled; end of encounter — `clear`. Never at a rest: a rest is time passing, which `calendar.py rest` already spends on the timed effects.
+
+Minute and hour durations count down in **in-game** time, not real time: they move only when `effect advance` runs, which `calendar.py advance` and `calendar.py rest` do for you.
 
 ---
 
@@ -251,7 +266,7 @@ python3 <skill-base>/display/push_stats.py --clear
 - Combat start — `--turn-order`; each turn — `--turn-current`; end — `--turn-clear`
 - Any rest or time advance — `--world-time`
 
-**Keep the clock honest.** The world clock is continuity, not decoration. Narrate consistently with the time you last pushed, and advance it *deliberately* when an action costs time — a brief exchange is a few minutes, a search or a shopping trip is longer, a rest or a journey longer still. Never let the time of day drift on its own or silently reset between scenes. If the clock and the fiction ever disagree, reconcile it to the truth with a fresh `--world-time` push rather than compounding the error; setting it *backward* to the correct time is fine and undoes nothing, since timed effects run on their own round/minute/hour durations in `tracker.py`, independent of the wall clock.
+**Keep the clock honest.** The world clock is continuity, not decoration. Narrate consistently with the time you last pushed, and advance it *deliberately* when an action costs time — a brief exchange is a few minutes, a search or a shopping trip is longer, a rest or a journey longer still. Never let the time of day drift on its own or silently reset between scenes. If the clock and the fiction ever disagree, reconcile it to the truth with a fresh `--world-time` push rather than compounding the error; setting it *backward* to the correct time is fine and undoes nothing, since timed effects in `tracker.py` count down only when time is advanced through `calendar.py advance` / `rest` or `tracker.py effect advance`, never when the clock is set.
 
 ---
 

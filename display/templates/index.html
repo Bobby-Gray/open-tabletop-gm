@@ -49,6 +49,26 @@
 <link rel="apple-touch-icon" sizes="180x180"      href="/icons/app_icon_180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/app_icon_192.png">
 <style>
+  /* IM Fell English draws the straight quote and apostrophe (U+0022, U+0027)
+     as curly CLOSING quotes, so "word" rendered as ”word” and an opening
+     single quote faced the wrong way. This face covers only those two code
+     points with a neutral serif already on the device; every other character
+     still comes from IM Fell, and the curly quotes U+2018-U+201D stay its own. */
+  @font-face {
+    font-family: 'GM Straight Quotes';
+    src: local('Georgia'), local('Times New Roman'), local('TimesNewRomanPSMT'),
+         local('Liberation Serif'), local('DejaVu Serif'), local('Noto Serif');
+    unicode-range: U+0022, U+0027;
+  }
+  @font-face {
+    font-family: 'GM Straight Quotes';
+    font-style: italic;
+    src: local('Georgia Italic'), local('Georgia-Italic'), local('Times New Roman Italic'),
+         local('TimesNewRomanPS-ItalicMT'), local('Liberation Serif Italic'),
+         local('DejaVu Serif Italic'), local('Noto Serif Italic');
+    unicode-range: U+0022, U+0027;
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
@@ -56,7 +76,7 @@
     overflow: hidden;
     background: #000;
     color: #d4c4a0;
-    font-family: 'IM Fell English', Georgia, serif;
+    font-family: 'GM Straight Quotes', 'IM Fell English', Georgia, serif;
     font-size: 20px;
     line-height: 1.85;
   }
@@ -1594,7 +1614,7 @@
     width: 100%; box-sizing: border-box;
     background: rgba(8,5,2,0.85); border: 1px solid rgba(180,140,60,0.18);
     border-radius: 3px; color: rgba(220,200,160,0.9);
-    font-family: 'IM Fell English', serif; font-size: 13px;
+    font-family: 'GM Straight Quotes', 'IM Fell English', serif; font-size: 13px;
     padding: 8px 10px; resize: none; outline: none;
     transition: border-color 0.15s ease;
   }
@@ -1643,7 +1663,7 @@
     margin-bottom: 2px;
   }
   .staged-text {
-    font-family: 'IM Fell English', serif; font-size: 11.5px;
+    font-family: 'GM Straight Quotes', 'IM Fell English', serif; font-size: 11.5px;
     color: rgba(200,175,120,0.82); word-break: break-word;
   }
   .staged-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 2px; }
@@ -1761,7 +1781,7 @@
     color: rgba(220,150,100,0.9); flex: 1;
   }
   .device-card-ip {
-    font-family: 'IM Fell English', serif; font-size: 11px;
+    font-family: 'GM Straight Quotes', 'IM Fell English', serif; font-size: 11px;
     color: rgba(200,160,120,0.7); margin-right: 4px;
   }
   .device-approve-btn, .device-deny-btn {
@@ -5909,6 +5929,145 @@ let _ttsCtx = null;
 let _ttsActiveSource = null;
 let _ttsActivePlayBtn = null;
 
+// Free fallback: the browser's own speech synthesis, no API key needed.
+// Used when /tts has no key configured (503) or fails. Without this, a
+// keyless install got a play button that flashed "TTS 503" for three seconds
+// and never spoke -- the server path was the only path.
+let _ttsServerOk = true;
+let _ttsUtterance = null;
+const _TTS_HAS_BROWSER = 'speechSynthesis' in window;
+if (_TTS_HAS_BROWSER) {
+  // Chrome populates the voice list asynchronously; the first call primes it.
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+// The language the text itself is written in, where its script says. This
+// page's <html lang> is a static "en" whatever the campaign is played in, so
+// without this a Japanese or Russian block went to an English voice, which
+// reads it as silence or noise. A script shared by several languages takes
+// the browser's first language that uses it, else the script's most common
+// one; Latin text returns null and leaves the choice to the chain below.
+const _TTS_SHARED_SCRIPTS = [
+  [/[\u0400-\u04ff]/, ['ru', 'uk', 'bg', 'sr', 'mk', 'be', 'kk', 'ky', 'mn', 'tg']],
+  [/[\u0600-\u06ff]/, ['ar', 'fa', 'ur', 'ps']],
+];
+function _ttsScriptLang(text) {
+  const t = String(text || '');
+  if (/[\u3040-\u30ff]/.test(t)) return 'ja';
+  if (/[\uac00-\ud7af\u1100-\u11ff]/.test(t)) return 'ko';
+  if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(t)) return 'zh';
+  if (/[\u0e00-\u0e7f]/.test(t)) return 'th';
+  if (/[\u0370-\u03ff]/.test(t)) return 'el';
+  if (/[\u0590-\u05ff]/.test(t)) return 'he';
+  for (const [re, langs] of _TTS_SHARED_SCRIPTS) {
+    if (!re.test(t)) continue;
+    const nav = (navigator.languages && navigator.languages.length
+      ? navigator.languages : [navigator.language])
+      .map(l => String(l || '').slice(0, 2).toLowerCase());
+    return nav.find(l => langs.includes(l)) || langs[0];
+  }
+  return null;
+}
+
+function _ttsPickBrowserVoice(text) {
+  const voices = speechSynthesis.getVoices() || [];
+  if (!voices.length) return null;
+  // Preference order: the language the text's script implies, then the
+  // page's declared language, then the browser's accept-language chain,
+  // then English, then any voice at all -- a voice in the wrong accent still
+  // beats silence. No single locale is hardcoded.
+  const prefs = [];
+  const want = t => {
+    t = String(t || '').slice(0, 2).toLowerCase();
+    if (t && !prefs.includes(t)) prefs.push(t);
+  };
+  want(_ttsScriptLang(text));
+  want(document.documentElement.lang);
+  (navigator.languages && navigator.languages.length
+    ? navigator.languages : [navigator.language]).forEach(want);
+  want('en');
+  // Neural/online voices first: the local fallbacks are markedly flatter.
+  // Note these are usually NOT local — Chrome's "Google …" and Edge's
+  // "… Online (Natural)" voices synthesize on the vendor's servers. No key
+  // and no cost to the player, but not offline. `v.localService === true`
+  // is the flag to rank on instead if on-device ever has to be the default.
+  const rank = v => /natural|online|neural/i.test(v.name) ? 0
+                  : /google/i.test(v.name) ? 1 : 2;
+  for (const p of prefs) {
+    const pool = voices.filter(v => (v.lang || '').toLowerCase().startsWith(p));
+    if (pool.length) return pool.sort((a, b) => rank(a) - rank(b))[0];
+  }
+  return voices.slice().sort((a, b) => rank(a) - rank(b))[0];
+}
+
+const _TTS_CHUNK_MAX = 220;
+
+function _ttsChunkText(text) {
+  // Short utterances avoid Chrome's ~15s cut-off on a single long speech.
+  // The terminator set carries CJK and Arabic/Armenian stops as well as the
+  // Latin ones: a Japanese paragraph contains no ".!?" at all, so a
+  // Latin-only split returns the whole paragraph as one chunk and walks
+  // straight into the cut-off this function exists to avoid.
+  const parts = text.match(/[^.!?…。！？؟։]+[.!?…。！？؟։]*["»”」』]?\s*/g) || [text];
+  const chunks = [];
+  let cur = '';
+  for (const part of parts) {
+    // A single sentence longer than the cap still has to be broken, or
+    // scripts that do not punctuate every 220 characters are back to one
+    // oversized utterance.
+    let p = part;
+    while (p.length > _TTS_CHUNK_MAX) {
+      if (cur) { chunks.push(cur.trim()); cur = ''; }
+      let cut = p.lastIndexOf(' ', _TTS_CHUNK_MAX);
+      if (cut < _TTS_CHUNK_MAX * 0.5) cut = _TTS_CHUNK_MAX;   // CJK has no spaces
+      chunks.push(p.slice(0, cut).trim());
+      p = p.slice(cut);
+    }
+    if ((cur + p).length > _TTS_CHUNK_MAX && cur) { chunks.push(cur.trim()); cur = ''; }
+    cur += p;
+  }
+  if (cur.trim()) chunks.push(cur.trim());
+  return chunks.filter(Boolean);
+}
+
+function _ttsBrowserSpeak(btn, text) {
+  speechSynthesis.cancel();
+  const voice = _ttsPickBrowserVoice(text);
+  const chunks = _ttsChunkText(text);
+  let last = null;
+  chunks.forEach(chunk => {
+    const u = new SpeechSynthesisUtterance(chunk);
+    // Leave lang unset when no voice matched: the browser default is a better
+    // guess than any locale this file could name.
+    if (voice) { u.voice = voice; u.lang = voice.lang; }
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+    last = u;
+  });
+  if (!last) return;
+
+  btn.innerHTML = _SVG_STOP;
+  btn.classList.remove('tts-loading');
+  btn.classList.add('tts-playing');
+  btn.setAttribute('aria-label', 'Stop narration');
+  _ttsActivePlayBtn = btn;
+  _ttsUtterance = last;
+
+  const done = () => {
+    if (_ttsUtterance !== last) return;      // a newer block took over
+    _ttsUtterance = null;
+    if (_ttsActivePlayBtn === btn) {
+      btn.innerHTML = _SVG_SPEAKER;
+      btn.classList.remove('tts-playing');
+      btn.setAttribute('aria-label', 'Listen to narration');
+      _ttsActivePlayBtn = null;
+    }
+  };
+  last.onend = done;
+  last.onerror = done;
+}
+
 function _getTtsCtx() {
   if (!_ttsCtx || _ttsCtx.state === 'closed') {
     _ttsCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -5925,6 +6084,10 @@ function _ttsStopActive() {
   if (_ttsActiveSource) {
     try { _ttsActiveSource.stop(); } catch (_) {}
     _ttsActiveSource = null;
+  }
+  if (_TTS_HAS_BROWSER && (_ttsUtterance || speechSynthesis.speaking || speechSynthesis.pending)) {
+    _ttsUtterance = null;
+    speechSynthesis.cancel();
   }
   if (_ttsActivePlayBtn) {
     _ttsActivePlayBtn.innerHTML = _SVG_SPEAKER;
@@ -5946,6 +6109,8 @@ async function _ttsPlayBlock(btn, blockEl) {
   _ttsStopActive();
   const text = _ttsExtractText(blockEl);
   if (!text) return;
+
+  if (!_ttsServerOk && _TTS_HAS_BROWSER) { _ttsBrowserSpeak(btn, text); return; }
 
   const ctx = _getTtsCtx();
   const resumeP = ctx.state !== 'running' ? ctx.resume() : Promise.resolve();
@@ -5996,6 +6161,14 @@ async function _ttsPlayBlock(btn, blockEl) {
     };
     source.start(0);
   } catch (err) {
+    if (_ttsActivePlayBtn === btn && _TTS_HAS_BROWSER) {
+      // 503 means no key is configured, so stop asking the server at all.
+      // Anything else (429, 502, a dropped connection) is transient: fall
+      // back for this block and try the server again on the next one.
+      if (err.message === 'TTS 503') _ttsServerOk = false;
+      _ttsBrowserSpeak(btn, text);
+      return;
+    }
     if (_ttsActivePlayBtn === btn) {
       const label = (err.message || 'ERR').slice(0, 12);
       btn.textContent = label;

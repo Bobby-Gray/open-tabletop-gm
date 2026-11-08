@@ -26,7 +26,11 @@ Usage:
 
     # Rest shortcuts
     python3 calendar.py -c <campaign> rest short    # +1 hour
-    python3 calendar.py -c <campaign> rest long     # +8 hours
+    python3 calendar.py -c <campaign> rest long     # +8 hours (also ends concentration)
+
+    `advance` and `rest` also spend the same in-game time on the campaign's
+    timed effects (tracker.py effect advance), so a one-hour spell cast before
+    a long rest has expired when the party wakes.
 
     # Show current date/time
     python3 calendar.py -c <campaign> now
@@ -159,6 +163,15 @@ def _advance_hours(cal: dict, hours: int) -> None:
             cal["year"] += 1
 
 
+def _advance_effects(campaign: str, hours: int, end_concentration: bool = False) -> None:
+    """Spend the same in-game time on tracker.py's timed effects."""
+    try:
+        import tracker
+        tracker.advance_time(campaign, hours * 60, end_concentration=end_concentration)
+    except Exception as e:      # the calendar move itself has already happened
+        print(f"  (timed effects not advanced: {e})")
+
+
 def _send_date(cal: dict) -> None:
     """Push the current date announcement to the display."""
     msg = f"📅 {_format_date(cal)}"
@@ -228,6 +241,7 @@ def cmd_advance(campaign: str, amount: int, unit: str) -> None:
     label = f"+{amount} {unit}"
     print(f"  {label} → {_format_date(cal)}")
     _send_date(cal)
+    _advance_effects(campaign, total_hours)
 
 
 def cmd_rest(campaign: str, rest_type: str) -> None:
@@ -237,15 +251,17 @@ def cmd_rest(campaign: str, rest_type: str) -> None:
         sys.exit(1)
 
     if rest_type == "short":
-        _advance_hours(cal, 1)
+        hours = 1
         label = "Short rest (+1 hour)"
     else:
-        _advance_hours(cal, 8)
+        hours = 8
         label = "Long rest (+8 hours)"
+    _advance_hours(cal, hours)
 
     _save(campaign, cal)
     print(f"  {label} → {_format_date(cal)}")
     _send_date(cal)
+    _advance_effects(campaign, hours, end_concentration=(rest_type == "long"))
 
 
 def cmd_now(campaign: str) -> None:

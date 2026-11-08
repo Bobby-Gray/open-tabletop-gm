@@ -772,11 +772,23 @@ def _is_chrome(line: str) -> bool:
     if len(c) == 1 and not c.isalpha():
         return True
 
-    # Very short non-alpha fragments (≤3 chars with no letters = not narration)
-    if len(c) <= 3 and not re.search(r"[a-zA-Z]{2}", c):
+    # Very short fragments with no word in them (≤3 chars) are not narration.
+    # "A word" is two letters in any script, or one letter in a script that
+    # writes a word per character: 「好的」, 「はい。」 and 「Да.」 are whole
+    # replies, and an ASCII-only letter test dropped every one of them.
+    if len(c) <= 3 and not _has_word(c):
         return True
 
     return False
+
+
+def _has_word(s: str) -> bool:
+    """Two letters in any script, or one in a script written without word
+    delimiters (scripts/script_ranges.py), where one character can be a word."""
+    letters = [ch for ch in s if ch.isalpha()]
+    if len(letters) >= 2:
+        return True
+    return any(script_ranges.NO_DELIMITER_SCRIPT.match(ch) for ch in letters)
 
 
 def _clean(text: str) -> str:
@@ -1919,7 +1931,7 @@ def tts_synthesize():
     if _tts.key_source() == "unset":
         return "TTS not configured (see docs/SKILL-tts.md)", 503
     try:
-        pcm = _tts.synthesize_strict(text, voice)
+        pcm, cached = _tts.synthesize_cached(text, voice)
     except _tts.TtsError as e:
         return f"TTS upstream: {e}", 502
     return Response(
@@ -1928,6 +1940,7 @@ def tts_synthesize():
         headers={
             "X-Audio-Chars": str(len(text)),
             "X-Audio-Voice": voice,
+            "X-Audio-Cache": "hit" if cached else "miss",
             "Cache-Control": "no-store",
         },
     )

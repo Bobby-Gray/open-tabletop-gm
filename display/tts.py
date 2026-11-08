@@ -12,6 +12,7 @@ Setup walkthrough: docs/SKILL-tts.md.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import urllib.error
@@ -48,6 +49,15 @@ MAX_TEXT_CHARS = 2000
 
 DEFAULT_TIMEOUT = 30.0
 
+# On-disk clip cache. Replaying a block, a second device pressing play on the
+# same block, or auto-narrate re-reading it after a reload would otherwise pay
+# for the same synthesis again. Keyed on (model, voice, text) so a different
+# voice or model never serves a stale clip. Bounded: once the directory passes
+# CACHE_MAX_BYTES, least-recently-used clips are deleted. GM_TTS_CACHE_MB=0
+# turns it off.
+CACHE_DIR_DEFAULT = Path.home() / ".cache" / "open-tabletop-gm" / "tts"
+CACHE_MAX_BYTES_DEFAULT = 200 * 1024 * 1024
+
 
 # ── Key resolution ──────────────────────────────────────────────────────────
 
@@ -77,6 +87,97 @@ def key_source() -> str:
 
 
 # ── Synthesis ───────────────────────────────────────────────────────────────
+
+# ── Clip cache ──────────────────────────────────────────────────────────────
+
+def cache_dir() -> Path:
+    raw = os.environ.get("GM_TTS_CACHE_DIR", "").strip()
+    return Path(raw).expanduser() if raw else CACHE_DIR_DEFAULT
+
+
+def cache_max_bytes() -> int:
+    raw = os.environ.get("GM_TTS_CACHE_MB", "").strip()
+    if not raw:
+        return CACHE_MAX_BYTES_DEFAULT
+    try:
+        return max(0, int(float(raw) * 1024 * 1024))
+    except ValueError:
+        return CACHE_MAX_BYTES_DEFAULT
+
+
+def cache_key(text: str, voice: str, model: str = GEMINI_TTS_MODEL) -> str:
+    h = hashlib.sha256()
+    for part in (model, voice, text):
+        h.update(part.encode("utf-8"))
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
+def cache_get(text: str, voice: str) -> Optional[bytes]:
+    if cache_max_bytes() <= 0:
+        return None
+    path = cache_dir() / f"{cache_key(text, voice)}.pcm"
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    if not data:
+        return None
+    try:
+        os.utime(path, None)       # mark recently used for eviction
+    except OSError:
+        pass
+    return data
+
+
+def cache_put(text: str, voice: str, pcm: bytes) -> None:
+    limit = cache_max_bytes()
+    if limit <= 0 or not pcm or len(pcm) > limit:
+        return
+    d = cache_dir()
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        path = d / f"{cache_key(text, voice)}.pcm"
+        tmp = path.with_suffix(f".tmp{os.getpid()}")
+        tmp.write_bytes(pcm)
+        os.replace(tmp, path)       # never leave a half-written clip
+        _cache_evict(d, limit)
+    except OSError:
+        pass                        # a cache that cannot write is just a miss
+
+
+def _cache_evict(d: Path, limit: int) -> None:
+    clips = []
+    for f in d.glob("*.pcm"):
+        try:
+            st = f.stat()
+        except OSError:
+            continue
+        clips.append((st.st_mtime, st.st_size, f))
+    total = sum(size for _, size, _ in clips)
+    for _, size, f in sorted(clips, key=lambda c: c[0]):
+        if total <= limit:
+            break
+        try:
+            f.unlink()
+            total -= size
+        except OSError:
+            pass
+
+
+def synthesize_cached(text: str, voice: str = DEFAULT_VOICE,
+                      timeout: float = DEFAULT_TIMEOUT) -> tuple:
+    """Return (pcm, from_cache). Raises TtsError like synthesize_strict."""
+    text = (text or "").strip()[:MAX_TEXT_CHARS]
+    if voice not in VALID_VOICES:
+        voice = DEFAULT_VOICE
+    hit = cache_get(text, voice)
+    if hit is not None:
+        return hit, True
+    pcm = synthesize_strict(text, voice, timeout)
+    cache_put(text, voice, pcm)
+    return pcm, False
+
 
 class TtsError(Exception):
     """Raised by synthesize_strict; caught by synthesize to fail silently."""

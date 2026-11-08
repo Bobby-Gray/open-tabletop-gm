@@ -272,7 +272,60 @@ def all_taken_slugs() -> set[str]:
     return set(data["entries"].keys())
 
 
-def check(name: str) -> dict:
+# Titles and forms of address that come before a name and are not part of it.
+# "Captain Mira Voss" and "Mira" share a first name; "Captain" is not one.
+# Compared case-insensitively with a trailing period removed.
+HONORIFICS = {
+    "sir", "dame", "lady", "lord", "master", "mistress", "madam", "madame",
+    "mr", "mrs", "ms", "miss", "dr", "doctor", "prof", "professor",
+    "captain", "capt", "commander", "general", "lieutenant", "sergeant",
+    "father", "mother", "brother", "sister", "friar", "abbot", "abbess",
+    "elder", "old", "young", "king", "queen", "prince", "princess",
+    "duke", "duchess", "baron", "baroness", "count", "countess",
+    "saint", "st", "high", "grand", "the",
+    "monsieur", "mademoiselle", "señor", "señora", "don", "doña",
+    "herr", "frau", "signor", "signora",
+}
+
+
+def first_name(name: str) -> str:
+    """The first word of a name once leading honorifics are removed, casefolded.
+
+    Returns "" when nothing but honorifics is left.
+    """
+    s = re.sub(r"\s*\([^)]*\)\s*", " ", name or "").strip()
+    for word in s.split():
+        bare = word.strip(".,;:'\"’").casefold()
+        if not bare or bare in HONORIFICS:
+            continue
+        return bare
+    return ""
+
+
+def pc_first_name_clashes(name: str, campaign: str | None = None) -> list[dict]:
+    """PC entries whose first name matches `name`'s first name.
+
+    Two characters at one table answering to "Mira" makes every line of
+    dialogue ambiguous, even when their surnames differ, so an NPC proposal
+    that shares a PC's first name is worth a warning on its own. An exact
+    duplicate is reported by check() as a duplicate, not repeated here.
+    """
+    want = first_name(name)
+    if not want:
+        return []
+    own = slug(name)
+    out = []
+    for e in _load()["entries"].values():
+        if e.get("type") != "pc" or e.get("slug") == own:
+            continue
+        if campaign and campaign not in e.get("currently_active_in", []):
+            continue
+        if first_name(e.get("name", "")) == want:
+            out.append(e)
+    return sorted(out, key=lambda x: x["name"].lower())
+
+
+def check(name: str, campaign: str | None = None) -> dict:
     """Check whether a proposed name collides with the registry.
 
     Returns:
@@ -280,9 +333,13 @@ def check(name: str) -> dict:
             "name": str,                # the proposed name (as given)
             "is_duplicate": bool,
             "entry": dict | None,       # the existing entry if duplicate
+            "first_name_clash": [dict], # PCs sharing the first name
             "severity": "none" | "warn" | "strict",
             "message": str,             # human-readable summary
         }
+
+    `campaign` limits the first-name check to PCs active in that campaign;
+    without it every PC in the registry is considered.
 
     Severity is read from `<GM_CAMPAIGN_ROOT>/.name_registry_config.json`
     (key `severity`); defaults to `"warn"`. `"none"` skips the check entirely
@@ -300,26 +357,72 @@ def check(name: str) -> dict:
 
     if severity == "none":
         return {"name": name, "is_duplicate": False, "entry": None,
+                "first_name_clash": [],
                 "severity": severity, "message": "registry check disabled"}
+
+    clashes = pc_first_name_clashes(name, campaign)
+    clash_msg = ""
+    if clashes:
+        pcs = "; ".join(
+            f"{c['name']} ({', '.join(c.get('currently_active_in', [])) or 'retired'})"
+            for c in clashes)
+        clash_msg = (f"first name '{first_name(name)}' is already a PC's: {pcs}")
 
     e = lookup(name)
     if not e:
+        if clashes:
+            return {"name": name, "is_duplicate": False, "entry": None,
+                    "first_name_clash": clashes, "severity": severity,
+                    "message": f"'{name}' is unused, but its {clash_msg}"}
         return {"name": name, "is_duplicate": False, "entry": None,
-                "severity": severity,
+                "first_name_clash": [], "severity": severity,
                 "message": f"'{name}' is unique — safe to use"}
 
     where = ", ".join(e.get("currently_active_in", [])) or "(retired everywhere)"
     src = e.get("source", "canonical")
     msg = (f"'{name}' was first used in {e['first_campaign']} S{e['first_session']} "
            f"({src}); currently active in: {where}")
+    if clash_msg:
+        msg += f"; also, its {clash_msg}"
     return {"name": name, "is_duplicate": True, "entry": e,
+            "first_name_clash": clashes,
             "severity": severity, "message": msg}
 
 
 # ── Prose scan (--include-prose) ──────────────────────────────────────────
 
 # Match capitalized 2-3 word sequences as candidate proper nouns.
-_PROSE_NAME_PAT = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b")
+#
+# In any cased script, not only ASCII: `[A-Z][a-z]+` skipped every name with
+# an accent or outside Latin — "Élodie Marchand", "Ярослав Мудрый",
+# "Νίκος Παππάς" were invisible to the prose scan, and "Ana Núñez" was cut to
+# nothing because "Núñez" failed `[a-z]+`. Python's `re` has no \p{Lu}, so the
+# upper- and lowercase letter classes are built once from the Unicode
+# database. Scripts without case (Han, Kana, Hangul, Thai, Arabic) carry no
+# capitalisation signal at all and are out of reach of this heuristic.
+def _letter_class(pred) -> str:
+    ranges, start, prev = [], None, None
+    for cp in range(0x2FFFF + 1):
+        if 0xD800 <= cp <= 0xDFFF:
+            ok = False
+        else:
+            ok = pred(chr(cp))
+        if ok and start is None:
+            start = cp
+        if not ok and start is not None:
+            ranges.append((start, prev))
+            start = None
+        prev = cp
+    if start is not None:
+        ranges.append((start, prev))
+    return "".join(re.escape(chr(a)) if a == b else f"{re.escape(chr(a))}-{re.escape(chr(b))}"
+                   for a, b in ranges)
+
+
+_UPPER = _letter_class(lambda c: c.isupper() or c.istitle())
+_LOWER = _letter_class(str.islower)
+_PROSE_WORD = f"[{_UPPER}][{_LOWER}]+"
+_PROSE_NAME_PAT = re.compile(rf"\b({_PROSE_WORD}(?:\s+{_PROSE_WORD}){{1,2}})\b")
 
 # Bigram/trigram stopwords — common phrases that look like names but aren't.
 # Add more as you encounter false positives.
@@ -510,6 +613,8 @@ def main() -> int:
     pc.add_argument("name")
     pc.add_argument("--json", action="store_true",
                     help="emit JSON instead of human text")
+    pc.add_argument("--campaign",
+                    help="limit the PC first-name check to this campaign's PCs")
 
     pa = sub.add_parser("add", help="record a new name")
     pa.add_argument("--name", required=True)
@@ -557,16 +662,19 @@ def main() -> int:
         return 0
 
     if args.cmd == "check":
-        result = check(args.name)
+        result = check(args.name, campaign=args.campaign)
+        flagged = result["is_duplicate"] or bool(result["first_name_clash"])
         if args.json:
             print(json.dumps(result, indent=2, ensure_ascii=False))
         else:
+            marker = "WARN" if result["severity"] == "warn" else "STRICT"
             if result["is_duplicate"]:
-                marker = "WARN" if result["severity"] == "warn" else "STRICT"
                 print(f"  [{marker}] DUPLICATE — {result['message']}")
+            elif result["first_name_clash"]:
+                print(f"  [{marker}] FIRST NAME — {result['message']}")
             else:
                 print(f"  [OK] {result['message']}")
-        return 1 if result["is_duplicate"] else 0
+        return 1 if flagged else 0
 
     if args.cmd == "add":
         e = add(args.name, args.type, args.campaign, args.session)

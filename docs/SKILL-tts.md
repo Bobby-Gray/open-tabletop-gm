@@ -1,12 +1,13 @@
 # Narrator TTS setup (optional)
 
-The display companion can read narrator and NPC blocks aloud via Google's Gemini Flash TTS. Off by default. The rest of open-tabletop-gm works fine without it.
+The display companion can read narrator and NPC blocks aloud via Google's Gemini Flash TTS. Without a key it still speaks, through the browser's own voice (`speechSynthesis`) — no setup and no cost, just flatter. The key is what upgrades the voice. The rest of open-tabletop-gm works fine either way.
 
 ## What you get
 
 - A speaker button at the bottom of every narrator and NPC block. Click to hear that block read aloud.
 - A 9-voice dropdown (4 male, 5 female) sitting next to the speaker button. Change voice mid-session.
 - An optional **Auto Narrate** toggle in the top-right audio controls. When on, every new narrator/NPC block auto-plays in **your browser only** — perfect for a TV or main-display cast device while player phones stay quiet.
+- **No key? The browser speaks instead.** When `/tts` answers 503 (no key configured) the page stops asking the server for the rest of the session and reads every block with the browser's voice. A one-off failure (429, a dropped connection) falls back for that block only and tries the server again on the next. The browser voice is chosen by the language the block is written in where its script says (Japanese, Korean, Chinese, Thai, Greek and Hebrew directly; Cyrillic and Arabic script by the browser's own language in that script), then the browser's language list, then English, then any voice at all; long blocks are split at sentence ends in Latin, CJK and Arabic punctuation so no single utterance runs into Chrome's ~15-second cut-off. Note that Chrome's "Google …" and Edge's "… Online (Natural)" voices are synthesized on the vendor's servers — free, but not offline.
 - Multi-language support — Gemini auto-detects the language from the text, so a campaign played in any of the [24 supported locales](https://ai.google.dev/gemini-api/docs/speech-generation) just works.
 
 ## What it costs
@@ -83,7 +84,7 @@ To expand to Gemini's full 30 voices, edit `_TTS_VOICES_MALE` / `_TTS_VOICES_FEM
 
 ## Per-browser cost note
 
-Each player clicking the speaker button on the same narration block produces a separate Gemini call — no server-side caching by content hash. A 4-player table where everyone clicks every block is roughly 4× the per-block cost. Mitigations:
+Synthesized clips are cached on disk, keyed on the model, the voice and the exact text, so replaying a block — or a second device pressing play on the same block — is served from the cache instead of a second Gemini call (the response carries `X-Audio-Cache: hit`). The cache lives in `~/.cache/open-tabletop-gm/tts/` (override with `GM_TTS_CACHE_DIR`) and is capped at 200 MB, oldest-used clips deleted first (`GM_TTS_CACHE_MB` sets the cap; `0` turns caching off). Changing voice is a new clip. Mitigations for the first play:
 
 1. **Auto Narrate on the casting TV only** — players hear the audio from the TV speaker and don't click their own phones.
 2. Set a daily spend cap on your Google billing project at [console.cloud.google.com/billing](https://console.cloud.google.com/billing).
@@ -138,7 +139,8 @@ The `--api-target` restriction means a leaked key can only call `generativelangu
 | Speaker button shows "TTS 401" | API key invalid or disabled — re-mint at https://aistudio.google.com/apikey. |
 | Speaker button shows "TTS 403" | Key not authorized for `generativelanguage.googleapis.com` (Path B keys), or billing not configured. |
 | Speaker button shows "TTS 429" | Free-tier rate limit, or new AI Studio account without billing. |
-| Speaker button shows "TTS 503" | Server reports TTS not configured — re-verify the key file and restart the display. |
+| Speaker button shows "TTS 503" | Server reports TTS not configured — re-verify the key file and restart the display. (Seen only in a browser with no `speechSynthesis`; elsewhere the browser voice takes over.) |
+| Narration sounds flatter than expected | The browser voice is speaking — the server has no key, or this block's request failed. Check `python3 display/tts.py --test`. |
 | Audio doesn't play but no error label | Check device volume; on iOS Safari, click the speaker once to grant the AudioContext gesture. |
 | 1-3 second delay before audio | Normal — Gemini Flash TTS synthesis latency. |
 
@@ -148,4 +150,4 @@ The `--api-target` restriction means a leaked key can only call `generativelangu
 rm ~/.config/open-tabletop-gm/tts.key
 ```
 
-Speaker buttons disappear on next page load. Nothing else changes.
+Narration falls back to the browser's voice on the next page load. Nothing else changes.

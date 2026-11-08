@@ -19,7 +19,18 @@ python3 $SKILL/scripts/dice.py d20+3 dis     # disadvantage + modifier
 python3 $SKILL/scripts/dice.py d20 --silent  # integer only
 ```
 
-Flags nat 20 (CRITICAL HIT) and nat 1 (FUMBLE) automatically.
+Say what the d20 is for with `--vs check|save|attack`, and optionally `--dc N`
+(the AC, for an attack). A natural 20 or 1 is labelled only where the campaign's
+system gives it a meaning: in D&D 5e that is attack rolls only (a critical hit,
+an automatic miss); in PF2e any check, as a one-step shift in the degree of
+success, which `--dc` resolves to all four degrees. Without `--vs` nothing is
+labelled — a natural 20 on an ability check is not a critical hit. The system
+comes from `-c <campaign>` (its `**System Module:**`) or `--system <name>`.
+
+```bash
+python3 $SKILL/scripts/dice.py d20+6 --vs attack --dc 15 -c $CAMP
+python3 $SKILL/scripts/dice.py d20+4 --vs save --dc 18 --system pf2e
+```
 
 ---
 

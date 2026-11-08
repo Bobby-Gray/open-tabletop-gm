@@ -184,6 +184,26 @@ def campaign_system(name: str, default: str = "dnd5e") -> str:
     return m.group(1).strip()
 
 
+def resolve_system(campaign: str = "", override: str = "", default: str = "dnd5e") -> str:
+    """Return the system module a script should apply rules for.
+
+    An explicit `override` (a `--system` flag) wins; otherwise the campaign's
+    `**System Module:**` header; otherwise `default`. Scripts that apply
+    system-specific mechanics call this rather than assuming D&D 5e.
+    """
+    if override and override.strip():
+        return override.strip().lower()
+    if campaign and campaign.strip():
+        if not (find_campaign(campaign.strip()) / "state.md").exists():
+            # A mistyped -c would otherwise apply the default system's rules
+            # with nothing on screen to say so.
+            import sys
+            print(f"warning: no campaign '{campaign.strip()}' (no state.md); "
+                  f"applying {default} rules", file=sys.stderr)
+        return campaign_system(campaign.strip(), default=default).lower()
+    return default
+
+
 def system_data_path(system: str, version: str = "", filename: str = "") -> pathlib.Path:
     """Return a path under `systems/<system>/data/`.
 

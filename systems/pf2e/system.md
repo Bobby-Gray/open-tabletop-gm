@@ -95,7 +95,7 @@ A character carries:
 
 **Resource name:** Focus Points (and spell slots for prepared/spontaneous casters)
 
-- **Focus Points** power focus spells. Most characters with any focus spells have a pool of 1–3. **Refocus** is a 10-minute activity that recovers one point. Track as current/max.
+- **Focus Points** power focus spells. Most characters with any focus spells have a pool of 1–3; a character with none has a pool of 0 (see Advancement for the level-1 pool). **Refocus** is a 10-minute activity that recovers one point. Track as current/max.
 - **Spell slots** work by rank (1st–10th), prepared or spontaneous depending on class. These map to the display's level-banded pip widget exactly as 5e slots do.
 - **Hero Points** are the table-level resource — see Bold Play Reward.
 
@@ -189,7 +189,9 @@ Narrate action spend naturally — "two quick strikes, then a step back out of r
 
 ### Initiative
 
-Usually a **Perception** check. Some scenes call for Stealth (an ambush) or another skill — say which statistic you are rolling and why. There is no separate initiative modifier.
+Usually a **Perception** check. Some scenes call for Stealth (an ambush) or another skill — say which statistic you are rolling and why. There is no separate initiative modifier. On a tie, foes act before PCs.
+
+`combat.py init '<JSON>' -c <campaign>` rolls d20 + each combatant's `perception`; give a combatant `"init_mod"` and `"init_label"` to roll another skill for them. `combat.py attack` resolves a Strike to its four degrees (a critical hit doubles the damage); add the multiple attack penalty to `--atk` yourself.
 
 ### Other core combat rules
 
@@ -218,7 +220,7 @@ Seventeen fixed skills, each governed by an attribute. **Lore** is specialisable
 
 **Skill actions are defined, not freeform.** Demoralize (Intimidation), Trip and Grapple and Shove (Athletics), Feint (Deception), Treat Wounds (Medicine), Recall Knowledge (the relevant lore skill), Create a Diversion (Deception) — each is a named action with a cost and four outcomes. Prefer naming the action a player is taking over inventing a bespoke check, because the named ones have defined critical successes and critical failures that make the degrees matter.
 
-**Skill feats** are a separate feat stream gained at even levels, and they are what turn a Trained skill into a distinctive capability.
+**Skill feats** are a separate feat stream gained at even levels (a rogue gains one every level), and they are what turn a Trained skill into a distinctive capability.
 
 ---
 
@@ -226,10 +228,30 @@ Seventeen fixed skills, each governed by an attribute. **Lore** is specialisable
 
 - Levels 1–20. **1,000 XP per level**, awarded for encounters, accomplishments and milestones rather than per-monster bookkeeping.
 - A moderate-threat encounter for a party of four is worth roughly 80 XP; an accomplishment 30 XP; a full session's progress commonly lands 150–400 XP.
-- Every level grants a class feat or feature; **attribute boosts at 5, 10, 15 and 20**; skill increases at even levels; ancestry feats at odd levels; general feats at 3, 7, 11, 15, 19.
 - Proficiency ranks advance by class progression, not automatically — a skill increase moves one skill up one rank.
 
----
+**What each level grants.** Every level brings class features from the class's own table; on top of that, the general schedule:
+
+| Gain | Levels |
+|------|--------|
+| Ancestry feat | 1, 5, 9, 13, 17 |
+| Class feat | every even level (2, 4, … 20); also level 1 for the classes whose table grants one |
+| Skill feat | every even level (2, 4, … 20) |
+| General feat | 3, 7, 11, 15, 19 |
+| Skill increase | 3, 5, 7, … 19 (every odd level from 3) |
+| Attribute boosts (four) | 5, 10, 15, 20 |
+
+Some classes run a faster skill track: a **rogue** gains a skill feat at every level and a skill increase at every level from 2, and an **investigator** gains additional skill feats and increases beyond the general schedule. Read the class's table before awarding a level; never assume the general row is the whole of it.
+
+**Apply a level-up to every number it touches, not only the one named.**
+- **CON boost:** max HP is `ancestry HP + (class HP + CON modifier) × level`, so a higher CON modifier raises max HP **retroactively** — by the character's level for each +1, not by 1. Raise current HP by the same amount.
+- **DEX boost:** AC rises with it **only up to the armor's Dex cap**; Reflex saves and DEX skills rise regardless.
+- **Key attribute boost:** class DC rises (and, for a caster whose key attribute is their spellcasting attribute, spell attack and spell DC).
+- **Every level:** each trained-or-better proficiency adds the new level, so AC, saves, Perception, trained skills, attacks and DCs all rise by 1 even with no other change. Untrained statistics do not.
+
+**Starting points at level 1** are class-specific — copy them from the class entry rather than from a default:
+- **Proficiency ranks** differ by class: a fighter starts **expert** in Perception and in simple and martial weapons; a wizard starts trained in Perception.
+- **Focus Points:** a character whose class grants a focus spell at level 1 starts with a pool of **1** — for example a bard, champion, druid, oracle, sorcerer or witch, and a wizard with an arcane school. Every other character starts at **0**; a feat that grants a focus spell adds 1 to the pool, to a maximum of 3.
 
 ## Bold Play Reward
 

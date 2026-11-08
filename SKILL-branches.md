@@ -86,7 +86,7 @@ If output reads `# graph not initialized` — graph hasn't been seeded for this 
    ```
    Tell the GM the backup path explicitly so they can revert if needed.
 
-3. **Run `/gm graph init <name>`** — propose seed nodes/edges from `npcs.md`, `world.md`, and `state.md` (Live State Flags + Active Quests + recent NPC dispositions). Show the GM a single approval block (counts by type + named entries) and ask for one go/no-go. After approval, batch-execute the `add-node` and `add-edge` calls. Use `--since N` matching when each node/edge first became canon.
+3. **Run `/gm graph init <name>`** — first `gm_graph.py init --campaign <name>` (creates the empty `graph.json`), then propose seed nodes/edges from `npcs.md`, `world.md`, and `state.md` (Live State Flags + Active Quests + recent NPC dispositions). Show the GM a single approval block (counts by type + named entries) and ask for one go/no-go. After approval, batch-execute the `add-node` and `add-edge` calls. Use `--since N` matching when each node/edge first became canon.
 
 4. **Validate** with a `scene-context` query at the current location to confirm the subgraph is reachable.
 
@@ -156,15 +156,15 @@ Each player message during an active session:
 ## `/gm combat start`
 
 1. Read `<skill-base>/scripts/combat.md`
-2. Collect combatants: name, dex_mod, HP, AC, type (pc/enemy)
-3. Run `combat.py init` → store STATE_JSON in `state.md → ## Active Combat`
+2. Collect combatants: name, HP, AC, type (pc/npc), and the system's initiative stat (`dex_mod` for dnd5e, `perception` for pf2e, `dex` for brp — see the table in `scripts/combat.md`)
+3. Run `combat.py init '<JSON>' -c <campaign>` → store STATE_JSON in `state.md → ## Active Combat`
 4. If display running: push turn order via `push_stats.py --turn-order`
 5. Enter COMBAT state
 
 ## COMBAT — Turn
 
 Each turn in combat:
-1. Run `combat.py attack` or `dice.py` as needed (scripts/combat.md already in context)
+1. Run `combat.py attack ... -c <campaign>` or `dice.py ... --vs attack|save|check -c <campaign>` as needed (scripts/combat.md already in context)
 2. Run `tracker.py effect tick` for the active combatant
 3. If display running: update HP, conditions, turn pointer via `push_stats.py`
 4. If display running: send narration via `send.py`
@@ -183,10 +183,9 @@ Each turn in combat:
 
 1. Read `scripts/general.md` (calendar.py) + `scripts/combat.md` (tracker.py)
 2. Follow rest procedure from `systems/<system>/system.md`
-3. Run `tracker.py clear` (expired conditions/effects)
-4. Run `calendar.py rest short|long`
-5. Update state.md in-world date
-6. If display running: `push_stats.py --world-time` + HP/slot updates
+3. Run `calendar.py rest short|long` — it also spends the rest's time on timed effects (expiring what runs out) and, for a long rest, ends concentration. Do **not** run `tracker.py clear`: a rest does not cure lasting conditions or erase death saves. Without a calendar, run `tracker.py effect advance 1h` (short) or `8h` (long) instead, and after a long rest `tracker.py concentrate <name> break` for anyone still concentrating.
+4. Update state.md in-world date
+5. If display running: `push_stats.py --world-time` + HP/slot updates
 
 ---
 
@@ -218,7 +217,7 @@ Default to `Step by step` if the question is dismissed. Either path lands in the
 
 1. Read `scripts/character.md`. Ask the player for the character's name.
 
-   **Name uniqueness check:** run `python3 <skill-base>/scripts/name_registry.py check "<name>"`. Exit 1 (duplicate) prints which prior campaign / session used the name; surface as a non-blocking warning and ask the player to confirm or change. After write (step 4), call `name_registry.py add --name "<name>" --type pc --campaign <name> --session <current>`.
+   **Name uniqueness check:** run `python3 <skill-base>/scripts/name_registry.py check "<name>"`. Exit 1 prints which prior campaign / session used the name, or which PC already has the same first name; surface as a non-blocking warning and ask the player to confirm or change. After write (step 4), call `name_registry.py add --name "<name>" --type pc --campaign <name> --session <current>`.
 2. Follow character creation procedure from `systems/<system>/system.md`
 3. Run `ability-scores.py` and `character.py calc`
 4. Write character file; mirror to global roster; record name in registry (see step 1)

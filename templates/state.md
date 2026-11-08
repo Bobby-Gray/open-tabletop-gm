@@ -154,7 +154,11 @@ revision_log: []
 *(roll_mode: `players` (default — players roll their own PCs; GM waits) or `auto` (GM rolls everything openly). See SKILL.md → Dice convention.)*
 
 ## GM Style Notes
-*Distilled calibration for this specific player — read at every /gm load, updated at /gm end only when a genuinely new pattern emerges.*
+*Distilled calibration for this specific player — read at every /gm load, updated at /gm end only when a genuinely new pattern emerges. A player's explicit style request is written here the moment it is made, replacing any note it contradicts.*
+*(none yet)*
+
+## Glossary
+*Optional — for a campaign narrated in a language other than the rules'. One fixed rendering per game term, so a condition, skill or spell is called the same thing every session. Format: `term — rendering`.*
 *(none yet)*
 
 ## GM Notes (hidden from players)

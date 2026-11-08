@@ -11,7 +11,7 @@ Supported input formats:
 Usage:
   python3 import_campaign.py <filepath>            # print full extracted text
   python3 import_campaign.py <filepath> --info     # print file info + page/word count only
-  python3 import_campaign.py <filepath> --chunk N  # print chunk N of ~4000 words (for large sources)
+  python3 import_campaign.py <filepath> --chunk N  # print chunk N of ~24,000 characters (for large sources)
   python3 import_campaign.py <filepath> --chunks   # print total number of chunks
 
 Output is UTF-8 plain text, written to stdout. The GM reads this and maps it to campaign files.
@@ -22,7 +22,24 @@ import os
 import argparse
 import subprocess
 
-CHUNK_WORDS = 4000  # words per chunk for large sources
+# The extracted text goes to stdout, and a module in any non-Latin script
+# raised UnicodeEncodeError on the first character under a non-UTF-8 console
+# (a Windows code page, or LC_ALL=C). Same guard as scripts/paths.py; this
+# script does not import it.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+# Chunks are measured in characters, not words, and cut on line boundaries.
+# Splitting on whitespace and re-joining with single spaces did two kinds of
+# damage: every newline in the source was lost, so headings, tables and stat
+# blocks arrived as one run-on line; and a script written without spaces
+# (Chinese, Japanese, Thai) is one "word" per paragraph, so a whole module
+# came out as a single chunk. 24,000 characters is about the 4,000 English
+# words the old chunk held.
+CHUNK_CHARS = 24000
 
 
 def extract_pdf(path: str) -> str:
@@ -92,20 +109,43 @@ def word_count(text: str) -> int:
     return len(text.split())
 
 
+def split_chunks(text: str, size: int = CHUNK_CHARS) -> list:
+    """Split `text` into chunks of at most `size` characters, verbatim.
+
+    Cuts fall on line ends, so headings and table rows stay whole and
+    "".join(chunks) == text. Only a very long line (a paragraph in a script
+    with no spaces, or a PDF that extracted without line breaks) is cut inside,
+    after its last space before the limit, or at the limit when it has none.
+    """
+    chunks, cur = [], ""
+    for line in text.splitlines(keepends=True):
+        while len(cur) + len(line) > size and len(line) > size // 2:
+            # An oversized line: fill the current chunk with as much of it as
+            # fits, preferring to cut after a space.
+            room = size - len(cur)
+            cut = line.rfind(" ", 0, room)
+            cut = room if cut < room // 2 else cut + 1
+            chunks.append(cur + line[:cut])
+            cur, line = "", line[cut:]
+        if cur and len(cur) + len(line) > size:
+            chunks.append(cur)
+            cur = ""
+        cur += line
+    if cur:
+        chunks.append(cur)
+    return chunks or [""]
+
+
 def chunk_text(text: str, chunk_index: int) -> str:
-    """Return chunk N (0-indexed) of ~CHUNK_WORDS words."""
-    words = text.split()
-    start = chunk_index * CHUNK_WORDS
-    end = start + CHUNK_WORDS
-    chunk_words = words[start:end]
-    if not chunk_words:
+    """Return chunk N (0-indexed) of at most CHUNK_CHARS characters."""
+    chunks = split_chunks(text)
+    if chunk_index < 0 or chunk_index >= len(chunks):
         return ""
-    return " ".join(chunk_words)
+    return chunks[chunk_index]
 
 
 def total_chunks(text: str) -> int:
-    wc = word_count(text)
-    return max(1, (wc + CHUNK_WORDS - 1) // CHUNK_WORDS)
+    return max(1, len(split_chunks(text)))
 
 
 def file_info(path: str, text: str) -> str:
@@ -116,6 +156,7 @@ def file_info(path: str, text: str) -> str:
         f"File:   {os.path.basename(path)}",
         f"Type:   {ext or 'unknown'}",
         f"Words:  {wc:,}",
+        f"Chars:  {len(text):,}",
         f"Chunks: {chunks}  (--chunk 0 through --chunk {chunks - 1})",
     ]
     return "\n".join(lines)
@@ -127,7 +168,7 @@ def main():
     parser.add_argument("--info", action="store_true", help="Print file info only")
     parser.add_argument("--chunks", action="store_true", help="Print total chunk count")
     parser.add_argument("--chunk", type=int, default=None, metavar="N",
-                        help="Print chunk N (0-indexed, ~4000 words each)")
+                        help="Print chunk N (0-indexed, up to 24,000 characters each)")
     args = parser.parse_args()
 
     if not os.path.exists(args.filepath):
@@ -150,11 +191,11 @@ def main():
         print(total_chunks(text))
     elif args.chunk is not None:
         chunk = chunk_text(text, args.chunk)
-        if not chunk:
+        if not chunk.strip():
             print(f"Error: chunk {args.chunk} out of range (max: {total_chunks(text) - 1})",
                   file=sys.stderr)
             sys.exit(1)
-        print(chunk)
+        print(chunk, end="" if chunk.endswith("\n") else "\n")
     else:
         # Print full text
         print(text)

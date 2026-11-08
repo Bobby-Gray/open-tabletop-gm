@@ -12,6 +12,217 @@ This project is the LLM-agnostic, system-flexible fork of [claude-dnd-skill](htt
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-11-08 — Rules That Follow the Game You Are Playing
+
+Fifteen fixes in one release, so an existing install updates once and receives
+all of them. The headline is that the toolchain stops assuming D&D: `combat.py`
+and `dice.py` read the campaign's `**System Module:**` and apply that system's
+initiative, critical hits and natural-number rules, and they refuse a system
+they do not know instead of handing it D&D arithmetic. Timed effects now run on
+in-game time, so a rest spends it rather than wiping the tracker. Narration
+audio works with no API key. Several fixes match claude-dnd-skill v2.7.0, where
+the same defects are fixed in parallel.
+
+### Fixed — combat ran D&D 5e math for every system
+
+- **`combat.py` rolled d20 + DEX for everyone.** A PF2e party's initiative is
+  a Perception check, and a BRP party rolls nothing at all — it acts in DEX
+  order, highest first. `attack` crit only on a natural 20, which in PF2e is
+  not the rule: a Strike is a critical hit when it beats AC by 10, and a
+  natural 20 or 1 shifts the degree of success one step. `scripts/combat.md`
+  documented all of it with no system caveat, and the output looked
+  authoritative in every system.
+
+  Combat now resolves the campaign's system the way `scripts/paths.py` does
+  for everything else — `-c <campaign>` reads `**System Module:**` from
+  `state.md`, `--system` overrides it, and with neither it is D&D 5e. A `-c`
+  naming a campaign that does not exist says so on stderr rather than quietly
+  applying D&D 5e. Per system:
+
+  | System | Initiative | Ties | `attack` |
+  |--------|-----------|------|----------|
+  | `dnd5e` | d20 + `dex_mod` | higher DEX modifier | unchanged |
+  | `pf2e` | d20 + `perception` (or a chosen skill via `init_mod`) | foes before PCs | four degrees; a crit doubles all damage |
+  | `brp` | no roll — `dex` rank, highest first | listed order | refused; resolve on the attack/defence matrix |
+
+  **D&D 5e output is byte-identical to v0.16.0**, verified by running both
+  versions against the same die sequences. A combatant missing its system's
+  stat, a BRP `attack`, or a system with no rule is an error with exit 2 and
+  a message saying what to do — the previous behaviour, silently applying
+  d20 + DEX, is the failure being closed. The rules live in one table,
+  `INITIATIVE` (die, stat, label, tie rule, whether a scene may pick another
+  statistic), plus `ATTACK_RESOLVERS`; supporting a new system is adding a
+  row. `SYSTEM-PORTING.md` says so instead of claiming initiative works for
+  any system unchanged.
+- **`attack --crit` did nothing.** The flag was parsed and passed to
+  `resolve_attack()`, which never read it, so the documented way to resolve
+  an attack on a paralysed target in reach rolled a normal hit. `--crit` now
+  makes a hit a critical hit; it cannot turn a miss into one.
+
+### Fixed — every natural 20 was a CRITICAL HIT
+
+- **`dice.py` labelled every single d20** "CRITICAL HIT" on a 20 and
+  "FUMBLE" on a 1 — ability checks, saving throws and initiative included. In
+  D&D 5e a natural 20 on a check is just a 20 and "fumble" is not a rule; a GM
+  reading the label narrated a critical success the rules do not give. New
+  `--vs check|save|attack` says what the roll is for and `--dc N` resolves it.
+  Naturals are labelled only where the system gives them a meaning: in D&D 5e
+  on attacks (a critical hit, an automatic miss); in PF2e on every check, as
+  the one-step shift, with `--dc` resolving all four degrees. Without `--vs`
+  nothing is labelled. Like combat, the system comes from `-c` or `--system`,
+  and the per-system rule is a row in `NATURAL_RULES`.
+- **Game dice now come from `secrets`.** `dice.py`, `combat.py` and
+  `ability-scores.py` used `random`, a seedable generator; the display's
+  server-side roller already used `secrets.randbelow`. All game dice draw from
+  the same source now.
+
+### Fixed — timed effects ran on the wall clock, and a rest wiped the tracker
+
+- **A `60m` effect lasted sixty real minutes.** `tracker.py` stored a
+  wall-clock timestamp, so a one-hour spell expired over a coffee break and
+  survived an eight-hour rest that took two minutes to type. Nothing could
+  spend in-game time on an effect at all. Minute and hour durations are now
+  in-game minutes. **`tracker.py effect advance <time>`** (`30`, `30m`, `8h`)
+  spends them, counting round-measured effects down by the rounds that much
+  time holds, and **`calendar.py advance` and `calendar.py rest` call it
+  for you**, so a journey or a rest moves the calendar and the effects
+  together. A long rest also ends concentration. Effects already stored with
+  a wall-clock timestamp are read as whatever the clock had left, and stored
+  as in-game minutes on the next write.
+- **The rest procedure ran `tracker.py clear`.** That wiped every effect,
+  every condition and all concentration, so an eight-hour ward vanished at a
+  short rest and a curse or a disease ended because the party sat down. The
+  `/gm rest` branch now runs only `calendar.py rest`, and says not to clear.
+- **`clear` at the end of every encounter did the same to hour-long
+  effects.** It now ends round-measured effects — they are combat-scale — and
+  conditions, and leaves minute/hour/indefinite effects running along with the
+  concentration they carry. `clear --all` still wipes everything.
+
+### Fixed — the D&D 5e long rest was not the one in the rules
+
+- **`systems/dnd5e/system.md` restored "half max Hit Dice (round up)" and
+  all HP, then ran `tracker.py clear --all`.** 2014 restores half the total
+  rounded **down**, minimum one; 2024 restores all of them. A character at 0
+  HP gains nothing from a long rest. Exhaustion drops by one (in 2014, only if
+  the character ate and drank), sleep ends concentration, and lasting
+  conditions and death-save tallies are not erased by sleeping. The text now
+  says all of that, by edition, and the short-rest line says what the hour
+  does and does not clear.
+
+### Fixed — the SRD armour table added DEX to plate
+
+- **`build_srd.py` wrote every armour's AC as `AC <base> + DEX`.** Upstream
+  carries `dex_bonus` and `max_bonus` beside `base`, and the builder read only
+  `base`, so the dataset said plate was "AC 18 + DEX" and a shield was
+  "AC 2 + DEX". A GM who trusted the lookup gave a DEX 16 fighter in plate AC
+  21. Heavy armour now reads `AC 18`, medium `AC 14 + DEX (max 2)`, light
+  `AC 11 + DEX`, and a shield `AC +2`. The dataset is gitignored, so rebuild
+  with `build_srd.py` to pick this up.
+
+### Fixed — PF2e advancement and level-1 numbers
+
+- **The advancement schedule was wrong.** `systems/pf2e/system.md` said
+  "skill increases at even levels; ancestry feats at odd levels" — a GM
+  following it awarded ten ancestry feats instead of five. It is now a table:
+  ancestry feats at 1, 5, 9, 13, 17; class feats at every even level (and
+  at 1 where the class grants one); skill feats at every even level; general
+  feats at 3, 7, 11, 15, 19; skill increases at 3, 5, 7 … 19; attribute boosts
+  at 5, 10, 15, 20 — with the rogue's and investigator's faster skill tracks
+  called out.
+- **A level-up's knock-on effects are spelled out.** A CON boost raises max
+  HP retroactively, by the character's level per +1; a DEX boost raises AC only
+  within the armour's Dex cap; a key-attribute boost raises class DC; and every
+  level adds 1 to each trained-or-better statistic.
+- **Level-1 starting points are class-specific.** A Focus Point pool of 1
+  only for a class that starts with a focus spell, 0 otherwise; and each
+  class's own proficiency ranks — a fighter starts expert in Perception.
+
+### Added — narration audio with no API key
+
+- **`/tts` answered 503 without a key, and that was the end of it.** The
+  speaker button flashed "TTS 503" and never spoke, so narration audio was a
+  paid feature by accident. The browser's own `speechSynthesis` now takes
+  over — the same fallback as claude-dnd-skill v2.6.0: a 503 switches the page
+  to the browser voice for the session, while a transient failure (429, a
+  dropped connection) falls back for that block only. Long blocks are split at
+  sentence ends in Latin, CJK and Arabic punctuation, so no single utterance
+  runs into Chrome's ~15-second cut-off.
+- **The voice follows the text's language.** This page's `<html lang>` is a
+  static `en`, so a page-language-first choice sent a Japanese block to an
+  English voice. The block's own script is now the first preference —
+  Japanese, Korean, Chinese, Thai, Greek and Hebrew directly, and Cyrillic or
+  Arabic script by the browser's own language in that script — then the
+  browser's language list, then English, then any voice at all.
+- **Synthesized clips are cached on disk.** Every press of a speaker button
+  was a new Gemini call, including replays and a second device playing the
+  same block. Clips are now kept in `~/.cache/open-tabletop-gm/tts/`, keyed
+  on model, voice and exact text, bounded at 200 MB with least-recently-used
+  eviction (`GM_TTS_CACHE_DIR`, `GM_TTS_CACHE_MB`; `0` disables). The response
+  says `X-Audio-Cache: hit` or `miss`.
+
+### Fixed — display
+
+- **Short replies outside Latin script vanished.** The terminal-chrome filter
+  dropped any line of three characters or fewer without two consecutive ASCII
+  letters, so 「好的」, 「はい。」 and 「Да.」 — whole answers from an NPC —
+  never reached the screen while "Ok." did. A word is now two letters in any
+  script, or one in a script written without word delimiters.
+- **Straight quotes rendered as closing curly quotes.** IM Fell English draws
+  U+0022 and U+0027 with right-hand curly glyphs, so `"Stay back," she said`
+  opened every line of dialogue the wrong way. A font face covering exactly
+  those two code points with a local serif now sits ahead of IM Fell in every
+  stack that uses it; every other character, curly quotes included, is still
+  IM Fell's.
+
+### Fixed — campaign import flattened every module
+
+- **`import_campaign.py` split on whitespace and rejoined with spaces.**
+  Every newline was lost — headings, tables and stat blocks arrived as one
+  run-on line — and a Chinese or Japanese module, which is one "word" per
+  paragraph, came back as a single chunk however long it was. Chunks are now
+  up to 24,000 characters (about the 4,000 English words a chunk held before),
+  cut on line ends and reassembling to the source exactly; only an overlong
+  line is cut inside. `--chunk N` and `--chunks` work as before, `--info` adds a
+  character count, and output is UTF-8 on any console — a module in a
+  non-Latin script raised `UnicodeEncodeError` under a non-UTF-8 code page.
+
+### Fixed — `graph init` was a hard requirement with no command behind it
+
+- **`SKILL-commands.md`, `SKILL-branches.md` and the README all required
+  `graph init`, and `gm_graph.py` had no `init` subcommand.** The call failed
+  with "invalid choice", so the step the load flow calls non-deferrable could
+  not be done. `gm_graph.py init --campaign <name>` now creates an empty
+  `graph.json`; it is idempotent on an empty graph and refuses, exit 1, to
+  touch one that already holds nodes or edges. The docs say to run it before
+  proposing seed nodes and edges.
+
+### Fixed — names
+
+- **An NPC could share a PC's first name unremarked.** `name_registry.py
+  check` compared whole names only, so "Captain Mira Thorne" passed as unique
+  at a table whose PC is "Mira Voss", and every "Mira said" after that was
+  ambiguous. The check now also flags a first name — honorifics stripped —
+  that a PC already answers to, optionally limited to one campaign with
+  `--campaign`, and exits 1 for it as for a duplicate.
+- **The prose scan could not see a name with an accent.** `_PROSE_NAME_PAT`
+  was `[A-Z][a-z]+`, so "Élodie Marchand", "Ярослав Мудрый" and
+  "Νίκος Παππάς" were invisible and "Ana Núñez" was cut to nothing. It now
+  uses Unicode upper- and lowercase classes; ASCII matches are unchanged.
+
+### Changed — table discipline in `SKILL.md`
+
+- A short, system-agnostic block of rules for failures no script can catch:
+  no combat from flirting, sparring, a joke or a figure of speech, or against a
+  friendly target, and a downed creature is not a combatant; a check only when
+  failure would change the scene, and each turn opens on what changed; a
+  player's mid-session style request is written to the style notes at once,
+  replacing any it contradicts; an out-of-character question is answered in
+  the language it was asked in; level and XP come from the sheet, and no sheet
+  update is claimed unless it was written; damage and loot are checked
+  against the sheet before applying, above all after compaction; and one
+  translation per game term, kept in a new optional `## Glossary` section of
+  the state template.
+
 ## [0.16.0] — 2026-10-09 — Two more games, and a display that knows which one you are playing
 
 Two new system modules ship with this release, and the display layer finally

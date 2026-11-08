@@ -19,7 +19,18 @@ python3 $SKILL/scripts/dice.py d20+3 dis     # disadvantage + modifier
 python3 $SKILL/scripts/dice.py d20 --silent  # integer only
 ```
 
-Flags nat 20 (CRITICAL HIT) and nat 1 (FUMBLE) automatically.
+Say what the d20 is for with `--vs check|save|attack`, and optionally `--dc N`
+(the AC, for an attack). A natural 20 or 1 is labelled only where the campaign's
+system gives it a meaning: in D&D 5e that is attack rolls only (a critical hit,
+an automatic miss); in PF2e any check, as a one-step shift in the degree of
+success, which `--dc` resolves to all four degrees. Without `--vs` nothing is
+labelled — a natural 20 on an ability check is not a critical hit. The system
+comes from `-c <campaign>` (its `**System Module:**`) or `--system <name>`.
+
+```bash
+python3 $SKILL/scripts/dice.py d20+6 --vs attack --dc 15 -c $CAMP
+python3 $SKILL/scripts/dice.py d20+4 --vs save --dc 18 --system pf2e
+```
 
 ---
 
@@ -27,19 +38,41 @@ Flags nat 20 (CRITICAL HIT) and nat 1 (FUMBLE) automatically.
 
 ```bash
 SKILL=<skill-base>
+CAMP=<campaign-name>
 
-# Roll initiative and print tracker
-python3 $SKILL/scripts/combat.py init '<JSON>'
-# JSON: [{"name":"Aldric","dex_mod":1,"hp":134,"ac":20,"type":"pc"}, ...]
+# Order the combatants and print the tracker
+python3 $SKILL/scripts/combat.py init '<JSON>' -c $CAMP
 
 # Reprint tracker from saved state
 python3 $SKILL/scripts/combat.py tracker '<JSON>' <round_num>
 
-# Resolve a single attack
-python3 $SKILL/scripts/combat.py attack --atk 10 --ac 20 --dmg 2d6+5
+# Resolve a single attack (--crit: a hit is a critical hit)
+python3 $SKILL/scripts/combat.py attack --atk 10 --ac 20 --dmg 2d6+5 -c $CAMP
 ```
 
 `init` outputs a `STATE_JSON:` line — store in `state.md → ## Active Combat` between turns.
+
+**The rules follow the campaign's system.** `-c <campaign>` reads `**System Module:**`
+from its `state.md`; `--system <name>` overrides it; with neither, the rules are
+D&D 5e. Each system's initiative stat goes in the combatant JSON under its own key:
+
+| System | Initiative | JSON key | Ties | `attack` |
+|--------|------------|----------|------|----------|
+| `dnd5e` | d20 + DEX modifier | `dex_mod` | higher DEX modifier first | natural 20 hits and crits (dice doubled), natural 1 misses |
+| `pf2e` | d20 + Perception modifier | `perception` | foes before PCs | four degrees: beat AC by 10 to crit, natural 20/1 shift one step; a crit doubles all damage |
+| `brp` | no roll — DEX rank, highest first | `dex` | listed order (GM's call) | not supported — resolve the percentile attack and defence per `systems/brp/system.md` |
+
+- **PF2e:** a scene can call for a different initiative skill for one combatant
+  (Stealth for an ambusher, Deception for a bluff). Give that combatant
+  `"init_mod": <modifier>, "init_label": "Stealth"` and it rolls that instead of
+  Perception. Fold the multiple attack penalty (−5 / −10, or −4 / −8 agile)
+  into `--atk` yourself.
+- **BRP:** `ac` is optional in the JSON (the tracker shows `—`); armour reduces
+  damage in this system rather than being a target number.
+- **Any other system:** `init` and `attack` refuse with a message rather than
+  apply another system's arithmetic. Add a row to `INITIATIVE` (and, for a
+  d20-against-AC system, `ATTACK_RESOLVERS`) in `scripts/combat.py`, or run
+  with `--system dnd5e` to accept d20 + DEX deliberately.
 
 ---
 
@@ -54,6 +87,7 @@ python3 $SKILL/scripts/tracker.py -c $CAMP effect start "NAME" "Effect" 10r conc
 python3 $SKILL/scripts/tracker.py -c $CAMP effect start "NAME" "Effect" indef
 python3 $SKILL/scripts/tracker.py -c $CAMP effect end   "NAME" "Effect"
 python3 $SKILL/scripts/tracker.py -c $CAMP effect tick  "NAME"   # call on actor's turn
+python3 $SKILL/scripts/tracker.py -c $CAMP effect advance 30m     # in-game time passed outside the calendar
 
 # Conditions
 python3 $SKILL/scripts/tracker.py -c $CAMP condition add    "NAME" Frightened
@@ -72,11 +106,19 @@ python3 $SKILL/scripts/tracker.py -c $CAMP saves "NAME" reset
 
 # Status / clear
 python3 $SKILL/scripts/tracker.py -c $CAMP status
-python3 $SKILL/scripts/tracker.py -c $CAMP clear        # conditions + concentration + effects
-python3 $SKILL/scripts/tracker.py -c $CAMP clear --all  # also clears death saves
+python3 $SKILL/scripts/tracker.py -c $CAMP clear        # end of encounter: conditions + round effects
+python3 $SKILL/scripts/tracker.py -c $CAMP clear --all  # everything, death saves included
 ```
 
 **When to run:** condition applied/removed; concentration begins/breaks; PC drops to 0 HP; each death save; end of encounter → `clear`.
+
+**Durations are in-game time.** A `60m` or `8h` effect counts down only when
+the story spends time: `calendar.py advance` and `calendar.py rest` advance it
+automatically (a long rest also ends concentration), and `effect advance <time>`
+covers time the calendar does not track. `clear` ends round-measured effects
+with the fight and leaves minute/hour effects running. Do **not** run `clear`
+for a rest — conditions with their own cure, and death saves, are not erased by
+sleeping.
 
 ---
 

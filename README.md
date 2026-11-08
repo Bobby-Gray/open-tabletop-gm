@@ -54,13 +54,19 @@ systems/<your-system>/
 | System | Module | Notes |
 |--------|--------|-------|
 | D&D 5e | `systems/dnd5e/` | Full support — scripts, SRD dataset, character tools |
-| PF2e-compatible (ORC) | `systems/pf2e/` | Three-action economy, four degrees of success, hero points, focus spells. Rules module + display manifest |
-| Basic Roleplaying (BRP) | `systems/brp/` | d100 roll-under, Power Points, optional Sanity. Rules module + display manifest |
+| PF2e-compatible (ORC) | `systems/pf2e/` | Three-action economy, four degrees of success, hero points, focus spells. Rules module + display manifest; `combat.py` rolls Perception initiative and resolves Strikes to four degrees |
+| Basic Roleplaying (BRP) | `systems/brp/` | d100 roll-under, Power Points, optional Sanity. Rules module + display manifest; `combat.py` orders the fight by DEX rank |
 
 All three are rules modules the GM model reads, each with a display manifest so
 the character sidebar shows that system's own statistics — PF2e sheets store
 attribute *modifiers* with no scores to derive from, and BRP has no XP bar
 because it has no levels. None of them needs a line of display code.
+
+`combat.py` and `dice.py` read the campaign's `**System Module:**` and apply
+that system's rules — initiative stat and tie order, what a critical hit is,
+and whether a natural 20 means anything on the roll in hand. A system they do
+not know is refused rather than given D&D arithmetic; adding one is a row in a
+table (see `scripts/combat.md`).
 
 The two non-D&D modules carry ORC-licensed rules content with attribution in
 their `NOTICE` files. The *Pathfinder* wordmark is Paizo's and is not licensed
@@ -219,7 +225,7 @@ Once loaded, type naturally — no `/gm` prefix needed. The GM interprets all in
 | `/gm display off` | Stop the display companion |
 | `/gm path [<new>\|reset]` | View or relocate campaign storage via `GM_CAMPAIGN_ROOT` |
 | `/gm update [--check]` | Pull the latest skill changes from `origin/main` (refuses on dirty tree, fast-forward only) |
-| `/gm graph init` | Initialize the campaign relationship graph (proposes seed nodes + edges; asks for approval) |
+| `/gm graph init` | Initialize the campaign relationship graph — `gm_graph.py init` creates the empty graph, then the GM proposes seed nodes + edges and asks for approval |
 | `/gm graph scene-context --place <id> [--present id1,id2]` | Focused subgraph for the current scene; primary in-session query |
 | `/gm graph add-edge --from <id> --to <id> --type T --since N` | Record a relationship shift mid-session |
 | `/gm graph close-edge --id <id> --at-session N` | Mark an edge as ended (alliance broke, NPC moved away, etc.) |
@@ -352,6 +358,13 @@ python3 display/push_stats.py --world-time \
 
 Valid `time` values: `dawn`, `morning`, `midday`, `afternoon`, `evening`, `dusk`, `night`  
 Valid `weather` values: `calm`, `clear`, `overcast`, `rainy`, `stormy`
+
+### Narration audio
+
+Every narrator and NPC block has a speaker button. With a Gemini key configured
+it plays Gemini Flash TTS, cached on disk so a replay costs nothing; with no key
+it speaks through the browser's own voice, picked by the language the block is
+written in. See [`docs/SKILL-tts.md`](docs/SKILL-tts.md).
 
 ### Sound effects
 

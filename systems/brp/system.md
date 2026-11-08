@@ -165,6 +165,8 @@ Standard BRP conditions. Severity classes are the display's four (`danger`, `war
 
 Multiple actions: each action after the first is at DEX rank −5.
 
+`combat.py init '<JSON>' -c <campaign>` orders the fight by each combatant's `dex` with no roll, highest first; equal DEX keeps the listed order, so settle ties as the table prefers. `combat.py attack` does not apply to this system — resolve attack and defence on the matrix below with `dice.py d100`.
+
 ### Attack & Defense Matrix
 
 | Attack  | Defense     | Result |

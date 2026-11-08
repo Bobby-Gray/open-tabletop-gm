@@ -23,6 +23,12 @@ Usage:
     python3 tracker.py -c $CAMPAIGN effect start <entity> "<spell>" <duration> [conc]
     python3 tracker.py -c $CAMPAIGN effect end   <entity> "<spell>"
     python3 tracker.py -c $CAMPAIGN effect tick  <entity>   # call on that entity's turn start
+    python3 tracker.py -c $CAMPAIGN effect advance <time>   # in-game time passed: 30 / 30m / 8h
+
+    # Minute and hour durations run on IN-GAME time, not the wall clock: they
+    # count down only when the story spends time. calendar.py advance/rest
+    # call `effect advance` for you; use it directly for time the calendar
+    # does not track (a ten-minute search, a short walk).
 
     # Death saves (PC only — 3 successes = stable, 3 failures = dead)
     python3 tracker.py -c $CAMPAIGN saves <entity> success
@@ -33,8 +39,9 @@ Usage:
     # Status display
     python3 tracker.py -c $CAMPAIGN status [entity]   # all entities or one
 
-    # Clear (end of encounter — wipes conditions/concentrations/effects; preserves saves)
-    python3 tracker.py -c $CAMPAIGN clear [--all]     # --all also clears saves
+    # Clear (end of encounter — wipes conditions and round-measured effects;
+    #   minute/hour/indefinite effects and their concentration carry on; preserves saves)
+    python3 tracker.py -c $CAMPAIGN clear [--all]     # --all wipes everything, saves included
 """
 
 import json
@@ -42,6 +49,7 @@ import os
 import sys
 import subprocess
 import argparse
+import math
 import time
 import pathlib
 
@@ -95,6 +103,7 @@ def _entity(state: dict, name: str) -> dict:
         }
     # Backfill effects key for older entries
     state[key].setdefault("effects", [])
+    state[key]["effects"] = [_migrate(e) for e in state[key]["effects"]]
     return state[key]
 
 
@@ -111,19 +120,41 @@ def _parse_duration(dur_str: str) -> "dict | None":
             return None
     elif d.endswith("m"):
         try:
-            secs = int(d[:-1]) * 60
-            return {"duration_type": "minutes", "duration_seconds": secs, "started_at": time.time()}
+            return {"duration_type": "minutes", "remaining_minutes": int(d[:-1])}
         except ValueError:
             return None
     elif d.endswith("h"):
         try:
-            secs = int(d[:-1]) * 3600
-            return {"duration_type": "hours", "duration_seconds": secs, "started_at": time.time()}
+            return {"duration_type": "hours", "remaining_minutes": int(d[:-1]) * 60}
         except ValueError:
             return None
     elif d == "indef":
         return {"duration_type": "indefinite"}
     return None
+
+
+def _remaining_minutes(eff: dict) -> int:
+    """In-game minutes left on a minute/hour effect.
+
+    Effects written before durations moved to in-game time carry
+    `started_at` + `duration_seconds` (wall clock). They are read as whatever
+    the wall clock had left — what the old code would have shown — and
+    `_migrate` stores that as in-game minutes on the next write.
+    """
+    if "remaining_minutes" in eff:
+        return int(eff["remaining_minutes"])
+    elapsed = time.time() - eff.get("started_at", time.time())
+    left = max(0.0, eff.get("duration_seconds", 0) - elapsed)
+    return math.ceil(left / 60)
+
+
+def _migrate(eff: dict) -> dict:
+    if eff.get("duration_type") in ("minutes", "hours") and "remaining_minutes" not in eff:
+        eff = dict(eff)
+        eff["remaining_minutes"] = _remaining_minutes(eff)
+        eff.pop("started_at", None)
+        eff.pop("duration_seconds", None)
+    return eff
 
 
 def _fmt_effect(eff: dict) -> str:
@@ -133,15 +164,13 @@ def _fmt_effect(eff: dict) -> str:
         r = eff.get("duration_remaining", 0)
         return f"{r} rnd"
     elif dt in ("minutes", "hours"):
-        elapsed = time.time() - eff.get("started_at", time.time())
-        remaining = max(0, eff.get("duration_seconds", 0) - elapsed)
+        remaining = _remaining_minutes(eff)
         if remaining <= 0:
             return "expired"
-        m, s = divmod(int(remaining), 60)
-        if m >= 60:
-            h, m = divmod(m, 60)
+        h, m = divmod(remaining, 60)
+        if h:
             return f"{h}h {m}m"
-        return f"{m}:{s:02d}"
+        return f"{m}m"
     return "∞"
 
 
@@ -242,9 +271,9 @@ def cmd_effect(campaign: str, action: str, entity_name: str,
                 else:
                     kept.append(e)
             elif dt in ("minutes", "hours"):
-                elapsed = time.time() - e.get("started_at", time.time())
-                remaining = e.get("duration_seconds", 0) - elapsed
-                if remaining <= 0:
+                # In-game time, advanced by `effect advance` — a turn passing
+                # does not spend it. Only an already-spent one expires here.
+                if _remaining_minutes(e) <= 0:
                     time_expired.append(e)
                 else:
                     kept.append(e)
@@ -278,7 +307,89 @@ def cmd_effect(campaign: str, action: str, entity_name: str,
         _save(campaign, state)
 
     else:
-        print(f"  error: unknown effect action '{action}' — use start / end / tick")
+        print(f"  error: unknown effect action '{action}' — use start / end / tick / advance")
+
+
+# Seconds per combat round, for converting time spent outside combat into
+# rounds on a round-measured effect. Six unless the system says otherwise.
+ROUND_SECONDS = {"brp": 12}
+
+
+def _round_seconds(campaign: str) -> int:
+    try:
+        from paths import campaign_system
+        return ROUND_SECONDS.get(campaign_system(campaign), 6)
+    except Exception:
+        return 6
+
+
+def parse_advance(amount: str) -> "int | None":
+    """'30' / '30m' -> 30, '8h' -> 480. None on bad input."""
+    a = str(amount).strip().lower()
+    try:
+        if a.endswith("h"):
+            return int(a[:-1]) * 60
+        if a.endswith("m"):
+            return int(a[:-1])
+        return int(a)
+    except ValueError:
+        return None
+
+
+def advance_time(campaign: str, minutes: int, end_concentration: bool = False,
+                 quiet: bool = False) -> dict:
+    """Spend `minutes` of in-game time on every tracked effect.
+
+    Minute/hour effects count down by `minutes`; round effects by the rounds
+    that much time contains. Anything that reaches zero expires, and a
+    concentration effect that expires ends the concentration it carried.
+    Conditions and death saves are untouched — time passing does not cure
+    them. `end_concentration` (a long rest: sleep ends concentration) ends
+    every concentration effect and clears the concentration field.
+    """
+    state = _load(campaign)
+    summary = {"expired": [], "running": 0}
+    if not state or minutes < 0:
+        return summary
+    rounds = (minutes * 60) // _round_seconds(campaign)
+
+    for ent in state.values():
+        name = ent.get("name", "?")
+        ent.setdefault("effects", [])
+        kept = []
+        for e in (_migrate(x) for x in ent["effects"]):
+            dt = e.get("duration_type")
+            expired = False
+            if dt == "rounds":
+                e["duration_remaining"] = max(0, e.get("duration_remaining", 0) - rounds)
+                expired = e["duration_remaining"] <= 0
+            elif dt in ("minutes", "hours"):
+                e["remaining_minutes"] = max(0, _remaining_minutes(e) - minutes)
+                expired = e["remaining_minutes"] <= 0
+            if end_concentration and e.get("concentration"):
+                expired = True
+            if expired:
+                summary["expired"].append((name, e["name"]))
+                if e.get("concentration") and \
+                        (ent.get("concentration") or "").lower() == e["name"].lower():
+                    ent["concentration"] = None
+                if not quiet:
+                    print(f"  ! {name}: {e['name']} EXPIRED")
+                    _send_announce(f"{name} — {e['name']} expired")
+            else:
+                kept.append(e)
+        ent["effects"] = kept
+        summary["running"] += len(kept)
+        if end_concentration and ent.get("concentration"):
+            if not quiet:
+                print(f"  {name}: concentration on '{ent['concentration']}' ends")
+            ent["concentration"] = None
+
+    _save(campaign, state)
+    if not quiet:
+        print(f"  +{minutes} min in-game: {len(summary['expired'])} effect(s) "
+              f"expired, {summary['running']} still running")
+    return summary
 
 
 def cmd_condition(campaign: str, entity_name: str, action: str, condition: str = "") -> None:
@@ -424,17 +535,34 @@ def cmd_status(campaign: str, filter_name: str = "") -> None:
 
 
 def cmd_clear(campaign: str, clear_all: bool = False) -> None:
+    """End-of-encounter reset.
+
+    Round-measured effects are combat-scale and end with the fight. Effects
+    measured in minutes or hours run on in-game time and outlast it — an
+    eight-hour ward does not lapse because the fight it was cast for ended —
+    so they, and the concentration they carry, stay. `--all` wipes everything.
+    """
     state = _load(campaign)
+    kept_total = 0
     for ent in state.values():
         ent["conditions"] = []
-        ent["concentration"] = None
-        ent["effects"] = []
+        if clear_all:
+            ent["effects"] = []
+        else:
+            ent["effects"] = [_migrate(e) for e in ent.get("effects", [])
+                              if e.get("duration_type") != "rounds"]
+        kept_total += len(ent["effects"])
+        held = {e["name"].lower() for e in ent["effects"] if e.get("concentration")}
+        if (ent.get("concentration") or "").lower() not in held:
+            ent["concentration"] = None
         _push_conditions(ent["name"], [])
         if clear_all:
             ent["death_saves"] = {"successes": 0, "failures": 0, "stable": False}
     _save(campaign, state)
     scope = "all state" if clear_all else "conditions and concentration"
     print(f"  Cleared {scope} for {len(state)} entities.")
+    if kept_total:
+        print(f"  {kept_total} minute/hour effect(s) still running on in-game time.")
 
 
 # ─── Main ────────────────────────────────────────────────────────────────────
@@ -447,8 +575,8 @@ def main() -> None:
 
     # effect
     eff = sub.add_parser("effect", help="Track timed effects (rounds/minutes/hours/indefinite)")
-    eff.add_argument("action", choices=["start", "end", "tick"])
-    eff.add_argument("entity")
+    eff.add_argument("action", choices=["start", "end", "tick", "advance"])
+    eff.add_argument("entity", help="Entity name (for advance: the time, e.g. 30 / 30m / 8h)")
     eff.add_argument("spell", nargs="?", default="",
                      help="Spell or ability name")
     eff.add_argument("duration", nargs="?", default="",
@@ -483,7 +611,13 @@ def main() -> None:
 
     args = p.parse_args()
 
-    if args.cmd == "effect":
+    if args.cmd == "effect" and args.action == "advance":
+        minutes = parse_advance(args.entity)
+        if minutes is None:
+            print(f"  error: bad time '{args.entity}' — use 30 / 30m / 8h")
+            sys.exit(2)
+        advance_time(args.campaign, minutes)
+    elif args.cmd == "effect":
         cmd_effect(args.campaign, args.action, args.entity,
                    spell=args.spell, duration=args.duration,
                    is_conc=(args.conc.lower() == "conc"))

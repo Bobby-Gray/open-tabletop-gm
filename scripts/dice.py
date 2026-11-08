@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-dice.py — D&D 5e dice roller
+dice.py — dice roller
 
 Usage:
-    python3 dice.py <notation> [--silent]
+    python3 dice.py <notation> [--silent] [--vs check|save|attack] [--dc N]
+                    [-c CAMPAIGN | --system NAME]
 
 Notation supported:
     d20               single d20
@@ -16,15 +17,32 @@ Notation supported:
     d20+3 adv         advantage with modifier
     2d6+3             multiple dice + modifier
 
+Options:
+    --vs check|save|attack   what the d20 is for. Natural 20 / natural 1 are
+                             labelled only where the active system gives them
+                             a meaning for that kind of roll (D&D 5e: attacks
+                             only; PF2e: any check, as a one-step shift in the
+                             degree of success). Without --vs nothing is
+                             labelled, because a natural 20 on an ability
+                             check is not a critical hit.
+    --dc N                   resolve against a DC (or AC, with --vs attack)
+    -c, --campaign NAME      read the system from the campaign's state.md
+    --system NAME            override the system (dnd5e, pf2e, brp, ...)
+
 Output (unless --silent):
     Rolls: [x, x, x]  →  Total: N
     For advantage/disadvantage, shows both rolls and which was taken.
-    Flags natural 20 (CRITICAL HIT) and natural 1 (FUMBLE) on single d20s.
 """
 
-import random
 import re
+import secrets
 import sys
+
+try:
+    from paths import resolve_system
+except ImportError:              # imported from outside scripts/
+    def resolve_system(campaign="", override="", default="dnd5e"):
+        return (override or default).strip().lower()
 
 
 def parse_notation(notation: str):
@@ -52,7 +70,84 @@ def parse_notation(notation: str):
 
 
 def roll_dice(num_dice, die_size):
-    return [random.randint(1, die_size) for _ in range(num_dice)]
+    # secrets, like the display's own roller: game dice should not come from a
+    # seedable, predictable generator.
+    return [secrets.randbelow(die_size) + 1 for _ in range(num_dice)]
+
+
+# ── What a natural 20 / natural 1 means, per system ──────────────────────────
+
+VS_KINDS = ("check", "save", "attack")
+
+PF2E_DEGREES = ("CRITICAL FAILURE", "FAILURE", "SUCCESS", "CRITICAL SUCCESS")
+
+
+def pf2e_degree(natural: int, total: int, dc: int) -> int:
+    """PF2e degree of success, 0 (critical failure) .. 3 (critical success).
+
+    Beat the DC by 10 for a critical success, miss it by 10 for a critical
+    failure; a natural 20 then moves the result one step up and a natural 1
+    one step down. Applies to every check, save and attack in that system.
+    """
+    if total >= dc + 10:
+        degree = 3
+    elif total >= dc:
+        degree = 2
+    elif total <= dc - 10:
+        degree = 0
+    else:
+        degree = 1
+    if natural == 20:
+        degree = min(3, degree + 1)
+    elif natural == 1:
+        degree = max(0, degree - 1)
+    return degree
+
+
+# What a natural 20 / natural 1 means on a single d20, per system:
+#   "attack_crit"  natural 20 on an ATTACK is a critical hit, natural 1 an
+#                  automatic miss; on checks and saves a natural means nothing
+#   "degrees"      every check, save and attack has four degrees of success,
+#                  and a natural 20 / 1 moves the degree one step
+# A system with no row gets no natural-number label at all — a DC still
+# resolves to success or failure. Supporting a system is adding a row.
+NATURAL_RULES = {
+    "dnd5e": "attack_crit",
+    "pf2e": "degrees",
+}
+
+
+def d20_verdict(natural: int, total: int, vs: str = "", dc=None,
+                system: str = "dnd5e") -> str:
+    """Return the label for a single kept d20, or "" when nothing applies."""
+    rule = NATURAL_RULES.get(system)
+    if rule == "attack_crit":
+        if vs == "attack":
+            if natural == 20:
+                return "  *** CRITICAL HIT (nat 20)! ***"
+            if natural == 1:
+                return "  *** AUTOMATIC MISS (nat 1) ***"
+            if dc is not None:
+                return f"  vs AC {dc} — {'HIT' if total >= dc else 'MISS'}"
+            return ""
+    elif rule == "degrees" and vs:
+        if dc is not None:
+            degree = pf2e_degree(natural, total, dc)
+            what = "AC" if vs == "attack" else "DC"
+            shift = ""
+            if natural == 20:
+                shift = " (natural 20: one step better)"
+            elif natural == 1:
+                shift = " (natural 1: one step worse)"
+            return f"  vs {what} {dc} — {PF2E_DEGREES[degree]}{shift}"
+        if natural == 20:
+            return "  (natural 20: one degree of success better)"
+        if natural == 1:
+            return "  (natural 1: one degree of success worse)"
+        return ""
+    if dc is not None:
+        return f"  vs DC {dc} — {'SUCCESS' if total >= dc else 'FAILURE'}"
+    return ""
 
 
 def format_modifier(mod):
@@ -61,8 +156,10 @@ def format_modifier(mod):
     return f" + {mod}" if mod > 0 else f" - {abs(mod)}"
 
 
-def run(notation: str, silent: bool = False) -> int:
+def run(notation: str, silent: bool = False, vs: str = "", dc=None,
+        system: str = "dnd5e") -> int:
     num_dice, die_size, modifier, keep_mode, keep_count, adv, dis = parse_notation(notation)
+    single_d20 = num_dice == 1 and die_size == 20
 
     # Advantage / disadvantage (only meaningful for single d20)
     if adv or dis:
@@ -76,7 +173,11 @@ def run(notation: str, silent: bool = False) -> int:
             print(f"[{label}] Roll A: {roll_a} = {total_a}{format_modifier(modifier)}")
             print(f"[{label}] Roll B: {roll_b} = {total_b}{format_modifier(modifier)}")
             taken = "A" if (adv and total_a >= total_b) or (dis and total_a <= total_b) else "B"
-            print(f"Takes roll {taken} → Total: {chosen}")
+            flag = ""
+            if single_d20:
+                natural = (roll_a if taken == "A" else roll_b)[0]
+                flag = d20_verdict(natural, chosen, vs, dc, system)
+            print(f"Takes roll {taken} → Total: {chosen}{flag}")
         return chosen
 
     rolls = roll_dice(num_dice, die_size)
@@ -97,13 +198,9 @@ def run(notation: str, silent: bool = False) -> int:
 
     result = sum(rolls) + modifier
     if not silent:
-        if num_dice == 1 and die_size == 20:
+        if single_d20:
             raw = rolls[0]
-            flag = ""
-            if raw == 20:
-                flag = "  *** CRITICAL HIT (nat 20)! ***"
-            elif raw == 1:
-                flag = "  *** FUMBLE (nat 1)! ***"
+            flag = d20_verdict(raw, result, vs, dc, system)
             mod_str = format_modifier(modifier)
             print(f"Roll: {raw}{mod_str} = {result}{flag}")
         else:
@@ -112,15 +209,49 @@ def run(notation: str, silent: bool = False) -> int:
     return result
 
 
-if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if a != "--silent"]
-    silent = "--silent" in sys.argv[1:]
+def _parse_cli(argv: list) -> dict:
+    """Split option flags from the notation, which may itself contain spaces."""
+    opts = {"silent": False, "vs": "", "dc": None, "campaign": "", "system": ""}
+    rest = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--silent":
+            opts["silent"] = True
+        elif a in ("--vs", "--dc", "-c", "--campaign", "--system"):
+            if i + 1 >= len(argv):
+                raise SystemExit(f"dice.py: {a} needs a value")
+            val = argv[i + 1]
+            i += 1
+            if a == "--vs":
+                if val.lower() not in VS_KINDS:
+                    raise SystemExit(f"dice.py: --vs must be one of {', '.join(VS_KINDS)}")
+                opts["vs"] = val.lower()
+            elif a == "--dc":
+                try:
+                    opts["dc"] = int(val)
+                except ValueError:
+                    raise SystemExit(f"dice.py: --dc needs a number, got {val!r}")
+            elif a in ("-c", "--campaign"):
+                opts["campaign"] = val
+            else:
+                opts["system"] = val
+        else:
+            rest.append(a)
+        i += 1
+    opts["notation"] = " ".join(rest)
+    return opts
 
-    if not args:
+
+if __name__ == "__main__":
+    opts = _parse_cli(sys.argv[1:])
+
+    if not opts["notation"]:
         print("Usage: python3 dice.py <notation>  e.g. d20+5  2d6  4d6kh3  d20 adv")
         sys.exit(1)
 
-    notation = " ".join(args)
-    result = run(notation, silent=silent)
-    if silent:
+    system = resolve_system(opts["campaign"], opts["system"])
+    result = run(opts["notation"], silent=opts["silent"], vs=opts["vs"],
+                 dc=opts["dc"], system=system)
+    if opts["silent"]:
         print(result)

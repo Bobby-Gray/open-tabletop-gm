@@ -196,6 +196,28 @@ def _norm_spell(r: dict) -> dict:
     }
 
 
+def _fmt_armor_ac(ac: dict, category: str = "") -> str:
+    """Render an upstream `armor_class` block the way the rules read.
+
+    Upstream carries `base`, `dex_bonus` and `max_bonus` separately, and all
+    three decide the number: heavy armour adds no DEX at all, medium adds DEX
+    up to its cap, and a shield is a bonus on top of whatever is worn rather
+    than a base of its own. Writing `+ DEX` for every piece told the GM that
+    plate armour on a DEX 16 fighter was AC 21.
+    """
+    if not isinstance(ac, dict) or not ac:
+        return ""
+    base = ac.get("base", "")
+    if str(category).strip().lower() == "shield":
+        return f"AC +{base}"
+    if not ac.get("dex_bonus"):
+        return f"AC {base}"
+    cap = ac.get("max_bonus")
+    if cap is not None:
+        return f"AC {base} + DEX (max {cap})"
+    return f"AC {base} + DEX"
+
+
 def _norm_equipment(r: dict) -> dict:
     cat  = r.get("equipment_category", {})
     cost = r.get("cost", {})
@@ -218,7 +240,7 @@ def _norm_equipment(r: dict) -> dict:
                          .strip() if dmg else "",
         "damage_2h":     f"{dmg2.get('damage_dice','')} {dmg2.get('damage_type',{}).get('name','')}"
                          .strip() if dmg2 else "",
-        "ac":            f"AC {ac.get('base','')} + DEX" if ac else "",
+        "ac":            _fmt_armor_ac(ac, r.get("armor_category", "")),
         "properties":    props,
         "range":         f"{rng.get('normal','?')}/{rng.get('long','?')} ft"
                          if rng and rng.get("normal") else "",

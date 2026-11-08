@@ -21,8 +21,8 @@ When you run `/gm load <campaign>`, the skill reads both files. Think of `SKILL.
 These parts of the skill work identically for any tabletop RPG:
 
 - **Dice rolling** — `dice.py` understands any XdY+Z notation. `2d6`, `d10`, `4d6kh3`, `d100` — all work out of the box.
-- **Turn order / initiative** — `combat.py` handles initiative tracking regardless of what stat is used. You just feed it the numbers.
-- **Timed effects** — round-based and time-based effect tracking works for any system. Rounds, minutes, hours, indefinite — all supported.
+- **Turn order / initiative** — `combat.py` tracks turn order for any system, but it orders the fight by the active system's rule, so a new system needs **one row** in the `INITIATIVE` table in `scripts/combat.py`: the initiative die (or none, for a straight ranking), the combatant JSON key it reads, and how ties break. Until that row exists `init` refuses rather than guess with d20 + DEX. A d20-against-AC system that wants `combat.py attack` adds a resolver to `ATTACK_RESOLVERS` too. See `scripts/combat.md`.
+- **Timed effects** — round-based and time-based effect tracking works for any system. Rounds, minutes, hours, indefinite — all supported; minutes and hours count down in in-game time, spent by `calendar.py advance` / `rest`. A system whose combat round is not six seconds adds itself to `ROUND_SECONDS` in `scripts/tracker.py`.
 - **Status effect tracking** — `tracker.py` tracks conditions, concentration/sustained effects, and incapacitation state. The condition *names* are configurable.
 - **Campaign file structure** — `state.md`, `world.md`, `npcs.md`, `session-log.md` are game-agnostic. A campaign is a campaign.
 - **Time and calendar** — `calendar.py` is fully configurable to any calendar system. You define the month names, day names, and month length.

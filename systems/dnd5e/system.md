@@ -116,9 +116,17 @@ python3 systems/dnd5e/character.py xp --level 1 --gained 150
 
 ## Rests
 
-**Short rest (1 hour):** Spend any number of Hit Dice; roll each + CON mod → recover that much HP. Second Wind and some class features recharge. Advance time: `calendar.py rest short`
+**Short rest (1 hour):** Spend any number of Hit Dice; roll each + CON mod → recover that much HP. Second Wind and some class features recharge. Advance time: `calendar.py rest short` (timed effects count the hour down; conditions and concentration are not cleared).
 
-**Long rest (8 hours):** Restore all HP, restore half max Hit Dice (round up), restore all spell slots, restore most features. Advance time: `calendar.py rest long`. Clear tracker state: `tracker.py clear --all`
+**Long rest (8 hours):** A character must have **at least 1 HP** to gain a long rest's benefits — one at 0 HP regains nothing until they are healed or stabilise and recover. Otherwise:
+- Regain all lost HP.
+- Regain spent Hit Dice: **2014** — up to half the character's total, rounded down, minimum 1; **2024** — all of them. Read `**System Version:**` in state.md.
+- Regain all spell slots and most features.
+- Reduce **exhaustion by 1** (2014: only if the character has had food and water).
+- **Concentration ends** — sleep breaks it. `calendar.py rest long` ends it in the tracker.
+- **Lasting conditions stay.** A curse, a disease, a poison with its own duration, petrification — a rest does not cure them, and a character's death-save tally is cleared by regaining HP, not by sleeping. Do **not** run `tracker.py clear` or `clear --all` for a rest.
+
+Advance time: `calendar.py rest long` — it also counts the eight hours down on timed effects, so a one-hour spell cast before the rest has expired when the party wakes.
 
 ---
 

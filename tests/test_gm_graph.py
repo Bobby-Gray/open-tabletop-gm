@@ -419,5 +419,46 @@ class GraphSubcommandTests(unittest.TestCase):
         self.assertIn("must be one of", err)
 
 
+class GraphInitTests(unittest.TestCase):
+    """`init` is the subcommand the docs call a hard requirement.
+
+    SKILL-commands.md, SKILL-branches.md and the README all told the GM to run
+    `graph init`, and gm_graph.py had no such subcommand, so the call failed
+    with argparse's "invalid choice" and the required step could not be done.
+    """
+
+    # The same ephemeral campaign as GraphSubcommandTests, without re-running
+    # that class's tests.
+    setUp = GraphSubcommandTests.setUp
+    tearDown = GraphSubcommandTests.tearDown
+    _graph_json = GraphSubcommandTests._graph_json
+
+    def test_init_creates_an_empty_graph(self):
+        rc, out, err = _run(["init", "--campaign", self.campaign], self.env)
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self._graph_json(), {"version": 1, "nodes": [], "edges": []})
+        rc, out, _ = _run(["scene-context", "--campaign", self.campaign], self.env)
+        self.assertIn("not initialized", out, "an empty graph still reads as unseeded")
+
+    def test_init_is_idempotent_on_an_empty_graph(self):
+        _run(["init", "--campaign", self.campaign], self.env)
+        rc, out, err = _run(["init", "--campaign", self.campaign], self.env)
+        self.assertEqual(rc, 0, err)
+
+    def test_init_refuses_to_overwrite_a_seeded_graph(self):
+        _run(["add-node", "--campaign", self.campaign, "--type", "npc", "--name", "Aldric"],
+             self.env)
+        before = (self.camp_dir / "graph.json").read_bytes()
+        rc, out, err = _run(["init", "--campaign", self.campaign], self.env)
+        self.assertNotEqual(rc, 0)
+        self.assertIn("refusing", err)
+        self.assertEqual((self.camp_dir / "graph.json").read_bytes(), before)
+
+    def test_init_needs_an_existing_campaign(self):
+        rc, _, err = _run(["init", "--campaign", "no-such-campaign-xyz"], self.env)
+        self.assertNotEqual(rc, 0)
+        self.assertFalse((self.root / "campaigns" / "no-such-campaign-xyz").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
